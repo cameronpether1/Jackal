@@ -14,7 +14,7 @@ const SinglePostPage = ({ params }) => {
           minus! Fugit? Ipsa corporis nihil eum dolore eius, ut veniam rerum
           vero cum quo quod soluta eaque accusamus id facere dolorum quae
           possimus perspiciatis! Repudiandae perspiciatis minima laborum error
-          fuga obcaecati sequi. Soluta eum sapiente doloribus dignissimos
+          fuga obcaecati sequi. Soluta eum sapiente doloribus dignissimoss
           ducimus aperiam fuga accusamus eos dolor amet temporibus alias ut
           sunt, distinctio tenetur totam repudiandae in quo veritatis! Ratione
           reprehenderit, et cum voluptatem dolorum dicta. Qui cumque a, laborum
