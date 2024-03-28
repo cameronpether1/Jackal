@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: "Space Mono", monospace;
+  --bg: #f4f4f4;
+  --text: #090909;
+  --linearGradient: rgba(0, 0, 0, 0.02);
+  --bgdot: #e5e7eb;
+  --herogradfrom: #383391;
+  --herogradvia: #c49aed;
+  --herogradto: #d6a4de;
+  --sparkles: #0a0a0a;
+}
+
+:root[id="dark"] {
+  font-family: "Space Mono", monospace;
+  --bg: #0f0f0f;
+  --text: #f4f4f4;
+  --linearGradient: rgba(255, 255, 255, 0.02);
+  --bgdot: #3d3d3d52;
+  --herogradfrom: #f1f1f1;
+  --herogradvia: #f3f3f3;
+  --herogradto: #f1f1f1;
+  --sparkles: #f1f1f1;
+}
+:root[id="light"] {
+  font-family: "Space Mono", monospace;
+  --bg: #f4f4f4;
+  --text: #090909;
+  --linearGradient: rgba(0, 0, 0, 0.02);
+  --bgdot: #a7a7a76b;
+  --herogradfrom: #383391;
+  --herogradvia: #c49aed;
+  --herogradto: #d6a4de;
+  --sparkles: #0a0a0a;
+}
+* {
+  margin: 0px;
+}
+
+body {
+  color: var(--text);
+  background: var(--bg);
+}
