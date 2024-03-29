@@ -12,6 +12,7 @@
   --herogradvia: #c49aed;
   --herogradto: #d6a4de;
   --sparkles: #0a0a0a;
+  --contrasttext: #090909;
 }
 
 :root[id="dark"] {
@@ -23,7 +24,7 @@
   --herogradfrom: #f1f1f1;
   --herogradvia: #f3f3f3;
   --herogradto: #f1f1f1;
-  --sparkles: #f1f1f1;
+  --contrasttext: #090909;
 }
 :root[id="light"] {
   font-family: "Space Mono", monospace;
@@ -34,7 +35,7 @@
   --herogradfrom: #383391;
   --herogradvia: #c49aed;
   --herogradto: #d6a4de;
-  --sparkles: #0a0a0a;
+  --contrasttext: #090909;
 }
 * {
   margin: 0px;
