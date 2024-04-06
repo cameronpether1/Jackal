@@ -1,11 +1,17 @@
 import { motion, useScroll } from "framer-motion";
+import { useRef } from "react";
 
 const Eightgrid = () => {
-  const { scrollYProgress } = useScroll();
+  const ref = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["end start", "end end"],
+  });
   return (
     <div className="flex justify-center ">
       <motion.div
         style={{ scale: scrollYProgress }}
+        ref={ref}
         className="grid grid-cols-3 grid-rows-6 gap-4 h-[600px] w-[1100px] mx-[200px] rounded-lg text-[12px] "
       >
         <div className="row-span-2 border border-[#FFFFFF20] rounded-lg p-[10px]">

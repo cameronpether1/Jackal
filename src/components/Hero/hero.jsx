@@ -15,7 +15,10 @@ const Hero = () => {
         <p className="max-w-[500px] text-center bg-clip-text text-[10px] sm:text-[10px] md:text-[10px] lg:text-[12px] ">
           The digital planner with your success in mind.
         </p>
-        <div className="  mt-16 flex items-center justify-center rounded-lg cursor-pointer text-white bg-gradient-to-r from-[#383391] to-[#4930a5] w-40 h-12">
+        <div
+          className="  mt-16 flex items-center justify-center text-white bg-gradient-to-r from-[#383391] to-[#4930a5] w-40 h-12 
+        cursor-pointer shadow-2xl shadow-zinc-900 rounded-full text-sm font-semibold "
+        >
           <Link href="/about">View</Link>
         </div>
       </div>

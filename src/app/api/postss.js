@@ -54,6 +54,48 @@ const posts = [
     title: "Hey im Evelina",
     body: "this is the body text of the blog ",
   },
+  {
+    username: "Evelina",
+    img: "7",
+    id: "7",
+    title: "Hey im Evelina",
+    body: "this is the body text of the blog ",
+  },
+  {
+    username: "Evelina",
+    img: "7",
+    id: "8",
+    title: "Hey im Evelina",
+    body: "this is the body text of the blog ",
+  },
+  {
+    username: "Evelina",
+    img: "5",
+    id: "9",
+    title: "Hey im Evelina",
+    body: "this is the body text of the blog ",
+  },
+  {
+    username: "Evelina",
+    img: "3",
+    id: "10",
+    title: "Hey im Evelina",
+    body: "this is the body text of the blog ",
+  },
+  {
+    username: "Evelina",
+    img: "7",
+    id: "11",
+    title: "Hey im Evelina",
+    body: "this is the body text of the blog ",
+  },
+  {
+    username: "Evelina",
+    img: "4",
+    id: "12",
+    title: "Hey im Evelina",
+    body: "this is the body text of the blog ",
+  },
 ];
 
 export const getPosts = async () => {

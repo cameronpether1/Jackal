@@ -12,8 +12,8 @@ const Blog = async () => {
       <div className="flex justify-center items-center ">
         <div className="w-[900px] my-[50px] flex flex-col md:flex-row justify-between items-center flex-wrap md:justify-start ">
           {posts.map((post) => (
-            <Link href={`/blog/${post.id}`}>
-              <Blogcardvertical key={post.id} post={post} />
+            <Link href={`/blog/${post.id}`} key={post.id}>
+              <Blogcardvertical post={post} />
             </Link>
           ))}
         </div>

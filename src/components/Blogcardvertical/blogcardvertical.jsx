@@ -4,7 +4,7 @@ import React from "react";
 const Blogcardvertical = ({ post }) => {
   return (
     <div className="flex-col justify-center items-center ">
-      <div className="flex flex-col m-[20px] flex-wrap  bg-white rounded-xl shadow-lg shadow-black/20 w-[250px] h-[450px] overflow-hidden text-[var(--contrasttext)]">
+      <div className="flex flex-col m-[20px] flex-wrap  bg-white/20 rounded-xl shadow-lg shadow-black/20 w-[250px] h-[450px] overflow-hidden text-[var(--contrasttext)]">
         <img
           src={`/img/${post.img}.png`}
           alt="blog image"

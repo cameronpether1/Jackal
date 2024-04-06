@@ -1,10 +1,9 @@
 import React from "react";
-import Image from "next/image";
 import Link from "next/link";
 
 const Blogcard = () => {
   return (
-    <Link href="/blog/post">
+    <Link href="/">
       <div className="lg:flex justify-center items-center mx-[400px] hidden ">
         <div className="flex flex-row bg-white rounded-xl shadow-lg shadow-black/20 min-w-[830px] max-w-[830px] max-h-[300px] overflow-hidden text-[var(--contrasttext)] ">
           <img
