@@ -20,10 +20,11 @@ import Link from "next/link";
 import Image from "next/image";
 import Logo from "/public/img/logo.svg";
 import { Button } from "@/components/ui/button";
+import { actionLoginUser } from "@/lib/server-action/auth-actions";
 
 const LoginPage = () => {
   const router = useRouter();
-  const [submitError, setsubmitError] = useState("");
+  const [submitError, setSubmitError] = useState("");
 
   const form = useForm<z.infer<typeof FormSchema>>({
     mode: "onChange",
@@ -35,13 +36,20 @@ const LoginPage = () => {
 
   const onSubmit: SubmitHandler<z.infer<typeof FormSchema>> = async (
     formData
-  ) => {};
+  ) => {
+    const { error } = await actionLoginUser(formData);
+    if (error) {
+      form.reset();
+      setSubmitError(error.message);
+    }
+    router.replace("/notedashboard");
+  };
 
   return (
     <Form {...form}>
       <form
         onChange={() => {
-          if (submitError) setsubmitError("");
+          if (submitError) setSubmitError("");
         }}
         onSubmit={form.handleSubmit(onSubmit)}
         className="w-full sm:justify-center sm:w-[400px] space-y-6 flex flex-col"
@@ -59,7 +67,7 @@ const LoginPage = () => {
           disabled={isLoading}
           control={form.control}
           name="email"
-          render={(field) => (
+          render={({ field }) => (
             <FormItem>
               <FormControl>
                 <Input type="email" placeholder="Email" {...field} />
@@ -72,7 +80,7 @@ const LoginPage = () => {
           disabled={isLoading}
           control={form.control}
           name="password"
-          render={(field) => (
+          render={({ field }) => (
             <FormItem>
               <FormControl>
                 <Input type="password" placeholder="Password" {...field} />
@@ -84,6 +92,7 @@ const LoginPage = () => {
         {submitError && <FormMessage>{submitError}</FormMessage>}
         <Button
           type="submit"
+          variant="destructive"
           className="w-full p-6 bg-[#000] text-[#f4f4f4]"
           size="lg"
           disabled={isLoading}
@@ -91,7 +100,7 @@ const LoginPage = () => {
           {!isLoading ? "Login" : <Loader />}
         </Button>
         <span className="self-container">
-          Don't Have an account?
+          Don't Have an account?{" "}
           <Link href="/signup" className=" text-purple-800">
             Sign Up
           </Link>

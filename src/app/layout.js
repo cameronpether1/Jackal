@@ -2,6 +2,7 @@ import { Space_Mono } from "next/font/google";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar/navbar";
+import { db } from "@/lib/supabase/db";
 const inter = Inter({ subsets: ["latin"] });
 // const monospace = Space_Mono({ subsets: ["latin"], weight: ["700"] });
 
