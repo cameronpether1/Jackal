@@ -3,7 +3,7 @@ import React from "react";
 import * as NavigationMenu from "@radix-ui/react-navigation-menu";
 import { CaretDownIcon } from "@radix-ui/react-icons";
 import classNames from "classnames";
-import SwitchOne from "../Switch/switch";
+import SwitchOne from "@/components/Switch/switch";
 
 const Navigationmenu = () => (
   <NavigationMenu.Root className="relative z-[1] flex w-screen justify-center">

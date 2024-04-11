@@ -23,7 +23,7 @@ const posts = [
     username: "Evelina",
     img: "3",
     id: "2",
-    title: "Hey im Evelina",
+    title: "Hey im cameron",
     body: "this is the body text of the blog ",
   },
   {
