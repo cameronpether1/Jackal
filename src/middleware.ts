@@ -12,6 +12,16 @@ export async function middleware(req: NextRequest) {
       return NextResponse.redirect(new URL("/login", req.url));
     }
   }
+  // if (req.nextUrl.pathname.startsWith("/login")) {
+  //   if (session) {
+  //     return NextResponse.redirect(new URL("/notedashboard", req.url));
+  //   }
+  // }
+  // if (req.nextUrl.pathname.startsWith("/signup")) {
+  //   if (session) {
+  //     return NextResponse.redirect(new URL("/notedashboard", req.url));
+  //   }
+  // }
 
   const emailLinkError = "Email link is invalid or has expired";
   if (
@@ -28,10 +38,10 @@ export async function middleware(req: NextRequest) {
     );
   }
 
-  if (["/login", "/signup"].includes(req.nextUrl.pathname)) {
-    if (session) {
-      return NextResponse.redirect(new URL("/notedashboard", req.url));
-    }
-  }
-  return res;
+  //   if (["/login", "/signup"].includes(req.nextUrl.pathname)) {
+  //     if (session) {
+  //       return NextResponse.redirect(new URL("/notedashboard", req.url));
+  //     }
+  //   }
+  //   return res;
 }

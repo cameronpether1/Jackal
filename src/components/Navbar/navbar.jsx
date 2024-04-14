@@ -4,11 +4,11 @@ import Link from "next/link";
 
 const Navbar = () => {
   return (
-    <div className="flex justify-evenly items-center px-[30px] mt-[20px] ">
+    <div className="flex justify-between items-center px-[30px] mt-[20px] ">
       <div>Jackal</div>
       <Navigationmenu />
       <Link href="/login">
-        <button className="border border-black no-underline cursor-pointer relative shadow-2xl shadow-zinc-900 rounded-full p-px text-xs font-semibold leading-6 text-black hidden md:inline-block">
+        <button className="border bg-zinc-100 hover:bg-white border-black no-underline cursor-pointer relative shadow-2xl rounded-full p-px text-xs font-semibold leading-6 text-black hidden md:inline-block">
           <div className="relative font-sans flex space-x-2 items-center z-10 rounded-full py-0.5 px-4 ring-1 ring-white/10 ">
             <span>Login</span>
             <svg

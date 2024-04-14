@@ -10,6 +10,8 @@ import {
   useMotionValueEvent,
 } from "framer-motion";
 import { redirect } from "next/navigation";
+import DashboardSetup from "@/components/dashboard-setup/dashboard-setup";
+import { getUserSubscriptionStatus } from "@/lib/supabase/queries";
 
 const notedashboard = async () => {
   const supabase = createServerComponentClient({ cookies });
@@ -22,8 +24,22 @@ const notedashboard = async () => {
   const workspace = await db.query.workspaces.findFirst({
     where: (workspace, { eq }) => eq(workspace.workspaceOwner, user.id),
   });
-  if (!workspace) return;
-  redirect("/notedashboard");
+
+  const { data: subscription, error: subscriptionError } =
+    await getUserSubscriptionStatus(user.id);
+
+  if (subscriptionError) return;
+
+  if (!workspace)
+    return (
+      <div className="bg-[#f4f4f4] h-screen w-screen flex justify-center items-center">
+        <DashboardSetup
+          user={user}
+          subscription={subscription}
+        ></DashboardSetup>
+      </div>
+    );
+  redirect(`/notedashboard/${workspace.id}`);
 };
 
 export default notedashboard;

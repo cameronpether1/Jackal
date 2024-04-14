@@ -89,7 +89,7 @@ const Signup = () => {
         onSubmit={form.handleSubmit(onSubmit)}
         className="w-full sm:justify-center sm:w-[400px]
         space-y-6 flex
-        flex-col
+        flex-col 
         "
       >
         <Link
@@ -105,7 +105,7 @@ const Signup = () => {
             className="font-semibold
           dark:text-white text-4xl first-letter:ml-2"
           >
-            cypress.
+            Jackal.
           </span>
         </Link>
         <FormDescription
@@ -125,7 +125,7 @@ const Signup = () => {
                   <FormControl>
                     <Input type="email" placeholder="Email" {...field} />
                   </FormControl>
-                  <FormMessage className="text-red-500" />
+                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -138,7 +138,7 @@ const Signup = () => {
                   <FormControl>
                     <Input type="password" placeholder="Password" {...field} />
                   </FormControl>
-                  <FormMessage className="text-red-500" />
+                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -155,13 +155,13 @@ const Signup = () => {
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage className="text-red-500" />
+                  <FormMessage />
                 </FormItem>
               )}
             />
             <Button
               type="submit"
-              className="w-full p-6 bg-[#1d1d1d] hover:bg-black text-[#f4f4f4]"
+              className="w-full p-6 bg-black text-[#f4f4f4]"
               disabled={isLoading}
             >
               {!isLoading ? "Create Account" : <Loader />}
@@ -172,7 +172,7 @@ const Signup = () => {
         {submitError && <FormMessage>{submitError}</FormMessage>}
         <span className="self-container">
           Already have an account?{" "}
-          <Link href="/login" className="text-primary">
+          <Link href="/login" className=" text-purple-800">
             Login
           </Link>
         </span>
