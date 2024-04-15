@@ -1,6 +1,7 @@
 "use client";
 import { workspace } from "@/lib/supabase/supabase.types";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { ChevronDown } from "lucide-react";
 import Image from "next/legacy/image";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
@@ -30,17 +31,18 @@ const SelectedWorkspace: React.FC<SelectedWorkspaceProps> = ({
       onClick={() => {
         if (onClick) onClick(workspace);
       }}
-      className="flex rounded-md hover:bg-violet3 transition-all flex-row p-2 gap-4 justify-center cursor-pointer items-center my-2"
+      className="flex rounded-md hover:bg-violet4 transition-all flex-row p-2 gap-4 justify-center cursor-pointer items-center my-2"
     >
-      <Image
+      {/* <Image
         src={workspaceLogo}
         alt="Workspace Logo"
-        width={26}
-        height={26}
+        width={16}
+        height={16}
         objectFit="cover"
-      />
+      /> */}
+      <ChevronDown />
       <div className="flex flex-col">
-        <p className="text-lg w-[170px] overflow-hidden overflow-ellipsis whitespace-nowrap">
+        <p className="text-sm w-[170px] overflow-hidden overflow-ellipsis whitespace-nowrap">
           {workspace.title}
         </p>
       </div>

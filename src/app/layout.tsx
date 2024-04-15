@@ -2,6 +2,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar/navbar";
 import AppStateProvider from "@/lib/providers/state-provider";
+import { SupabaseUserProvider } from "@/lib/providers/supabase-user-provider";
 const inter = Inter({ subsets: ["latin"] });
 
 // const monospace = Space_Mono({ subsets: ["latin"], weight: ["700"] });
@@ -21,7 +22,9 @@ export default function RootLayout({
       <body className={inter.className}>
         <div className="-z-30 absolute h-full w-full bg-[radial-gradient(var(--bgdot)_1px,transparent_1px)] [background-size:16px_16px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)] "></div>
         <Navbar />
-        <AppStateProvider>{children}</AppStateProvider>
+        <AppStateProvider>
+          <SupabaseUserProvider>{children}</SupabaseUserProvider>
+        </AppStateProvider>
       </body>
     </html>
   );

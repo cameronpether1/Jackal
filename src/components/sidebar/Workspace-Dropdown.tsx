@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react";
 import SelectedWorkspace from "./selected-workspace";
 import CustomDialogTrigger from "../global/custom-dialog-trigger";
 import AppStateProvider from "@/lib/providers/state-provider";
+import WorkspaceCreator from "../global/workspace-creator";
 
 interface WorkspaceDropdownProps {
   privateWorkspaces: workspace[] | [];
@@ -54,7 +55,7 @@ const WorkspaceDropdown: React.FC<WorkspaceDropdownProps> = ({
         </span>
       </div>
       {isOpen && (
-        <div className="origin-top-right absolute w-full rounded-md shadow-md z-50 h-[190px] bg-zinc-100 backdrop-blur-lg group border-[1px] border-zinc-800">
+        <div className="origin-top-right absolute w-full rounded-md shadow-md z-50 h-[190px] group bg-[#FFFFFF5] border border-[#FFFFFF]/20 backdrop-blur ">
           <div className="rounded-md flex flex-col">
             <div className="!p-2">
               {!!privateWorkspaces.length && (
@@ -72,7 +73,7 @@ const WorkspaceDropdown: React.FC<WorkspaceDropdownProps> = ({
               )}
               {!!sharedWorkspaces.length && (
                 <>
-                  <p className=" text-blackA8">Shared</p>
+                  <p className=" text-black">Shared</p>
                   <hr />
                   {sharedWorkspaces.map((option) => (
                     <SelectedWorkspace
@@ -85,7 +86,7 @@ const WorkspaceDropdown: React.FC<WorkspaceDropdownProps> = ({
               )}
               {!!collaboratingWorkspaces.length && (
                 <>
-                  <p className=" text-blackA8">Collaborating</p>
+                  <p className=" text-black">Collaborating</p>
                   <hr />
                   {collaboratingWorkspaces.map((option) => (
                     <SelectedWorkspace
@@ -97,7 +98,18 @@ const WorkspaceDropdown: React.FC<WorkspaceDropdownProps> = ({
                 </>
               )}
             </div>
-            {/* <CustomDialogTrigger></CustomDialogTrigger> */}
+            <CustomDialogTrigger
+              header="Create a Workspace"
+              content={<WorkspaceCreator />}
+              description="Workspaces give you the power to collaborate with others. You can change your workspace privacy settings after creation."
+            >
+              <div className="flex transition-all justify-center items-center gap-2 p-2 w-full text-xs hover:bg-violet4  ">
+                <article className=" w-4 h-4 flex items-center justify-center">
+                  +
+                </article>
+                Create Workspace
+              </div>
+            </CustomDialogTrigger>
           </div>
         </div>
       )}
