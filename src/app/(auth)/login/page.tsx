@@ -17,7 +17,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import Link from "next/link";
-import Image from "next/image";
+import Image from "next/legacy/image";
 import Logo from "/public/img/logo.svg";
 import { Button } from "@/components/ui/button";
 import { actionLoginUser } from "@/lib/server-action/auth-actions";

@@ -1,7 +1,7 @@
 "use client";
 import { workspace } from "@/lib/supabase/supabase.types";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import Image from "next/image";
+import Image from "next/legacy/image";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 
@@ -30,7 +30,7 @@ const SelectedWorkspace: React.FC<SelectedWorkspaceProps> = ({
       onClick={() => {
         if (onClick) onClick(workspace);
       }}
-      className="flex rounded-md hover:bg-black transition-all flex-row p-2 gap-4 justify-center cursor-pointer items-center my-2"
+      className="flex rounded-md hover:bg-violet3 transition-all flex-row p-2 gap-4 justify-center cursor-pointer items-center my-2"
     >
       <Image
         src={workspaceLogo}

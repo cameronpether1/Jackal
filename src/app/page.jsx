@@ -1,6 +1,6 @@
 "use client";
 import { ContainerScroll } from "@/components/ui/container-scroll-animation";
-import Image from "next/image";
+import Image from "next/legacy/image";
 import TitleSection from "@/components/landingpage/title-section";
 import Banner from "/public/img/Banner.png";
 import BannerSec2 from "/public/img/Productivity-Banner.png";
