@@ -55,12 +55,12 @@ const WorkspaceDropdown: React.FC<WorkspaceDropdownProps> = ({
         </span>
       </div>
       {isOpen && (
-        <div className="origin-top-right absolute w-full rounded-md shadow-md z-50 h-[190px] group bg-[#FFFFFF5] border border-[#FFFFFF]/20 backdrop-blur ">
+        <div className="origin-top-right absolute w-full rounded-md shadow-md z-50 h-[190px] group bg-[#FFFFFF5] border border-[#FFFFFF]/20 backdrop-blur overflow-y-scroll no-scrollbar">
           <div className="rounded-md flex flex-col">
             <div className="!p-2">
               {!!privateWorkspaces.length && (
                 <>
-                  <p className=" text-black">Private</p>
+                  <p className=" text-black text-xs">Private</p>
                   <hr />
                   {privateWorkspaces.map((option) => (
                     <SelectedWorkspace
@@ -73,7 +73,7 @@ const WorkspaceDropdown: React.FC<WorkspaceDropdownProps> = ({
               )}
               {!!sharedWorkspaces.length && (
                 <>
-                  <p className=" text-black">Shared</p>
+                  <p className=" text-black text-xs">Shared</p>
                   <hr />
                   {sharedWorkspaces.map((option) => (
                     <SelectedWorkspace
@@ -86,7 +86,7 @@ const WorkspaceDropdown: React.FC<WorkspaceDropdownProps> = ({
               )}
               {!!collaboratingWorkspaces.length && (
                 <>
-                  <p className=" text-black">Collaborating</p>
+                  <p className=" text-black text-xs">Collaborating</p>
                   <hr />
                   {collaboratingWorkspaces.map((option) => (
                     <SelectedWorkspace

@@ -2,6 +2,14 @@
 const plugin = require("tailwindcss/plugin");
 const { blackA, mauve, violet, indigo, purple } = require("@radix-ui/colors");
 module.exports = {
+  // plugins: [
+  //   plugin(function ({ addUtilities }) {
+  //     addUtilities({
+  //       "no-scrollbar": "::-webkit-scrollbar {display: none;}",
+  //     });
+  //   }),
+  // ],
+
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",

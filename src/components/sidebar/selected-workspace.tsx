@@ -5,6 +5,7 @@ import { ChevronDown } from "lucide-react";
 import Image from "next/legacy/image";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface SelectedWorkspaceProps {
   workspace: workspace;
@@ -40,7 +41,10 @@ const SelectedWorkspace: React.FC<SelectedWorkspaceProps> = ({
         height={16}
         objectFit="cover"
       /> */}
-      <ChevronDown />
+      <Avatar className="h-[20px] w-[20px]">
+        <AvatarImage src="https://github.com/shadcn.png" />
+        <AvatarFallback>CN</AvatarFallback>
+      </Avatar>
       <div className="flex flex-col">
         <p className="text-sm w-[170px] overflow-hidden overflow-ellipsis whitespace-nowrap">
           {workspace.title}

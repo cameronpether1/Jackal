@@ -13,6 +13,10 @@ import { error } from "console";
 import { redirect } from "next/navigation";
 import { twMerge } from "tailwind-merge";
 import WorkspaceDropdown from "./Workspace-Dropdown";
+import PlanUsage from "./plan-usage";
+import NativeNavigation from "./native-navigation";
+import { ScrollArea } from "../ui/scroll-area";
+import FoldersDropdownList from "./folders-dropdown-list";
 
 interface SidebarProps {
   params: { workspaceId: string };
@@ -52,7 +56,7 @@ const Sidebar: React.FC<SidebarProps> = async ({ params, className }) => {
   return (
     <aside
       className={twMerge(
-        "hidden sm:flex sm:flex-col w-[280px] shrink-0 p-4 md:gap-4 !justify-between",
+        "hidden sm:flex sm:flex-col !w-[280px] shrink-0 p-4 md:gap-4 !justify-between",
         className
       )}
     >
@@ -66,7 +70,19 @@ const Sidebar: React.FC<SidebarProps> = async ({ params, className }) => {
             ...collaboratingWorkspaces,
             ...sharedWorkspaces,
           ].find((workspace) => workspace.id === params.workspaceId)}
-        ></WorkspaceDropdown>
+        />
+        <PlanUsage
+          foldersLength={workspaceFolderData?.length || 0}
+          subscription={subscriptionData}
+        />
+        <NativeNavigation myWorkspaceId={params.workspaceId} />
+        <ScrollArea className="overflow-scroll relative h-[450px] no-scrollbar">
+          <div className="pointer-events-none w-full absolute bottom-0 h-20 bg-gradient-to-t from-[#f4f4f4] to-transparent z-40" />
+          <FoldersDropdownList
+            workspaceFolders={workspaceFolderData || []}
+            workspaceId={params.workspaceId}
+          />
+        </ScrollArea>
       </div>
     </aside>
   );
