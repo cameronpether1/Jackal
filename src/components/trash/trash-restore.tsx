@@ -38,21 +38,18 @@ const TrashRestore = () => {
           <h3>Folders</h3>
           {folders.map((folder) => (
             <Link
-              className="hover:bg-muted
-            rounded-md
-            p-2
-            flex
-            item-center
-            justify-between"
+              className="hover:bg-violet4 rounded-md p-2 flex item-center justify-between"
               href={`/notedashboard/${folder.workspaceId}/${folder.id}`}
               key={folder.id}
             >
-              <article className=" flex justify-center">
-                <aside className="flex items-center gap-2">
+              <article className=" flex flex-nowrap">
+                <aside className="flex items-center justify-start gap-2 w-[140px]">
                   <FolderIcon size={15} />
                   {folder.title}
                 </aside>
-                <Button className=" mx-24">Delete</Button>
+                <Button className=" bg-red-800/50 border-red-800 text-red-800 relative mx-7 right-0 ">
+                  Delete
+                </Button>
               </article>
             </Link>
           ))}
@@ -69,9 +66,10 @@ const TrashRestore = () => {
             >
               <article>
                 <aside className="flex items-center gap-2">
-                  <FileIcon />
+                  <FileIcon size={15} />
                   {file.title}
                 </aside>
+                <Button className=" mx-24 ">Delete</Button>
               </article>
             </Link>
           ))}
