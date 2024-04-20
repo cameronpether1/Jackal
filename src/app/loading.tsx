@@ -3,8 +3,10 @@ import React from "react";
 
 const Loading = () => {
   return (
-    <div className="flex justify-center items-center">
-      <Loader />
+    <div className="absolute top-[50%] left-[50%] ">
+      <div>
+        <Loader />
+      </div>
     </div>
   );
 };

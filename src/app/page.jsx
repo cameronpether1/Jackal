@@ -21,8 +21,8 @@ const Home = () => {
             title="Explore New Heights
             of Productivity"
           ></TitleSection>
-          <div className=" bg-white p-[2px] mt-6 rounded-xl bg-gradient-to-r from-[var(--herogradto)] via-[var(--herogradvia)] to-[var(--herogradto)] sm:w-[300px]">
-            <button className="w-full rounded-[10px] p-2 text-2xl bg-[#f4f4f4] ">
+          <div className=" bg-white p-[2px] mt-6 rounded-full bg-gradient-to-r from-[var(--herogradto)] via-[var(--herogradvia)] to-[var(--herogradto)] sm:w-[300px]">
+            <button className="w-full rounded-full p-1 text-lg bg-[#f4f4f4] ">
               Get Jackal Free
             </button>
           </div>
@@ -39,7 +39,7 @@ const Home = () => {
           subheading="Create Tasks, Track Events, Share Thoughts"
           pill="features"
         />
-        <div className="mt-10 max-w-[450px] flex justify-center items-center relative sm:ml-0 rounded-2xl border-8 border-purple-300 border-opacity-10">
+        <div className="mt-10 max-w-[450px] flex justify-center items-center relative sm:ml-0 rounded-[45px] border-8 border-purple-300 border-opacity-10">
           <Image src={BannerSec2} alt="Productivity Planner Banner"></Image>
         </div>
       </section>

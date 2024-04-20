@@ -3,7 +3,6 @@ import React from "react";
 import * as NavigationMenu from "@radix-ui/react-navigation-menu";
 import { CaretDownIcon } from "@radix-ui/react-icons";
 import classNames from "classnames";
-import SwitchOne from "@/components/Switch/switch";
 
 const Navigationmenu = () => (
   <NavigationMenu.Root className="relative z-[1] flex w-screen justify-end md:justify-center">
@@ -112,9 +111,6 @@ const Navigationmenu = () => (
             <ListItem href="/store" title="Ideas">
               A crisp set of 15x15 icons, balanced and consistent.
             </ListItem>
-            <ListItem title="settings">
-              <SwitchOne />
-            </ListItem>
           </ul>
         </NavigationMenu.Content>
       </NavigationMenu.Item>
@@ -213,9 +209,7 @@ const Navigationmenu = () => (
             <ListItem href="/store" title="Ideas">
               A crisp set of 15x15 icons, balanced and consistent.
             </ListItem>
-            <ListItem title="settings">
-              <SwitchOne />
-            </ListItem>
+            <ListItem title="settings"></ListItem>
           </ul>
         </NavigationMenu.Content>
       </NavigationMenu.Item>
