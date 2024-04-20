@@ -51,6 +51,20 @@ const Home = () => {
             subheading="Join thousands using Jackal everyday to organise, prioritise, and connect"
             pill="Testimonials"
           />
+          <div className="flex justify-center gap-4 mb-24 mt-10">
+            <CustomCard
+              cardHeader=" Hello Header"
+              cardContent=" this is the content"
+            />
+            <CustomCard
+              cardHeader=" Hello Header"
+              cardContent=" this is the content"
+            />
+            <CustomCard
+              cardHeader=" Hello Header"
+              cardContent=" this is the content"
+            />
+          </div>
           <TitleSection
             title="The Perfect Plan For You"
             subheading="Experience all the benefits of Jackal. Select the best plan for you."
@@ -72,11 +86,6 @@ const Home = () => {
                     {card.planType === PRICING_PLANS.proplan && (
                       <>
                         <div className="hidden w-full blur-[120px] rounded-full h-32 absolute bg-purple-500/80 -z-10 top-0" />
-                        <Image
-                          src={diamond}
-                          alt="Pro Plan Icon"
-                          className="absolute top-6 right-6"
-                        ></Image>
                       </>
                     )}
                     {card.planType}

@@ -104,7 +104,7 @@ const DashboardSetup: React.FC<DashboardSetupProps> = ({
         description: `${newWorkspace.title} has been created successfully.`,
       });
 
-      router.replace(`/dashboard/${newWorkspace.id}`);
+      router.replace(`/notedashboard/${newWorkspace.id}`);
     } catch (error) {
       console.log(error, "Error");
       toast({

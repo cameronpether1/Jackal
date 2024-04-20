@@ -6,7 +6,7 @@ export const PRICING_CARDS = [
     highlightFeature: "",
     features: [
       "One Personal Dashboard",
-      "One Group Dashboard",
+      "One Shared Dashboard",
       "Unlimited file uploads",
       "30 day page history",
       "Invite Two Guests",
@@ -15,7 +15,7 @@ export const PRICING_CARDS = [
   {
     planType: "Pro Plan",
     price: "4.99",
-    description: "Billed annually. $17 billed monthly",
+    description: "Billed annually.",
     highlightFeature: "Everything in free +",
     features: [
       "Unlimited Personal Dashboards",

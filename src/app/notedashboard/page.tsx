@@ -13,7 +13,7 @@ import { redirect } from "next/navigation";
 import DashboardSetup from "@/components/dashboard-setup/dashboard-setup";
 import { getUserSubscriptionStatus } from "@/lib/supabase/queries";
 
-const notedashboard = async () => {
+const DashboardPage = async () => {
   const supabase = createServerComponentClient({ cookies });
 
   const {
@@ -42,7 +42,7 @@ const notedashboard = async () => {
   redirect(`/notedashboard/${workspace.id}`);
 };
 
-export default notedashboard;
+export default DashboardPage;
 
 // const constraintsRef = useRef(null);
 //   const [divCount, setDivCount] = useState(0);

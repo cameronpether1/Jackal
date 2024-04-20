@@ -104,7 +104,7 @@ const WorkspaceCreator = () => {
             <SelectGroup>
               <SelectItem
                 value="private"
-                className="bg-[#f4f4f4] hover:bg-violet3"
+                className="bg-[#f4f4f4] hover:bg-violet4"
               >
                 <div className="p-2 flex gap-4 justify-center items-center">
                   <Lock />
@@ -119,7 +119,7 @@ const WorkspaceCreator = () => {
               </SelectItem>
               <SelectItem
                 value="shared"
-                className="bg-[#f4f4f4] hover:bg-violet3 "
+                className="bg-[#f4f4f4] hover:bg-violet4 "
               >
                 <div className="p-2 flex gap-4 justify-center items-center">
                   <Share />
@@ -148,13 +148,13 @@ const WorkspaceCreator = () => {
               type="button"
               className="text-xs mt-4 hover:border-[#3d3d3d] hover:text-[#3d3d3d] hover:bg-slate-50 border border-[#6d6d6d] text-[#6d6d6d]"
             >
-              <Plus className=" h-4 w-4 mr-3 white" />
+              <Plus className=" h-4 w-4 mr-3" />
               Add Collaborators
             </Button>
           </CollaboratorSearch>
           <div className="mt-4">
             <span className="text-xs ">
-              Collaborators {collaborators.length || ""}
+              Collaborators: {collaborators.length || ""}
             </span>
             <ScrollArea className=" h-[120px] overflow-y-scroll w-full rounded-md border border-[#3d3d3d] no-scrollbar">
               {collaborators.length ? (
@@ -198,7 +198,6 @@ const WorkspaceCreator = () => {
           (permissions === "shared" && collaborators.length === 0) ||
           isLoading
         }
-        variant="secondary"
         className=" bg-[#0c0c0c] hover:bg-black text-[#f4f4f4]"
         onClick={createItem}
       >

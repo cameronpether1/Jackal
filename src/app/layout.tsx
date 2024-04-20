@@ -3,6 +3,8 @@ import "./globals.css";
 import Navbar from "@/components/Navbar/navbar";
 import AppStateProvider from "@/lib/providers/state-provider";
 import { SupabaseUserProvider } from "@/lib/providers/supabase-user-provider";
+import { twMerge } from "tailwind-merge";
+import { Toaster } from "react-hot-toast";
 const inter = Inter({ subsets: ["latin"] });
 
 // const monospace = Space_Mono({ subsets: ["latin"], weight: ["700"] });
@@ -19,8 +21,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" id="light">
-      <body className={inter.className}>
-        <div className="-z-30 absolute h-full w-full bg-[radial-gradient(var(--bgdot)_1px,transparent_1px)] [background-size:16px_16px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)] "></div>
+      <body className={twMerge("bg-[#f4f4f4]", inter.className)}>
+        <Toaster />
+        <div className="-z-30 absolute h-full w-full  bg-[radial-gradient(var(--bgdot)_1px,transparent_1px)] [background-size:16px_16px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)] "></div>
         <Navbar />
         <AppStateProvider>
           <SupabaseUserProvider>{children}</SupabaseUserProvider>
@@ -29,4 +32,3 @@ export default function RootLayout({
     </html>
   );
 }
-//
