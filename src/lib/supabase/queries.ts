@@ -1,11 +1,25 @@
 "use server";
 import { validate } from "uuid";
-import { files, folders, users, workspaces } from "../../../migrations/schema";
 import db from "./db";
-import { File, Folder, Subscription, User, workspace } from "./supabase.types";
+import {
+  File,
+  Folder,
+  Subscription,
+  User,
+  workspace,
+  Notes,
+} from "./supabase.types";
 import { and, eq, ilike, notExists } from "drizzle-orm";
-import { collaborators } from "./schema";
+import {
+  collaborators,
+  files,
+  folders,
+  notes,
+  users,
+  workspaces,
+} from "./schema";
 import { revalidatePath } from "next/cache";
+import { error } from "console";
 
 export const createWorkspace = async (workspace: workspace) => {
   try {
@@ -76,6 +90,23 @@ export const getWorkspaceDetails = async (workspaceId: string) => {
   }
 };
 
+export const getAllWorkspaceDetails = async (workspaceId: string) => {
+  const isValid = validate(workspaceId);
+  if (!isValid)
+    return {
+      response: [],
+      error: "Error",
+    };
+
+  try {
+    const response = (await db.select().from(workspaces)) as workspace[];
+    return { response: response, error: null };
+  } catch (error) {
+    console.log(error);
+    return { response: [], error: "Error" };
+  }
+};
+
 export const getFileDetails = async (fileId: string) => {
   const isValid = validate(fileId);
   if (!isValid) {
@@ -124,6 +155,62 @@ export const getFolderDetails = async (folderId: string) => {
     return { data: [], error: "Error" };
   }
 };
+
+export const getAllFolderDetails = async (workspaceId: string) => {
+  // const isValid = validate(folderId);
+  // if (!isValid) {
+  //   data: [];
+  //   error: "Error";
+  // }
+
+  try {
+    const dashResponse = (await db
+      .select()
+      .from(folders)
+      .where(eq(folders.workspaceId, workspaceId))) as Folder[];
+
+    return { dashResponse: dashResponse, error: null };
+  } catch (error) {
+    return { dashResponse: [], error: "Error" };
+  }
+};
+
+export const init = async (folderId: string) => {
+  const response = (await db
+    .select()
+    .from(notes)
+    .where(eq(notes.folderId, folderId))) as Notes[];
+  return { response: response };
+};
+
+// export const getUserNotes = async (userId: string, ) => {
+//   if (!userId) return [];
+//   const notes = (await db
+//     .select({
+//       id: notes.id,
+
+//       noteOwner: notes.noteowner,
+//       body: notes.body,
+//       position: notes.position,
+//       color: notes.color,
+//     })
+//     .from(notes)
+//     .where(eq(notes.noteOwner, userId))
+//     ) as workspace[];
+//   return notes;
+// };
+
+// export const getUserNotes = async (userId: string) => {
+//   try {
+//     const data = await db.query.notes.findFirst({
+//       where: (notes, { eq }) => eq(notes.noteOwner, userId),
+//     });
+//     if (data) return { data: data as notes, error: null };
+//     else return { data: null, error: null };
+//   } catch (error) {
+//     console.log(error);
+//     return { data: null, error: `Error` };
+//   }
 
 export const getPrivateWorkspaces = async (userId: string) => {
   if (!userId) return [];

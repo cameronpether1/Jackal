@@ -1,26 +1,79 @@
-import { relations, sql } from "drizzle-orm";
 import {
-  boolean,
-  integer,
-  jsonb,
   pgTable,
-  text,
-  timestamp,
+  pgEnum,
   uuid,
+  timestamp,
+  text,
+  foreignKey,
+  jsonb,
+  boolean,
+  bigint,
+  integer,
 } from "drizzle-orm/pg-core";
-import {
-  prices,
-  products,
-  subscriptionStatus,
-  users,
-} from "../../../migrations/schema";
+
+import { relations, sql } from "drizzle-orm";
+export const keyStatus = pgEnum("key_status", [
+  "expired",
+  "invalid",
+  "valid",
+  "default",
+]);
+export const keyType = pgEnum("key_type", [
+  "stream_xchacha20",
+  "secretstream",
+  "secretbox",
+  "kdf",
+  "generichash",
+  "shorthash",
+  "auth",
+  "hmacsha256",
+  "hmacsha512",
+  "aead-det",
+  "aead-ietf",
+]);
+export const factorStatus = pgEnum("factor_status", ["verified", "unverified"]);
+export const factorType = pgEnum("factor_type", ["webauthn", "totp"]);
+export const aalLevel = pgEnum("aal_level", ["aal3", "aal2", "aal1"]);
+export const codeChallengeMethod = pgEnum("code_challenge_method", [
+  "plain",
+  "s256",
+]);
+export const pricingType = pgEnum("pricing_type", ["recurring", "one_time"]);
+export const pricingPlanInterval = pgEnum("pricing_plan_interval", [
+  "year",
+  "month",
+  "week",
+  "day",
+]);
+export const subscriptionStatus = pgEnum("subscription_status", [
+  "unpaid",
+  "past_due",
+  "incomplete_expired",
+  "incomplete",
+  "canceled",
+  "active",
+  "trialing",
+]);
+export const equalityOp = pgEnum("equality_op", [
+  "in",
+  "gte",
+  "gt",
+  "lte",
+  "lt",
+  "neq",
+  "eq",
+]);
+export const action = pgEnum("action", [
+  "ERROR",
+  "TRUNCATE",
+  "DELETE",
+  "UPDATE",
+  "INSERT",
+]);
 
 export const workspaces = pgTable("workspaces", {
   id: uuid("id").defaultRandom().primaryKey().notNull(),
-  createdAt: timestamp("created_at", {
-    withTimezone: true,
-    mode: "string",
-  })
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
     .defaultNow()
     .notNull(),
   workspaceOwner: uuid("workspace_owner").notNull(),
@@ -32,12 +85,22 @@ export const workspaces = pgTable("workspaces", {
   bannerUrl: text("banner_url"),
 });
 
+export const notes = pgTable("notes", {
+  id: uuid("id").defaultRandom().primaryKey().notNull(),
+  folderId: uuid("folder_id")
+    .references(() => folders.id)
+    .notNull(),
+  body: text("body"),
+  position: text("position").notNull(),
+  color: text("color"),
+  noteOwner: uuid("note_owner")
+    .references(() => users.id)
+    .notNull(),
+});
+
 export const folders = pgTable("folders", {
   id: uuid("id").defaultRandom().primaryKey().notNull(),
-  createdAt: timestamp("created_at", {
-    withTimezone: true,
-    mode: "string",
-  })
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
     .defaultNow()
     .notNull(),
   title: text("title").notNull(),
@@ -47,17 +110,12 @@ export const folders = pgTable("folders", {
   bannerUrl: text("banner_url"),
   workspaceId: uuid("workspace_id")
     .notNull()
-    .references(() => workspaces.id, {
-      onDelete: "cascade",
-    }),
+    .references(() => workspaces.id, { onDelete: "cascade" }),
 });
 
 export const files = pgTable("files", {
   id: uuid("id").defaultRandom().primaryKey().notNull(),
-  createdAt: timestamp("created_at", {
-    withTimezone: true,
-    mode: "string",
-  })
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
     .defaultNow()
     .notNull(),
   title: text("title").notNull(),
@@ -67,14 +125,48 @@ export const files = pgTable("files", {
   bannerUrl: text("banner_url"),
   workspaceId: uuid("workspace_id")
     .notNull()
-    .references(() => workspaces.id, {
-      onDelete: "cascade",
-    }),
+    .references(() => workspaces.id, { onDelete: "cascade" }),
   folderId: uuid("folder_id")
     .notNull()
-    .references(() => folders.id, {
-      onDelete: "cascade",
-    }),
+    .references(() => folders.id, { onDelete: "cascade" }),
+});
+
+export const customers = pgTable("customers", {
+  id: uuid("id").primaryKey().notNull(),
+  stripeCustomerId: text("stripe_customer_id"),
+});
+
+export const users = pgTable("users", {
+  id: uuid("id").primaryKey().notNull(),
+  fullName: text("full_name"),
+  avatarUrl: text("avatar_url"),
+  billingAddress: jsonb("billing_address"),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" }),
+  paymentMethod: jsonb("payment_method"),
+  email: text("email"),
+});
+
+export const prices = pgTable("prices", {
+  id: text("id").primaryKey().notNull(),
+  productId: text("product_id").references(() => products.id),
+  active: boolean("active"),
+  description: text("description"),
+  unitAmount: bigint("unit_amount", { mode: "number" }),
+  currency: text("currency"),
+  type: pricingType("type"),
+  interval: pricingPlanInterval("interval"),
+  intervalCount: integer("interval_count"),
+  trialPeriodDays: integer("trial_period_days"),
+  metadata: jsonb("metadata"),
+});
+
+export const products = pgTable("products", {
+  id: text("id").primaryKey().notNull(),
+  active: boolean("active"),
+  name: text("name"),
+  description: text("description"),
+  image: text("image"),
+  metadata: jsonb("metadata"),
 });
 
 export const subscriptions = pgTable("subscriptions", {
@@ -123,22 +215,18 @@ export const subscriptions = pgTable("subscriptions", {
 });
 
 export const collaborators = pgTable("collaborators", {
-  id: uuid("id").defaultRandom().primaryKey().notNull(),
   workspaceId: uuid("workspace_id")
     .notNull()
     .references(() => workspaces.id, { onDelete: "cascade" }),
-  createdAt: timestamp("created_at", {
-    withTimezone: true,
-    mode: "string",
-  })
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
     .defaultNow()
     .notNull(),
   userId: uuid("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
+  id: uuid("id").defaultRandom().primaryKey().notNull(),
 });
 
-//Dont Delete!!!
 export const productsRelations = relations(products, ({ many }) => ({
   prices: many(prices),
 }));
@@ -149,3 +237,17 @@ export const pricesRelations = relations(prices, ({ one }) => ({
     references: [products.id],
   }),
 }));
+
+// export const noteRelations = relations(notes, ({ one }) => {
+//   return {
+//     users: one(users),
+//     folders: one(folders),
+//   };
+// });
+
+// export const foldersRelations = relations(folders, ({ many }) => ({
+//   notes: many(notes, {
+//     fields: [folders.id],
+//     references: [notes.id],
+//   }),
+// }));

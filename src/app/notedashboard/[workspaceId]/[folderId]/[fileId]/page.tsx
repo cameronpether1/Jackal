@@ -8,7 +8,7 @@ const File = async ({ params }: { params: { fileId: string } }) => {
   const { data, error } = await getFileDetails(params.fileId);
   if (error || !data.length) redirect("/notedashboard");
 
-  return <div className="relative ">file page</div>;
+  return <div className="relative ">file page files</div>;
 };
 
 export default File;

@@ -2,12 +2,13 @@ import { InferSelectModel } from "drizzle-orm";
 import {
   customers,
   folders,
+  notes,
   prices,
   products,
   subscriptions,
   users,
   workspaces,
-} from "../../../migrations/schema";
+} from "./schema";
 import { files } from "./schema";
 
 export type Json =
@@ -166,6 +167,33 @@ export interface Database {
           }
         ];
       };
+      notes: {
+        Row: {
+          id: string;
+          body: string;
+          color: string;
+          position: string;
+          note_owner: string;
+          folder_id: string;
+        };
+        Insert: {
+          id?: string;
+          body: string;
+          color: string;
+          position: string;
+          note_owner: string;
+          folder_id: string;
+        };
+        Update: {
+          id?: string;
+          body?: string;
+          color?: string;
+          position?: string;
+          note_owner?: string;
+          folder_id?: string;
+        };
+      };
+
       prices: {
         Row: {
           active: boolean | null;
@@ -418,6 +446,7 @@ export interface Database {
 }
 
 export type workspace = InferSelectModel<typeof workspaces>;
+export type Notes = InferSelectModel<typeof notes>;
 export type User = InferSelectModel<typeof users>;
 export type Folder = InferSelectModel<typeof folders>;
 export type File = InferSelectModel<typeof files>;

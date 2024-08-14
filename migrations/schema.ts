@@ -85,6 +85,19 @@ export const workspaces = pgTable("workspaces", {
   bannerUrl: text("banner_url"),
 });
 
+export const notes = pgTable("notes", {
+  id: uuid("id").defaultRandom().primaryKey().notNull(),
+  folderId: uuid("folder_id")
+    .references(() => folders.id)
+    .notNull(),
+  body: text("body"),
+  position: text("position").array().notNull(),
+  color: text("color"),
+  noteOwner: uuid("note_owner")
+    .references(() => users.id)
+    .notNull(),
+});
+
 export const folders = pgTable("folders", {
   id: uuid("id").defaultRandom().primaryKey().notNull(),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
@@ -118,6 +131,11 @@ export const files = pgTable("files", {
     .references(() => folders.id, { onDelete: "cascade" }),
 });
 
+export const customers = pgTable("customers", {
+  id: uuid("id").primaryKey().notNull(),
+  stripeCustomerId: text("stripe_customer_id"),
+});
+
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().notNull(),
   fullName: text("full_name"),
@@ -128,17 +146,11 @@ export const users = pgTable("users", {
   email: text("email"),
 });
 
-export const customers = pgTable("customers", {
-  id: uuid("id").primaryKey().notNull(),
-  stripeCustomerId: text("stripe_customer_id"),
-});
-
 export const prices = pgTable("prices", {
   id: text("id").primaryKey().notNull(),
   productId: text("product_id").references(() => products.id),
   active: boolean("active"),
   description: text("description"),
-  // You can use { mode: "bigint" } if numbers are exceeding js number limitations
   unitAmount: bigint("unit_amount", { mode: "number" }),
   currency: text("currency"),
   type: pricingType("type"),

@@ -8,7 +8,6 @@ import { PRICING_CARDS } from "@/lib/constants";
 import { PRICING_PLANS } from "@/lib/constants";
 import CustomCard from "@/components/landingpage/custom-card";
 import clsx from "clsx";
-import diamond from "/public/img/diamond.svg";
 import CheckIcon from "/public/img/check.svg";
 
 const Home = () => {
@@ -21,8 +20,8 @@ const Home = () => {
             title="Explore New Heights
             of Productivity"
           ></TitleSection>
-          <div className=" bg-white p-[2px] mt-6 rounded-full bg-gradient-to-r from-[var(--herogradto)] via-[var(--herogradvia)] to-[var(--herogradto)] sm:w-[300px]">
-            <button className="w-full rounded-full p-1 text-lg bg-[#f4f4f4] ">
+          <div className=" bg-white p-[2px] mt-6 rounded-full bg-gradient-to-r from-[var(--herogradto)] via-[var(--herogradvia)] to-[var(--herogradto)] sm:w-[200px]">
+            <button className="w-full rounded-full p-1 text-md bg-[#f4f4f4] ">
               Get Jackal Free
             </button>
           </div>

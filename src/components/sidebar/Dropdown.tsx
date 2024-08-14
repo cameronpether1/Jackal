@@ -9,7 +9,6 @@ import {
   AccordionTrigger,
 } from "../ui/accordion";
 import clsx from "clsx";
-import EmojiPicker from "../global/emoji-picker";
 import { createFile, updateFile, updateFolder } from "@/lib/supabase/queries";
 import { useToast } from "../ui/use-toast";
 import TooltipComponent from "../global/tooltip-component";
@@ -19,7 +18,7 @@ import { v4 } from "uuid";
 import { useSupabaseUser } from "@/lib/providers/supabase-user-provider";
 import toast, { Toaster } from "react-hot-toast";
 import { Badge } from "../ui/badge";
-import { users } from "../../../migrations/schema";
+import { users } from "../../lib/supabase/schema";
 import { secureHeapUsed } from "crypto";
 
 interface DropdownProps {
