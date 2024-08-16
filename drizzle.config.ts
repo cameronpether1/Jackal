@@ -10,7 +10,6 @@ export default {
   schema: "./src/lib/supabase/schema.ts",
   out: "./migrations",
   dialect:"postgresql",
-  driver: "d1-http",
   verbose: true,
   dbCredentials: {
     connectionString: process.env.DATABASE_URL || "",
