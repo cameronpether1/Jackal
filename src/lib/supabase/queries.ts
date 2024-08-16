@@ -183,6 +183,14 @@ export const init = async (folderId: string) => {
   return { response: response };
 };
 
+export const updateNote = async (newPosition: string) => {
+  if (!newPosition) return;
+  else {
+    await db.update(notes).set({ position: JSON.stringify(newPosition) });
+    // .where(eq(notes.id, newPosition));
+  }
+};
+
 // export const getUserNotes = async (userId: string, ) => {
 //   if (!userId) return [];
 //   const notes = (await db

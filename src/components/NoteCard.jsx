@@ -4,12 +4,12 @@ import { useRef, useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { setNewOffset, autoGrow, setZIndex, bodyParser } from "@/lib/utilitys";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import db from "@/lib/supabase/db";
+import { updateNote } from "@/lib/supabase/queries";
 
 const NoteCard = ({ note }) => {
   const body = bodyParser(note.body);
   const [position, setPosition] = useState(bodyParser(note.position));
-  const colors = bodyParser(note.colors);
+  // const colors = bodyParser(note.colors);
 
   let mouseStartPos = { x: 0, y: 0 };
   const cardRef = useRef(null);
@@ -43,19 +43,24 @@ const NoteCard = ({ note }) => {
 
     const newPosition = setNewOffset(cardRef.current, mouseMoveDir);
     setPosition(newPosition);
-
-    // setPosition({
-    //   x: cardRef.current.offsetLeft - mouseMoveDir.x,
-    //   y: cardRef.current.offsetTop - mouseMoveDir.y,
-    // });
   };
 
-  const mouseUp = () => {
+  const mouseUp = async () => {
     document.removeEventListener("mousemove", mouseMove);
     document.removeEventListener("mouseup", mouseUp);
 
     const newPosition = setNewOffset(cardRef.current);
-    // db.notes.update(note.$id, { position: JSON.stringify(newPosition) });
+    console.log(cardRef.current);
+    saveData(newPosition);
+  };
+
+  const saveData = (newPosition) => {
+    // const payload = { [key]: newPosition };
+    try {
+      updateNote(newPosition);
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   return (

@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import {
   getAllFolderDetails,
   getAllWorkspaceDetails,
@@ -14,17 +15,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+// import { Button } from "@/components/ui/button";
+// import { Input } from "@/components/ui/input";
+// import { Label } from "@/components/ui/label";
 import WorkspaceCard from "../../../components/WorkspaceCard";
 import DashboardCard from "../../../components/DashboardCard";
 
-const Workspace = async ({
-  params,
-}: {
-  params: { workspaceId: string; folderId: string };
-}) => {
+const Workspace = async ({ params }: { params: { workspaceId: string } }) => {
   const { data, error } = await getWorkspaceDetails(params.workspaceId);
   if (error || !data.length) redirect("/dashboard");
 
@@ -36,7 +33,7 @@ const Workspace = async ({
   const { dashResponse } = await getAllFolderDetails(params.workspaceId);
   if (!dashResponse.length) {
     return (
-      <div>hello</div>
+      <></>
       // <div className="flex justify-center items-center mt-[100px] ">
       //   <div className="flex flex-col justify-center items-center ">
       //     <Tabs defaultValue="workspaces" className="w-[600px] ">
@@ -77,7 +74,6 @@ const Workspace = async ({
       // </div>
     );
   }
-
   return (
     <div className="flex justify-center items-center mt-[100px]">
       <div className="flex flex-col justify-center items-center">
