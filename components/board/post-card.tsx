@@ -15,6 +15,7 @@ import { getAvatarColor } from '@/lib/avatar-color'
 import { useProfile } from '@/components/providers/profile-provider'
 import { cn } from '@/lib/utils'
 import type { PostWithRelations } from '@/lib/supabase/types'
+import { renderContent } from '@/lib/render-content'
 
 interface PostCardProps {
   post: PostWithRelations
@@ -44,7 +45,7 @@ export function PostCard({
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     const target = e.target as HTMLElement
-    if (target.closest('button') || target.closest('input') || target.closest('textarea') || target.closest('[role="checkbox"]')) return
+    if (target.closest('button') || target.closest('input') || target.closest('textarea') || target.closest('[role="checkbox"]') || target.closest('a')) return
     e.preventDefault()
     ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
     dragState.current = { startX: e.clientX, startY: e.clientY, startPosX: pos.x, startPosY: pos.y }
@@ -72,7 +73,7 @@ export function PostCard({
 
   const onDoubleClick = useCallback((e: React.MouseEvent) => {
     const target = e.target as HTMLElement
-    if (target.closest('button') || target.closest('input') || target.closest('textarea') || target.closest('[role="checkbox"]')) return
+    if (target.closest('button') || target.closest('input') || target.closest('textarea') || target.closest('[role="checkbox"]') || target.closest('a')) return
     onFocusPost?.(post)
   }, [post, onFocusPost])
 
@@ -134,7 +135,7 @@ export function PostCard({
               />
             ) : (
               post.content && (
-                <p className="text-sm text-[#6b6a67] leading-relaxed whitespace-pre-wrap">{post.content}</p>
+                <p className="text-sm text-[#6b6a67] leading-relaxed whitespace-pre-wrap">{renderContent(post.content)}</p>
               )
             )}
 
@@ -175,7 +176,7 @@ export function PostCard({
                             <p className="text-xs font-bold text-[#1c1b19] mt-0.5 leading-snug">{reply.title}</p>
                           )}
                           {reply.content && (
-                            <p className="text-xs text-[#6b6a67] leading-relaxed whitespace-pre-wrap">{reply.content}</p>
+                            <p className="text-xs text-[#6b6a67] leading-relaxed whitespace-pre-wrap">{renderContent(reply.content)}</p>
                           )}
                           {reply.image_url && (
                             <img
