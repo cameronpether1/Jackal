@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { Camera, Loader2 } from 'lucide-react'
+import { Camera, Loader2, Shuffle } from 'lucide-react'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 import { errMsg } from '@/lib/error'
@@ -56,6 +56,31 @@ export function ProfileModal({ open, onOpenChange, profile, onUpdated }: Profile
     } finally {
       setUploading(false)
       e.target.value = ''
+    }
+  }
+
+  async function handleRandomAvatar() {
+    if (!profile) return
+    setUploading(true)
+    const supabase = createClient()
+    try {
+      const res = await fetch('/api/random-avatar')
+      if (!res.ok) throw new Error('Failed to fetch avatar')
+      const blob = await res.blob()
+      const path = `${profile.id}/avatar.webp`
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(path, blob, { upsert: true, contentType: 'image/webp' })
+
+      if (uploadError) throw uploadError
+
+      const { data } = supabase.storage.from('avatars').getPublicUrl(path)
+      setAvatarUrl(`${data.publicUrl}?t=${Date.now()}`)
+    } catch (err) {
+      toast.error(errMsg(err, 'Failed to fetch random avatar'))
+    } finally {
+      setUploading(false)
     }
   }
 
@@ -125,6 +150,15 @@ export function ProfileModal({ open, onOpenChange, profile, onUpdated }: Profile
               </div>
             </button>
             <p className="text-xs text-[var(--jk-text-muted)]">Click to upload a photo</p>
+            <button
+              type="button"
+              onClick={handleRandomAvatar}
+              disabled={uploading}
+              className="flex items-center gap-1.5 text-xs text-[var(--jk-accent)] hover:underline disabled:opacity-50"
+            >
+              <Shuffle className="w-3 h-3" />
+              Random avatar
+            </button>
             <input
               ref={fileInputRef}
               type="file"

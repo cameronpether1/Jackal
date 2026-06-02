@@ -4,11 +4,11 @@ import { useState } from 'react'
 import { Send, Zap } from 'lucide-react'
 import { toast } from 'sonner'
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet'
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -60,32 +60,35 @@ export function InvitePanel({ open, onOpenChange, board, members, currentUser, i
 
   return (
     <>
-      <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent className="w-80">
-          <SheetHeader>
-            <SheetTitle>Members — {board.name}</SheetTitle>
-          </SheetHeader>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Members — {board.name}</DialogTitle>
+          </DialogHeader>
 
-          <div className="mt-6 space-y-3">
+          <div className="space-y-1 mt-2">
             {members.map(member => {
               const p = member.profile
               const color = getAvatarColor(p?.id ?? '')
               const isMe = p?.id === currentUser?.id
               return (
-                <div key={member.id} className="flex items-center gap-3">
+                <div key={member.id} className="flex items-center gap-3 py-2">
                   <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium flex-shrink-0"
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium flex-shrink-0 overflow-hidden"
                     style={{ backgroundColor: color }}
                   >
-                    {p?.display_name?.[0]?.toUpperCase() ?? '?'}
+                    {p?.avatar_url
+                      ? <img src={p.avatar_url} alt="" className="w-full h-full object-cover" />
+                      : p?.display_name?.[0]?.toUpperCase() ?? '?'}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium text-[var(--jk-text)] truncate">
-                      {p?.display_name ?? 'Unknown'} {isMe && <span className="text-[var(--jk-text-faint)]">(you)</span>}
+                      {p?.display_name ?? 'Unknown'}
+                      {isMe && <span className="text-[var(--jk-text-faint)] font-normal"> (you)</span>}
                     </div>
                     <div className="text-xs text-[var(--jk-text-muted)] truncate">{p?.username}</div>
                   </div>
-                  <Badge variant="outline" className="text-xs capitalize">
+                  <Badge variant="outline" className="text-xs capitalize flex-shrink-0">
                     {member.role}
                   </Badge>
                 </div>
@@ -94,7 +97,7 @@ export function InvitePanel({ open, onOpenChange, board, members, currentUser, i
           </div>
 
           {isOwner && (
-            <div className="mt-6 space-y-2">
+            <div className="space-y-2 pt-3 border-t border-border">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-medium text-[var(--jk-text)]">Invite by email</p>
                 {plan === 'free' && (
@@ -133,8 +136,8 @@ export function InvitePanel({ open, onOpenChange, board, members, currentUser, i
               )}
             </div>
           )}
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
 
       <UpgradeModal
         open={showUpgrade}
