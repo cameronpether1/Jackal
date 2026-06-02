@@ -35,7 +35,21 @@ export default async function BoardPage({ params }: PageProps<'/board/[boardId]'
     supabase.from('profiles').select('*').eq('id', user.id).single(),
   ])
 
-  if (!board || !membership) notFound()
+  if (!membership) {
+    // Check if this user has a pending invite for this board and redirect them to accept it
+    const { data: pendingInvite } = await supabase
+      .from('board_invites')
+      .select('token')
+      .eq('board_id', boardId)
+      .eq('accepted', false)
+      .limit(1)
+      .single()
+
+    if (pendingInvite) redirect(`/invite/${pendingInvite.token}`)
+    notFound()
+  }
+
+  if (!board) notFound()
 
   const isOwner = (membership as { role: string }).role === 'owner'
 
