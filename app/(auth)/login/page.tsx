@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { LoginForm } from '@/components/auth/login-form'
 
 export const metadata = { title: 'Sign in — Jackal' }
@@ -11,7 +12,9 @@ export default function LoginPage() {
           <h1 className="text-xl font-semibold text-[var(--jk-text)]">Welcome to Jackal</h1>
           <p className="text-sm text-[var(--jk-text-muted)] mt-1">Sign in to your shared board</p>
         </div>
-        <LoginForm />
+        <Suspense>
+          <LoginForm />
+        </Suspense>
       </div>
     </div>
   )
