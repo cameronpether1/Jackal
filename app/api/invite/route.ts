@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     if (process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== 're_your_api_key_here') {
       const resend = new Resend(process.env.RESEND_API_KEY)
       const { data: emailData, error: emailError } = await resend.emails.send({
-        from: process.env.RESEND_FROM_EMAIL ?? 'Jackal <onboarding@resend.dev>',
+        from: `Jackal <${process.env.RESEND_FROM_EMAIL ?? 'onboarding@resend.dev'}>`,
         to: email,
         subject: `${inviterName} invited you to "${boardName}" on Jackal`,
         html: `
