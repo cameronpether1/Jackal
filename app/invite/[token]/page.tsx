@@ -1,5 +1,5 @@
 import { redirect, notFound } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import type { BoardInvite } from '@/lib/supabase/types'
 
 export default async function InvitePage({ params }: { params: Promise<{ token: string }> }) {
@@ -23,21 +23,24 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
     notFound()
   }
 
+  // Use service client for writes to bypass RLS
+  const service = createServiceClient()
+
   // Ensure a profile exists (covers users created before the auto-profile trigger)
-  const { data: { user: fullUser } } = await supabase.auth.getUser()
-  await supabase.from('profiles').upsert({
+  const emailPrefix = user.email?.split('@')[0] ?? user.id
+  await service.from('profiles').upsert({
     id: user.id,
-    username: fullUser?.email?.split('@')[0] ?? user.id,
-    display_name: fullUser?.email?.split('@')[0] ?? user.id,
+    username: emailPrefix,
+    display_name: emailPrefix,
   }, { onConflict: 'id', ignoreDuplicates: true })
 
-  await supabase.from('board_members').upsert({
+  await service.from('board_members').upsert({
     board_id: invite.board_id,
     user_id: user.id,
     role: 'member',
   }, { onConflict: 'board_id,user_id' })
 
-  await supabase
+  await service
     .from('board_invites')
     .update({ accepted: true })
     .eq('token', token)
