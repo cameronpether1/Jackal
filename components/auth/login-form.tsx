@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,6 +14,8 @@ export function LoginForm() {
   const [mode, setMode] = useState<'signin' | 'signup' | 'magic'>('signin')
   const [loading, setLoading] = useState(false)
   const [magicSent, setMagicSent] = useState(false)
+  const searchParams = useSearchParams()
+  const next = searchParams.get('next') ?? '/'
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -22,7 +25,7 @@ export function LoginForm() {
       if (mode === 'magic') {
         const { error } = await supabase.auth.signInWithOtp({
           email,
-          options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+          options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
         })
         if (error) throw error
         setMagicSent(true)
@@ -31,14 +34,14 @@ export function LoginForm() {
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+          options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
         })
         if (error) throw error
         toast.success('Account created! Check your email to confirm.')
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
-        window.location.href = '/'
+        window.location.href = next
       }
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Something went wrong')
