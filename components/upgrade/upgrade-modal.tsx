@@ -30,7 +30,7 @@ const PRICING_PLANS: {
   {
     id: 'monthly',
     name: 'Monthly',
-    price: '£9',
+    price: '£5.99',
     period: '/mo',
     description: 'Full Pro access, cancel anytime.',
     ctaLabel: 'Start Monthly',
@@ -39,9 +39,9 @@ const PRICING_PLANS: {
   {
     id: 'yearly',
     name: 'Yearly',
-    price: '£72',
+    price: '£59.99',
     period: '/yr',
-    description: 'Save over 30% vs monthly.',
+    description: 'Save over 15% vs monthly.',
     badge: 'Best Value',
     ctaLabel: 'Start Yearly',
     highlight: true,
@@ -50,7 +50,7 @@ const PRICING_PLANS: {
   {
     id: 'lifetime',
     name: 'Lifetime',
-    price: '£179',
+    price: '£115',
     period: 'once',
     description: 'Pay once, yours forever.',
     ctaLabel: 'Get Lifetime Access',
@@ -104,8 +104,8 @@ export function UpgradeModal({ open, onOpenChange, reason }: UpgradeModalProps) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
+      <DialogContent className="max-w-3xl p-8">
+        <DialogHeader className="mb-2">
           <DialogTitle className="flex items-center gap-2">
             <Zap className="w-4 h-4 text-[var(--jk-accent)]" />
             Upgrade to Pro
@@ -113,7 +113,7 @@ export function UpgradeModal({ open, onOpenChange, reason }: UpgradeModalProps) 
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 py-1">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 py-2">
           {PRICING_PLANS.map(plan => (
             <div
               key={plan.id}
@@ -124,7 +124,7 @@ export function UpgradeModal({ open, onOpenChange, reason }: UpgradeModalProps) 
                   : 'border-[var(--jk-border)]'
               )}
             >
-              <div className={cn('px-4 pt-4 pb-3 bg-gradient-to-b to-transparent', plan.gradientFrom)}>
+              <div className={cn('px-5 pt-5 pb-4 bg-gradient-to-b to-transparent', plan.gradientFrom)}>
                 {plan.badge && (
                   <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--jk-accent)] mb-1.5">
                     <Sparkles className="w-2.5 h-2.5" />
@@ -143,7 +143,7 @@ export function UpgradeModal({ open, onOpenChange, reason }: UpgradeModalProps) 
                 </p>
               </div>
 
-              <div className="px-4 pb-4 flex flex-col flex-1 gap-3 pt-3">
+              <div className="px-5 pb-5 flex flex-col flex-1 gap-3 pt-3">
                 <Button
                   onClick={() => handleUpgrade(plan.id)}
                   disabled={loading !== null}
