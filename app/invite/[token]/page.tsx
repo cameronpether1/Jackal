@@ -23,6 +23,14 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
     notFound()
   }
 
+  // Ensure a profile exists (covers users created before the auto-profile trigger)
+  const { data: { user: fullUser } } = await supabase.auth.getUser()
+  await supabase.from('profiles').upsert({
+    id: user.id,
+    username: fullUser?.email?.split('@')[0] ?? user.id,
+    display_name: fullUser?.email?.split('@')[0] ?? user.id,
+  }, { onConflict: 'id', ignoreDuplicates: true })
+
   await supabase.from('board_members').upsert({
     board_id: invite.board_id,
     user_id: user.id,
