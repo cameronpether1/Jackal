@@ -28,15 +28,22 @@ interface UpgradeModalProps {
 
 export function UpgradeModal({ open, onOpenChange, reason }: UpgradeModalProps) {
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   async function handleUpgrade() {
     setLoading(true)
+    setError(null)
     try {
       const res = await fetch('/api/stripe/checkout', { method: 'POST' })
       const data = await res.json()
-      if (data.url) window.location.href = data.url
-      else setLoading(false)
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        setError(data.error ?? 'Something went wrong. Please try again.')
+        setLoading(false)
+      }
     } catch {
+      setError('Could not reach the server. Please try again.')
       setLoading(false)
     }
   }
@@ -65,6 +72,9 @@ export function UpgradeModal({ open, onOpenChange, reason }: UpgradeModalProps) 
           ))}
         </ul>
 
+        {error && (
+          <p className="text-sm text-red-500 text-center">{error}</p>
+        )}
         <Button
           onClick={handleUpgrade}
           disabled={loading}
