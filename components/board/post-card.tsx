@@ -192,8 +192,17 @@ export function PostCard({
                           {reply.title && (
                             <p className="text-xs font-bold text-[#1c1b19] mt-0.5 leading-snug">{reply.title}</p>
                           )}
-                          {reply.content && (
-                            <p className="text-xs text-[#6b6a67] leading-relaxed whitespace-pre-wrap">{renderContent(reply.content)}</p>
+                          {reply.type === 'tasks' ? (
+                            <TaskList
+                              items={reply.task_items ?? []}
+                              onToggle={onTaskToggle}
+                              postId={reply.id}
+                              currentUserId={currentUserId}
+                            />
+                          ) : (
+                            reply.content && (
+                              <p className="text-xs text-[#6b6a67] leading-relaxed whitespace-pre-wrap">{renderContent(reply.content)}</p>
+                            )
                           )}
                           {reply.image_url && (
                             <img

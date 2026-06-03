@@ -1,9 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { Plus, LogOut, Moon, Sun, PanelLeft, Zap, CreditCard } from 'lucide-react'
+import { Plus, LogOut, Moon, Sun, PanelLeft, Zap, CreditCard, Trash2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { useTheme } from '@/hooks/use-theme'
 import { useProfile } from '@/components/providers/profile-provider'
 import { createClient } from '@/lib/supabase/client'
@@ -14,6 +15,15 @@ import { CreateBoardModal } from '@/components/sidebar/create-board-modal'
 import { ProfileModal } from '@/components/profile/profile-modal'
 import { UpgradeModal } from '@/components/upgrade/upgrade-modal'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 
 const BOARD_COLORS = [
   'bg-sky-400', 'bg-pink-400', 'bg-blue-400',
@@ -21,7 +31,7 @@ const BOARD_COLORS = [
 ]
 
 interface SidebarProps {
-  boards: { id: string; name: string }[]
+  boards: { id: string; name: string; isOwner: boolean }[]
   ownedBoardCount: number
 }
 
@@ -32,6 +42,9 @@ export function Sidebar({ boards, ownedBoardCount }: SidebarProps) {
   const [showCreate, setShowCreate] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
   const [showUpgrade, setShowUpgrade] = useState(false)
+  const [deleteBoard, setDeleteBoard] = useState<{ id: string; name: string } | null>(null)
+  const [deleting, setDeleting] = useState(false)
+  const router = useRouter()
   const { profile, setProfile } = useProfile()
 
   const avatarColor = getAvatarColor(profile?.id ?? '')
@@ -58,6 +71,22 @@ export function Sidebar({ boards, ownedBoardCount }: SidebarProps) {
     } else {
       setShowCreate(true)
     }
+  }
+
+  async function handleDeleteBoard() {
+    if (!deleteBoard) return
+    setDeleting(true)
+    const supabase = createClient()
+    const { error } = await supabase.from('boards').delete().eq('id', deleteBoard.id)
+    if (error) {
+      toast.error('Failed to delete board')
+      setDeleting(false)
+      return
+    }
+    toast.success(`"${deleteBoard.name}" deleted`)
+    setDeleteBoard(null)
+    if (pathname === `/board/${deleteBoard.id}`) router.push('/')
+    else router.refresh()
   }
 
   return (
@@ -96,19 +125,30 @@ export function Sidebar({ boards, ownedBoardCount }: SidebarProps) {
               const isActive = pathname === `/board/${board.id}`
               const color = BOARD_COLORS[i % BOARD_COLORS.length]
               return (
-                <Link
-                  key={board.id}
-                  href={`/board/${board.id}`}
-                  className={cn(
-                    'flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm transition-colors',
-                    isActive
-                      ? 'bg-jk-surface-offset dark:bg-white/15 text-jk-text dark:text-white'
-                      : 'text-jk-text-muted dark:text-white/60 hover:bg-jk-surface-offset dark:hover:bg-white/8 hover:text-jk-text dark:hover:text-white'
+                <div key={board.id} className="group/row relative flex items-center">
+                  <Link
+                    href={`/board/${board.id}`}
+                    className={cn(
+                      'flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm transition-colors flex-1 min-w-0',
+                      isActive
+                        ? 'bg-jk-surface-offset dark:bg-white/15 text-jk-text dark:text-white'
+                        : 'text-jk-text-muted dark:text-white/60 hover:bg-jk-surface-offset dark:hover:bg-white/8 hover:text-jk-text dark:hover:text-white'
+                    )}
+                  >
+                    <span className={cn('w-2 h-2 rounded-full shrink-0', color)} />
+                    <span className="truncate">{board.name}</span>
+                  </Link>
+                  {board.isOwner && (
+                    <button
+                      type="button"
+                      onClick={() => setDeleteBoard({ id: board.id, name: board.name })}
+                      className="absolute right-1 opacity-0 group-hover/row:opacity-100 transition-opacity p-1 rounded text-jk-text-faint hover:text-red-500 dark:text-white/30 dark:hover:text-red-400"
+                      title="Delete board"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
                   )}
-                >
-                  <span className={cn('w-2 h-2 rounded-full shrink-0', color)} />
-                  <span className="truncate">{board.name}</span>
-                </Link>
+                </div>
               )
             })}
             <button
@@ -207,6 +247,24 @@ export function Sidebar({ boards, ownedBoardCount }: SidebarProps) {
         onOpenChange={setShowUpgrade}
         reason="boards"
       />
+      <Dialog open={!!deleteBoard} onOpenChange={open => { if (!open) setDeleteBoard(null) }}>
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>Delete board?</DialogTitle>
+            <DialogDescription>
+              <strong>&ldquo;{deleteBoard?.name}&rdquo;</strong> and all its posts will be permanently deleted. This cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteBoard(null)} disabled={deleting}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteBoard} disabled={deleting}>
+              {deleting ? 'Deleting…' : 'Delete board'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
