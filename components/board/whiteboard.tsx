@@ -91,7 +91,7 @@ export function Whiteboard({ boardId, boardName, initialPosts, currentUserId, cu
       e.preventDefault()
 
       const inner = innerRef.current
-      if (!inner) return
+      if (!inner || !container) return
 
       // Disable transition for immediate visual response during gesture
       inner.style.transition = 'none'
@@ -111,9 +111,12 @@ export function Whiteboard({ boardId, boardName, initialPosts, currentUserId, cu
       const contentY = (container.scrollTop + mouseY) / oldScale
 
       // Apply directly to DOM — no React re-render lag
+      // Also carry any simultaneous pan delta (trackpad pinch+scroll at once)
+      const panX = e.ctrlKey ? 0 : e.deltaX
+      const panY = e.ctrlKey ? 0 : e.deltaY
       inner.style.transform = `scale(${newScale})`
-      container.scrollLeft = Math.max(0, contentX * newScale - mouseX)
-      container.scrollTop = Math.max(0, contentY * newScale - mouseY)
+      container.scrollLeft = Math.max(0, contentX * newScale - mouseX + panX)
+      container.scrollTop = Math.max(0, contentY * newScale - mouseY + panY)
 
       zoomRef.current = newZoom
 
