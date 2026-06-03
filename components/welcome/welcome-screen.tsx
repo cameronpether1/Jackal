@@ -63,7 +63,7 @@ export function WelcomeScreen({ profile, ownedBoardCount }: WelcomeScreenProps) 
     try {
       const res = await fetch('/api/stripe/checkout', { method: 'POST' })
       const data = await res.json()
-      if (data.url) window.location.href = data.url
+      if (data.url) window.location.assign(data.url)
       else setUpgrading(false)
     } catch {
       setUpgrading(false)
@@ -71,37 +71,37 @@ export function WelcomeScreen({ profile, ownedBoardCount }: WelcomeScreenProps) 
   }
 
   return (
-    <div className="min-h-full flex items-center justify-center bg-[var(--jk-bg)] dot-grid px-4">
-      <div className="bg-[var(--jk-surface)] rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] p-10 w-full max-w-sm text-center">
+    <div className="min-h-full flex items-center justify-center bg-jk-bg dot-grid px-4">
+      <div className="bg-jk-surface rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] p-10 w-full max-w-sm text-center">
         <img src="/logo.png" alt="Jackal" className="w-12 h-12 rounded-xl object-cover mb-5 mx-auto" />
 
         {atLimit ? (
           <>
-            <h1 className="text-xl font-semibold text-[var(--jk-text)] mb-1">
+            <h1 className="text-xl font-semibold text-jk-text mb-1">
               Board limit reached
             </h1>
-            <p className="text-sm text-[var(--jk-text-muted)] mb-7">
+            <p className="text-sm text-jk-text-muted mb-7">
               You&apos;ve used all {limits.boards} free boards. Upgrade to Pro for unlimited whiteboards.
             </p>
             <Button
               onClick={handleUpgrade}
               disabled={upgrading}
-              className="w-full bg-[var(--jk-accent)] hover:bg-sky-400 text-white font-medium rounded-lg gap-2"
+              className="w-full bg-jk-accent hover:bg-sky-400 text-white font-medium rounded-lg gap-2"
             >
               <Zap className="w-4 h-4" />
               {upgrading ? 'Redirecting…' : 'Upgrade to Pro'}
               {!upgrading && <ArrowRight className="w-4 h-4" />}
             </Button>
-            <p className="text-xs text-[var(--jk-text-faint)] mt-3">
+            <p className="text-xs text-jk-text-faint mt-3">
               Secure payment via Stripe · Cancel anytime
             </p>
           </>
         ) : (
           <>
-            <h1 className="text-xl font-semibold text-[var(--jk-text)] mb-1">
+            <h1 className="text-xl font-semibold text-jk-text mb-1">
               Welcome{profile?.display_name ? `, ${profile.display_name}` : ''}!
             </h1>
-            <p className="text-sm text-[var(--jk-text-muted)] mb-7">
+            <p className="text-sm text-jk-text-muted mb-7">
               Create your first board to get started.
             </p>
             <form onSubmit={handleCreate} className="space-y-3">
@@ -115,7 +115,7 @@ export function WelcomeScreen({ profile, ownedBoardCount }: WelcomeScreenProps) 
               <Button
                 type="submit"
                 disabled={loading || !name.trim()}
-                className="w-full bg-[var(--jk-accent)] hover:bg-sky-400 text-white font-medium rounded-lg"
+                className="w-full bg-jk-accent hover:bg-sky-400 text-white font-medium rounded-lg"
               >
                 {loading ? 'Creating…' : 'Create board →'}
               </Button>

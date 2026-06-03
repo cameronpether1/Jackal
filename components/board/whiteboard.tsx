@@ -139,7 +139,7 @@ export function Whiteboard({ boardId, boardName, initialPosts, currentUserId, cu
     })
   }, [])
 
-  const handleSaveDraft = useCallback(async (data: { type: PostType; title: string; content: string; imageFile?: File | null }) => {
+  const handleSaveDraft = useCallback(async (data: { type: PostType; title: string; content: string; imageFile?: File | null; mapLocation?: import('@/lib/supabase/types').MapLocation | null }) => {
     if (!draft) return
     setDraft(null)
 
@@ -166,6 +166,7 @@ export function Whiteboard({ boardId, boardName, initialPosts, currentUserId, cu
       title: data.title || null,
       content: data.type === 'tasks' ? null : data.content || null,
       image_url: imageUrl,
+      map_location: data.mapLocation ?? null,
       pos_x: draft.x,
       pos_y: draft.y,
       rotation: draft.rotation,
@@ -187,6 +188,7 @@ export function Whiteboard({ boardId, boardName, initialPosts, currentUserId, cu
           title: data.title || null,
           content: data.type === 'tasks' ? null : data.content || null,
           image_url: imageUrl,
+          map_location: data.mapLocation ?? null,
           pos_x: draft.x,
           pos_y: draft.y,
           rotation: draft.rotation,
@@ -376,7 +378,7 @@ export function Whiteboard({ boardId, boardName, initialPosts, currentUserId, cu
   return (
     <div
       ref={canvasRef}
-      className="relative flex-1 overflow-auto bg-[var(--jk-bg)] dot-grid"
+      className="relative flex-1 overflow-auto bg-jk-bg dot-grid"
     >
       <div
         ref={innerRef}

@@ -149,12 +149,12 @@ export function ProfileModal({ open, onOpenChange, profile, onUpdated }: Profile
                 }
               </div>
             </button>
-            <p className="text-xs text-[var(--jk-text-muted)]">Click to upload a photo</p>
+            <p className="text-xs text-jk-text-muted">Click to upload a photo</p>
             <button
               type="button"
               onClick={handleRandomAvatar}
               disabled={uploading}
-              className="flex items-center gap-1.5 text-xs text-[var(--jk-accent)] hover:underline disabled:opacity-50"
+              className="flex items-center gap-1.5 text-xs text-jk-accent hover:underline disabled:opacity-50"
             >
               <Shuffle className="w-3 h-3" />
               Random avatar
@@ -183,8 +183,8 @@ export function ProfileModal({ open, onOpenChange, profile, onUpdated }: Profile
           {/* Username (read-only) */}
           {profile?.username && (
             <div className="space-y-1.5">
-              <Label className="text-[var(--jk-text-muted)]">Username</Label>
-              <p className="text-sm text-[var(--jk-text-muted)] font-mono">@{profile.username}</p>
+              <Label className="text-jk-text-muted">Username</Label>
+              <p className="text-sm text-jk-text-muted font-mono">@{profile.username}</p>
             </div>
           )}
 
@@ -193,7 +193,7 @@ export function ProfileModal({ open, onOpenChange, profile, onUpdated }: Profile
             <Button
               onClick={handleSave}
               disabled={saving || !displayName.trim()}
-              className="bg-[var(--jk-accent)] hover:bg-sky-400 text-white"
+              className="bg-jk-accent hover:bg-sky-400 text-white"
             >
               {saving ? 'Saving…' : 'Save'}
             </Button>

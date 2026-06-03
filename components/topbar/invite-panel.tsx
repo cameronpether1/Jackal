@@ -74,7 +74,7 @@ export function InvitePanel({ open, onOpenChange, board, members, currentUser, i
               return (
                 <div key={member.id} className="flex items-center gap-3 py-2">
                   <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium flex-shrink-0 overflow-hidden"
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium shrink-0 overflow-hidden"
                     style={{ backgroundColor: color }}
                   >
                     {p?.avatar_url
@@ -82,13 +82,13 @@ export function InvitePanel({ open, onOpenChange, board, members, currentUser, i
                       : p?.display_name?.[0]?.toUpperCase() ?? '?'}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-[var(--jk-text)] truncate">
+                    <div className="text-sm font-medium text-jk-text truncate">
                       {p?.display_name ?? 'Unknown'}
-                      {isMe && <span className="text-[var(--jk-text-faint)] font-normal"> (you)</span>}
+                      {isMe && <span className="text-jk-text-faint font-normal"> (you)</span>}
                     </div>
-                    <div className="text-xs text-[var(--jk-text-muted)] truncate">{p?.username}</div>
+                    <div className="text-xs text-jk-text-muted truncate">{p?.username}</div>
                   </div>
-                  <Badge variant="outline" className="text-xs capitalize flex-shrink-0">
+                  <Badge variant="outline" className="text-xs capitalize shrink-0">
                     {member.role}
                   </Badge>
                 </div>
@@ -99,9 +99,9 @@ export function InvitePanel({ open, onOpenChange, board, members, currentUser, i
           {isOwner && (
             <div className="space-y-2 pt-3 border-t border-border">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-[var(--jk-text)]">Invite by email</p>
+                <p className="text-sm font-medium text-jk-text">Invite by email</p>
                 {plan === 'free' && (
-                  <span className="text-xs text-[var(--jk-text-faint)]">
+                  <span className="text-xs text-jk-text-faint">
                     {members.length}/{limits.membersPerBoard} members
                   </span>
                 )}
@@ -110,9 +110,9 @@ export function InvitePanel({ open, onOpenChange, board, members, currentUser, i
               {atMemberLimit ? (
                 <button
                   onClick={() => setShowUpgrade(true)}
-                  className="flex items-center gap-2 w-full text-sm text-[var(--jk-accent)] hover:underline"
+                  className="flex items-center gap-2 w-full text-sm text-jk-accent hover:underline"
                 >
-                  <Zap className="w-4 h-4 flex-shrink-0" />
+                  <Zap className="w-4 h-4 shrink-0" />
                   Upgrade to Pro to invite more members
                 </button>
               ) : (
@@ -128,7 +128,7 @@ export function InvitePanel({ open, onOpenChange, board, members, currentUser, i
                     type="submit"
                     size="icon"
                     disabled={sending || !email.trim()}
-                    className="bg-[var(--jk-accent)] hover:bg-sky-400 text-white flex-shrink-0"
+                    className="bg-jk-accent hover:bg-sky-400 text-white shrink-0"
                   >
                     <Send className="w-4 h-4" />
                   </Button>

@@ -26,7 +26,7 @@ export function MemberAvatarStack({ members, currentUserId, onlineIds }: MemberA
         return (
           <div key={member.id} className="relative" title={p?.display_name ?? 'Unknown'}>
             <div
-              className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-medium ring-2 ring-[var(--jk-surface)] overflow-hidden"
+              className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-medium ring-2 ring-jk-surface overflow-hidden"
               style={{ backgroundColor: color }}
             >
               {p?.avatar_url
@@ -34,13 +34,13 @@ export function MemberAvatarStack({ members, currentUserId, onlineIds }: MemberA
                 : p?.display_name?.[0]?.toUpperCase() ?? '?'}
             </div>
             {(isOnline || isMe) && (
-              <span className="absolute bottom-0 right-0 w-2 h-2 bg-green-400 rounded-full ring-1 ring-[var(--jk-surface)]" />
+              <span className="absolute bottom-0 right-0 w-2 h-2 bg-green-400 rounded-full ring-1 ring-jk-surface" />
             )}
           </div>
         )
       })}
       {overflow > 0 && (
-        <div className="w-7 h-7 rounded-full bg-[var(--jk-surface-offset)] flex items-center justify-center text-xs text-[var(--jk-text-muted)] ring-2 ring-[var(--jk-surface)]">
+        <div className="w-7 h-7 rounded-full bg-jk-surface-offset flex items-center justify-center text-xs text-jk-text-muted ring-2 ring-jk-surface">
           +{overflow}
         </div>
       )}

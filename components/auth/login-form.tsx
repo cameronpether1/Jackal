@@ -41,8 +41,8 @@ export function LoginForm() {
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
-        window.location.href = next
-      }
+        window.location.assign(next
+)      }
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Something went wrong')
     } finally {
@@ -52,14 +52,14 @@ export function LoginForm() {
 
   if (magicSent) {
     return (
-      <div className="bg-[var(--jk-surface)] rounded-2xl p-8 text-center shadow-[0_2px_8px_rgba(0,0,0,0.08)]">
+      <div className="bg-jk-surface rounded-2xl p-8 text-center shadow-[0_2px_8px_rgba(0,0,0,0.08)]">
         <div className="text-3xl mb-3">📬</div>
-        <h2 className="font-semibold text-[var(--jk-text)] mb-1">Check your email</h2>
-        <p className="text-sm text-[var(--jk-text-muted)]">
+        <h2 className="font-semibold text-jk-text mb-1">Check your email</h2>
+        <p className="text-sm text-jk-text-muted">
           We sent a magic link to <strong>{email}</strong>
         </p>
         <button
-          className="mt-4 text-sm text-[var(--jk-accent)] hover:underline"
+          className="mt-4 text-sm text-jk-accent hover:underline"
           onClick={() => setMagicSent(false)}
         >
           Try a different email
@@ -69,10 +69,10 @@ export function LoginForm() {
   }
 
   return (
-    <div className="bg-[var(--jk-surface)] rounded-2xl p-8 shadow-[0_2px_8px_rgba(0,0,0,0.08)]">
+    <div className="bg-jk-surface rounded-2xl p-8 shadow-[0_2px_8px_rgba(0,0,0,0.08)]">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1.5">
-          <Label htmlFor="email" className="text-sm font-medium text-[var(--jk-text)]">Email</Label>
+          <Label htmlFor="email" className="text-sm font-medium text-jk-text">Email</Label>
           <Input
             id="email"
             type="email"
@@ -86,7 +86,7 @@ export function LoginForm() {
 
         {mode !== 'magic' && (
           <div className="space-y-1.5">
-            <Label htmlFor="password" className="text-sm font-medium text-[var(--jk-text)]">Password</Label>
+            <Label htmlFor="password" className="text-sm font-medium text-jk-text">Password</Label>
             <Input
               id="password"
               type="password"
@@ -102,7 +102,7 @@ export function LoginForm() {
         <Button
           type="submit"
           disabled={loading}
-          className="w-full bg-[var(--jk-accent)] hover:bg-sky-400 text-white font-medium rounded-lg"
+          className="w-full bg-jk-accent hover:bg-sky-400 text-white font-medium rounded-lg"
         >
           {loading ? 'Loading…' : mode === 'magic' ? 'Send magic link' : mode === 'signup' ? 'Create account' : 'Sign in'}
         </Button>
@@ -114,16 +114,16 @@ export function LoginForm() {
             <button
               type="button"
               onClick={() => setMode('magic')}
-              className="text-[var(--jk-accent)] hover:underline block w-full"
+              className="text-jk-accent hover:underline block w-full"
             >
               Sign in with magic link instead
             </button>
             <button
               type="button"
               onClick={() => setMode('signup')}
-              className="text-[var(--jk-text-muted)] hover:text-[var(--jk-text)]"
+              className="text-jk-text-muted hover:text-jk-text"
             >
-              Don&apos;t have an account? <span className="text-[var(--jk-accent)]">Sign up</span>
+              Don&apos;t have an account? <span className="text-jk-accent">Sign up</span>
             </button>
           </>
         )}
@@ -131,16 +131,16 @@ export function LoginForm() {
           <button
             type="button"
             onClick={() => setMode('signin')}
-            className="text-[var(--jk-text-muted)] hover:text-[var(--jk-text)]"
+            className="text-jk-text-muted hover:text-jk-text"
           >
-            Already have an account? <span className="text-[var(--jk-accent)]">Sign in</span>
+            Already have an account? <span className="text-jk-accent">Sign in</span>
           </button>
         )}
         {mode === 'magic' && (
           <button
             type="button"
             onClick={() => setMode('signin')}
-            className="text-[var(--jk-text-muted)] hover:text-[var(--jk-text)]"
+            className="text-jk-text-muted hover:text-jk-text"
           >
             Use password instead
           </button>

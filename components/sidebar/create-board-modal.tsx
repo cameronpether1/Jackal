@@ -84,7 +84,7 @@ export function CreateBoardModal({ open, onOpenChange }: CreateBoardModalProps) 
             <Button
               type="submit"
               disabled={loading || !name.trim()}
-              className="bg-[var(--jk-accent)] hover:bg-sky-400 text-white"
+              className="bg-jk-accent hover:bg-sky-400 text-white"
             >
               {loading ? 'Creating…' : 'Create board'}
             </Button>

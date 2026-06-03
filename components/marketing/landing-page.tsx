@@ -71,7 +71,7 @@ const FEATURES = [
     className: 'col-span-3 lg:col-span-1',
     background: (
       <div className="absolute top-4 right-4 w-24 h-24 rounded-xl bg-sky-100/80 border border-sky-200/50 overflow-hidden opacity-60">
-        <div className="w-full h-full bg-gradient-to-br from-sky-200 to-blue-300" />
+        <div className="w-full h-full bg-linear-to-br from-sky-200 to-blue-300" />
       </div>
     ),
   },
@@ -117,7 +117,7 @@ export function LandingPage() {
     <div className="min-h-screen bg-white text-neutral-900 antialiased">
 
       {/* ── Hero area with light-ray wash ── */}
-      <div className="relative overflow-hidden bg-gradient-to-b from-sky-50 via-sky-50/40 to-white">
+      <div className="relative overflow-hidden bg-linear-to-b from-sky-50 via-sky-50/40 to-white">
         <LightRays
           color="rgba(14, 165, 233, 0.28)"
           count={9}
@@ -131,7 +131,7 @@ export function LandingPage() {
           <nav className="flex items-center gap-6 bg-[#0c1a2e] text-white rounded-full px-5 py-2.5 shadow-[0_4px_24px_rgba(0,0,0,0.30)]">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 mr-2">
-              <img src="/logo.png" alt="Jackal" className="w-6 h-6 rounded-md object-cover flex-shrink-0" />
+              <img src="/logo.png" alt="Jackal" className="w-6 h-6 rounded-md object-cover shrink-0" />
               <span className="font-semibold text-sm">Jackal</span>
             </Link>
 
@@ -147,7 +147,7 @@ export function LandingPage() {
               {authChecked && profile ? (
                 <Link
                   href="/welcome"
-                  className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center text-white text-xs font-semibold ring-2 ring-white/20 hover:ring-white/50 transition-all flex-shrink-0"
+                  className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center text-white text-xs font-semibold ring-2 ring-white/20 hover:ring-white/50 transition-all shrink-0"
                   style={{ backgroundColor: getAvatarColor(profile.id) }}
                   title={profile.display_name}
                 >
