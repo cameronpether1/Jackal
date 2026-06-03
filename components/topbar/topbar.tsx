@@ -23,7 +23,6 @@ export function Topbar({ board, members, currentUser, currentUserId, isOwner, on
   const [shareOpen, setShareOpen] = useState(false)
   const [upgradeOpen, setUpgradeOpen] = useState(false)
   const [upgradeReason, setUpgradeReason] = useState<'boards' | 'members'>('boards')
-
   const isPro = currentUser?.plan === 'pro'
 
   function handleShare() {

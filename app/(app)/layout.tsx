@@ -24,7 +24,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     .flatMap((m: { board_id: string; role: string; boards: { id: string; name: string }[] | { id: string; name: string } | null }) => {
       const b = m.boards
       if (!b) return []
-      return Array.isArray(b) ? b : [b]
+      const items = Array.isArray(b) ? b : [b]
+      return items.map(board => ({ ...board, isOwner: m.role === 'owner' }))
     })
 
   const ownedBoardCount = (memberships ?? []).filter(
