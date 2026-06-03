@@ -35,8 +35,11 @@ export function Whiteboard({ boardId, boardName, initialPosts, currentUserId, cu
   const supabase = useMemo(() => createClient(), [])
   const postsRef = useRef(posts)
   const boardNameRef = useRef(boardName)
+  const zoomRef = useRef(zoom)
+  const wheelZoomTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => { postsRef.current = posts }, [posts])
   useEffect(() => { boardNameRef.current = boardName }, [boardName])
+  useEffect(() => { zoomRef.current = zoom }, [zoom])
 
   const rootPosts = useMemo(() => posts.filter(p => !p.reply_to_post_id), [posts])
 
@@ -77,6 +80,62 @@ export function Whiteboard({ boardId, boardName, initialPosts, currentUserId, cu
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [draft, zoom])
+
+  // Pinch-to-zoom (trackpad) and Cmd/Ctrl+scroll (mouse wheel)
+  useEffect(() => {
+    const container = canvasRef.current
+    if (!container) return
+
+    function onWheel(e: WheelEvent) {
+      if (!e.ctrlKey && !e.metaKey) return
+      e.preventDefault()
+
+      const inner = innerRef.current
+      if (!inner || !container) return
+
+      // Disable transition for immediate visual response during gesture
+      inner.style.transition = 'none'
+
+      const oldScale = zoomRef.current / 100
+      // Normalise across deltaMode (0=px, 1=lines, 2=pages) and clamp to avoid huge per-tick jumps
+      const rawDelta = -e.deltaY * (e.deltaMode === 1 ? 15 : e.deltaMode === 2 ? 300 : 1)
+      const clampedDelta = Math.max(-50, Math.min(50, rawDelta))
+      const newZoom = Math.max(20, Math.min(200, zoomRef.current * Math.exp(clampedDelta * 0.01)))
+      const newScale = newZoom / 100
+
+      // Keep the canvas point under the cursor fixed
+      const rect = container.getBoundingClientRect()
+      const mouseX = e.clientX - rect.left
+      const mouseY = e.clientY - rect.top
+      const contentX = (container.scrollLeft + mouseX) / oldScale
+      const contentY = (container.scrollTop + mouseY) / oldScale
+
+      // Apply directly to DOM — no React re-render lag
+      // Also carry any simultaneous pan delta (trackpad pinch+scroll at once)
+      const panX = e.ctrlKey ? 0 : e.deltaX
+      const panY = e.ctrlKey ? 0 : e.deltaY
+      inner.style.transform = `scale(${newScale})`
+      container.scrollLeft = Math.max(0, contentX * newScale - mouseX + panX)
+      container.scrollTop = Math.max(0, contentY * newScale - mouseY + panY)
+
+      zoomRef.current = newZoom
+
+      // Debounce syncing to React state (updates toolbar readout)
+      if (wheelZoomTimeout.current) clearTimeout(wheelZoomTimeout.current)
+      wheelZoomTimeout.current = setTimeout(() => {
+        setZoom(Math.round(zoomRef.current))
+        if (innerRef.current) {
+          innerRef.current.style.transition = 'transform 550ms cubic-bezier(0.4, 0, 0.2, 1)'
+        }
+      }, 200)
+    }
+
+    container.addEventListener('wheel', onWheel, { passive: false })
+    return () => {
+      container.removeEventListener('wheel', onWheel)
+      if (wheelZoomTimeout.current) clearTimeout(wheelZoomTimeout.current)
+    }
+  }, [])
 
   // Supabase realtime
   useEffect(() => {
