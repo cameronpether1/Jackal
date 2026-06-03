@@ -40,6 +40,13 @@
   --radius-xl: calc(var(--radius) * 1.4);
   --radius-2xl: calc(var(--radius) * 1.8);
 
+  /* Brand palette */
+  --color-frozen-lake: #86d3fa;
+  --color-tangerine-dream: #faad86;
+  --color-light-green: #86fa96;
+  --color-ivory: #fffced;
+  --color-carbon-black: #262626;
+
   /* Jackal custom tokens */
   --color-bg: var(--jk-bg);
   --color-surface: var(--jk-surface);
