@@ -68,7 +68,7 @@ export function ReadonlyWhiteboard({ posts }: ReadonlyWhiteboardProps) {
   }
 
   return (
-    <div ref={canvasRef} className="relative flex-1 overflow-auto bg-[var(--jk-bg)] dot-grid">
+    <div ref={canvasRef} className="relative flex-1 overflow-auto bg-jk-bg dot-grid">
       <div
         style={{
           transform: `scale(${zoom / 100})`,
@@ -88,24 +88,24 @@ export function ReadonlyWhiteboard({ posts }: ReadonlyWhiteboardProps) {
       </div>
 
       {/* Zoom controls */}
-      <div className="fixed bottom-6 right-6 z-40 flex items-center gap-1 bg-[var(--jk-surface)] rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.08)] border border-[var(--jk-border)] px-1 py-1">
+      <div className="fixed bottom-6 right-6 z-40 flex items-center gap-1 bg-jk-surface rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.08)] border border-jk-border px-1 py-1">
         <button
           onClick={() => adjustZoom(-10)}
-          className="w-7 h-7 flex items-center justify-center rounded text-[var(--jk-text-muted)] hover:bg-[var(--jk-surface-offset)] transition-colors"
+          className="w-7 h-7 flex items-center justify-center rounded text-jk-text-muted hover:bg-jk-surface-offset transition-colors"
         >
           <Minus className="w-3.5 h-3.5" />
         </button>
-        <span className="text-xs text-[var(--jk-text-muted)] w-10 text-center font-mono">{zoom}%</span>
+        <span className="text-xs text-jk-text-muted w-10 text-center font-mono">{zoom}%</span>
         <button
           onClick={() => adjustZoom(10)}
-          className="w-7 h-7 flex items-center justify-center rounded text-[var(--jk-text-muted)] hover:bg-[var(--jk-surface-offset)] transition-colors"
+          className="w-7 h-7 flex items-center justify-center rounded text-jk-text-muted hover:bg-jk-surface-offset transition-colors"
         >
           <Plus className="w-3.5 h-3.5" />
         </button>
-        <div className="w-px h-4 bg-[var(--jk-border)] mx-0.5" />
+        <div className="w-px h-4 bg-jk-border mx-0.5" />
         <button
           onClick={fitAll}
-          className="w-7 h-7 flex items-center justify-center rounded text-[var(--jk-text-muted)] hover:bg-[var(--jk-surface-offset)] transition-colors"
+          className="w-7 h-7 flex items-center justify-center rounded text-jk-text-muted hover:bg-jk-surface-offset transition-colors"
           title="Fit all"
         >
           <Maximize2 className="w-3.5 h-3.5" />

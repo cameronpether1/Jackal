@@ -1,10 +1,12 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { CornerUpLeft, Image, X } from 'lucide-react'
+import { CornerUpLeft, Image, MapPin, X } from 'lucide-react'
 import { getAvatarColor } from '@/lib/avatar-color'
+import { getMapImageUrl } from '@/lib/mapbox'
 import { cn } from '@/lib/utils'
-import type { PostType, Profile } from '@/lib/supabase/types'
+import type { MapLocation, PostType, Profile } from '@/lib/supabase/types'
+import { LocationPicker } from '@/components/board/location-picker'
 
 const TYPE_OPTIONS: { value: PostType; label: string }[] = [
   { value: 'note', label: 'Note' },
@@ -19,7 +21,7 @@ interface InlineCardEditorProps {
   currentProfile: Profile | null
   currentUserId: string
   replyTo?: { postId: string; authorName: string } | null
-  onSave: (data: { type: PostType; title: string; content: string; imageFile?: File | null }) => void
+  onSave: (data: { type: PostType; title: string; content: string; imageFile?: File | null; mapLocation?: MapLocation | null }) => void
   onDiscard: () => void
 }
 
@@ -31,6 +33,8 @@ export function InlineCardEditor({
   const [content, setContent] = useState('')
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [mapLocation, setMapLocation] = useState<MapLocation | null>(null)
+  const [showLocationPicker, setShowLocationPicker] = useState(false)
   const titleRef = useRef<HTMLInputElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -71,8 +75,8 @@ export function InlineCardEditor({
   }
 
   function handleSave() {
-    if (!title.trim() && !content.trim() && !imageFile) { onDiscard(); return }
-    onSave({ type, title: title.trim(), content: content.trim(), imageFile })
+    if (!title.trim() && !content.trim() && !imageFile && !mapLocation) { onDiscard(); return }
+    onSave({ type, title: title.trim(), content: content.trim(), imageFile, mapLocation })
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
@@ -108,7 +112,7 @@ export function InlineCardEditor({
         {/* Reply-to banner */}
         {replyTo && (
           <div className="flex items-center gap-1.5 pb-1 text-[11px] text-[#b0afa9]">
-            <CornerUpLeft className="w-3 h-3 flex-shrink-0" />
+            <CornerUpLeft className="w-3 h-3 shrink-0" />
             <span>Replying to <span className="font-medium text-[#6b6a67]">{replyTo.authorName}</span></span>
           </div>
         )}
@@ -130,17 +134,30 @@ export function InlineCardEditor({
             </button>
           ))}
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className={cn(
-              'ml-auto p-1.5 rounded-full transition-colors',
-              imageFile ? 'text-[var(--jk-accent)]' : 'text-[#b0afa9] hover:text-[#6b6a67]'
-            )}
-            title="Add image"
-          >
-            <Image className="w-3.5 h-3.5" />
-          </button>
+          <div className="ml-auto flex items-center gap-0.5">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className={cn(
+                'p-1.5 rounded-full transition-colors',
+                imageFile ? 'text-jk-accent' : 'text-[#b0afa9] hover:text-[#6b6a67]'
+              )}
+              title="Add image"
+            >
+              <Image className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowLocationPicker(v => !v)}
+              className={cn(
+                'p-1.5 rounded-full transition-colors',
+                mapLocation ? 'text-jk-accent' : 'text-[#b0afa9] hover:text-[#6b6a67]'
+              )}
+              title="Add location"
+            >
+              <MapPin className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
 
         {/* Title */}
@@ -178,6 +195,37 @@ export function InlineCardEditor({
             >
               <X className="w-3 h-3" />
             </button>
+          </div>
+        )}
+
+        {/* Location picker */}
+        {showLocationPicker && !mapLocation && (
+          <LocationPicker
+            onSelect={loc => { setMapLocation(loc); setShowLocationPicker(false) }}
+            onClose={() => setShowLocationPicker(false)}
+          />
+        )}
+
+        {/* Map preview */}
+        {mapLocation && (
+          <div className="relative mt-1 rounded-2xl overflow-hidden">
+            <img
+              src={getMapImageUrl(mapLocation.lat, mapLocation.lng)}
+              alt={mapLocation.label}
+              className="w-full"
+              draggable={false}
+            />
+            <div className="absolute bottom-0 inset-x-0 bg-white/90 backdrop-blur-sm px-2.5 py-1.5 flex items-center gap-1.5">
+              <MapPin className="w-3 h-3 text-[#ee4444] shrink-0" />
+              <span className="text-[10px] text-[#1c1b19] truncate flex-1">{mapLocation.label}</span>
+              <button
+                type="button"
+                onClick={() => setMapLocation(null)}
+                className="text-[#b0afa9] hover:text-[#6b6a67] transition-colors"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
           </div>
         )}
 

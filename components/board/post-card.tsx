@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useCallback, useState } from 'react'
-import { Trash2, Copy, CornerUpLeft } from 'lucide-react'
+import { Trash2, Copy, CornerUpLeft, MapPin } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   ContextMenu,
@@ -16,6 +16,7 @@ import { useProfile } from '@/components/providers/profile-provider'
 import { cn } from '@/lib/utils'
 import type { PostWithRelations } from '@/lib/supabase/types'
 import { renderContent } from '@/lib/render-content'
+import { getMapImageUrl } from '@/lib/mapbox'
 
 interface PostCardProps {
   post: PostWithRelations
@@ -151,6 +152,22 @@ export function PostCard({
               </div>
             )}
 
+            {/* Map */}
+            {post.map_location && (
+              <div className="mt-3 rounded-2xl overflow-hidden">
+                <img
+                  src={getMapImageUrl(post.map_location.lat, post.map_location.lng)}
+                  alt={post.map_location.label}
+                  className="w-full"
+                  draggable={false}
+                />
+                <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#f8f7f5]">
+                  <MapPin className="w-3 h-3 text-[#ee4444] shrink-0" />
+                  <span className="text-[10px] text-[#1c1b19] truncate">{post.map_location.label}</span>
+                </div>
+              </div>
+            )}
+
             {/* Inline replies */}
             {replies.length > 0 && (
               <div className="mt-4 pt-3 border-t border-[#f0ede8] space-y-3">
@@ -163,7 +180,7 @@ export function PostCard({
                     return (
                       <div key={reply.id} className={cn('flex items-start gap-2', isRight && 'flex-row-reverse')}>
                         <div
-                          className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold overflow-hidden"
+                          className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold overflow-hidden"
                           style={{ backgroundColor: replyColor }}
                         >
                           {reply.author?.avatar_url
@@ -199,7 +216,7 @@ export function PostCard({
                 <button
                   type="button"
                   onClick={() => onReply(post)}
-                  className="opacity-0 group-hover/card:opacity-100 transition-opacity duration-150 flex items-center gap-1 text-[11px] text-[#b0afa9] hover:text-[var(--jk-accent)] transition-colors"
+                  className="opacity-0 group-hover/card:opacity-100 transition-opacity duration-150 flex items-center gap-1 text-[11px] text-[#b0afa9] hover:text-jk-accent transition-colors"
                 >
                   <CornerUpLeft className="w-3 h-3" />
                   Reply

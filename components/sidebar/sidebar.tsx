@@ -43,14 +43,14 @@ export function Sidebar({ boards, ownedBoardCount }: SidebarProps) {
   async function handleSignOut() {
     const supabase = createClient()
     await supabase.auth.signOut()
-    window.location.href = '/login'
-  }
+    window.location.assign('/login'
+)  }
 
   async function handleManageBilling() {
     const res = await fetch('/api/stripe/portal', { method: 'POST' })
     const data = await res.json()
-    if (data.url) window.location.href = data.url
-  }
+    if (data.url) window.location.assign(data.url
+)  }
 
   function handleNewBoard() {
     if (atBoardLimit) {
@@ -64,31 +64,31 @@ export function Sidebar({ boards, ownedBoardCount }: SidebarProps) {
     <>
       <Sheet>
         <SheetTrigger
-          className="fixed top-2.5 left-3 z-50 w-9 h-9 rounded-lg flex items-center justify-center bg-[var(--jk-surface)] hover:bg-[var(--jk-surface-offset)] border border-[var(--jk-border)] shadow-sm transition-colors"
+          className="fixed top-2.5 left-3 z-50 w-9 h-9 rounded-lg flex items-center justify-center bg-jk-surface hover:bg-jk-surface-offset border border-jk-border shadow-sm transition-colors"
           aria-label="Open sidebar"
         >
-          <PanelLeft className="w-4 h-4 text-[var(--jk-text-muted)]" />
+          <PanelLeft className="w-4 h-4 text-jk-text-muted" />
         </SheetTrigger>
 
         <SheetContent
           side="left"
           showCloseButton={false}
-          className="p-0 gap-0 bg-[var(--jk-surface)] dark:bg-[#0e0d0c] border-r border-[var(--jk-border)] dark:border-white/10"
+          className="p-0 gap-0 bg-jk-surface dark:bg-[#0e0d0c] border-r border-jk-border dark:border-white/10"
           style={{ width: '14rem' }}
         >
           {/* Header */}
           <Link
             href="/"
-            className="flex items-center gap-2 px-4 py-5 border-b border-[var(--jk-border)] dark:border-white/10 hover:opacity-80 transition-opacity"
+            className="flex items-center gap-2 px-4 py-5 border-b border-jk-border dark:border-white/10 hover:opacity-80 transition-opacity"
           >
-            <img src="/logo.png" alt="Jackal" className="w-7 h-7 rounded-lg object-cover flex-shrink-0" />
-            <span className="font-semibold text-sm text-[var(--jk-text)] dark:text-white">Jackal</span>
+            <img src="/logo.png" alt="Jackal" className="w-7 h-7 rounded-lg object-cover shrink-0" />
+            <span className="font-semibold text-sm text-jk-text dark:text-white">Jackal</span>
           </Link>
 
           {/* Nav */}
           <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-0.5">
             <div className="px-2 pb-1">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--jk-text-faint)] dark:text-white/40">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-jk-text-faint dark:text-white/40">
                 Boards
               </p>
             </div>
@@ -102,11 +102,11 @@ export function Sidebar({ boards, ownedBoardCount }: SidebarProps) {
                   className={cn(
                     'flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm transition-colors',
                     isActive
-                      ? 'bg-[var(--jk-surface-offset)] dark:bg-white/15 text-[var(--jk-text)] dark:text-white'
-                      : 'text-[var(--jk-text-muted)] dark:text-white/60 hover:bg-[var(--jk-surface-offset)] dark:hover:bg-white/8 hover:text-[var(--jk-text)] dark:hover:text-white'
+                      ? 'bg-jk-surface-offset dark:bg-white/15 text-jk-text dark:text-white'
+                      : 'text-jk-text-muted dark:text-white/60 hover:bg-jk-surface-offset dark:hover:bg-white/8 hover:text-jk-text dark:hover:text-white'
                   )}
                 >
-                  <span className={cn('w-2 h-2 rounded-full flex-shrink-0', color)} />
+                  <span className={cn('w-2 h-2 rounded-full shrink-0', color)} />
                   <span className="truncate">{board.name}</span>
                 </Link>
               )
@@ -116,8 +116,8 @@ export function Sidebar({ boards, ownedBoardCount }: SidebarProps) {
               className={cn(
                 'flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm transition-colors w-full mt-1',
                 atBoardLimit
-                  ? 'text-[var(--jk-accent)] hover:bg-[var(--jk-surface-offset)]'
-                  : 'text-[var(--jk-text-faint)] dark:text-white/40 hover:text-[var(--jk-text-muted)] dark:hover:text-white/70 hover:bg-[var(--jk-surface-offset)] dark:hover:bg-white/8'
+                  ? 'text-jk-accent hover:bg-jk-surface-offset'
+                  : 'text-jk-text-faint dark:text-white/40 hover:text-jk-text-muted dark:hover:text-white/70 hover:bg-jk-surface-offset dark:hover:bg-white/8'
               )}
             >
               {atBoardLimit ? (
@@ -130,17 +130,17 @@ export function Sidebar({ boards, ownedBoardCount }: SidebarProps) {
           </nav>
 
           {/* Footer */}
-          <div className="border-t border-[var(--jk-border)] dark:border-white/10 px-3 py-3 space-y-1">
+          <div className="border-t border-jk-border dark:border-white/10 px-3 py-3 space-y-1">
             {/* Plan indicator */}
             {plan === 'free' ? (
               <button
                 onClick={() => setShowUpgrade(true)}
-                className="flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm text-[var(--jk-accent)] hover:bg-[var(--jk-surface-offset)] transition-colors w-full"
+                className="flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm text-jk-accent hover:bg-jk-surface-offset transition-colors w-full"
               >
-                <Zap className="w-4 h-4 flex-shrink-0" />
+                <Zap className="w-4 h-4 shrink-0" />
                 <div className="text-left min-w-0">
                   <div className="font-medium text-xs leading-tight">Upgrade to Pro</div>
-                  <div className="text-[10px] text-[var(--jk-text-faint)] leading-tight">
+                  <div className="text-[10px] text-jk-text-faint leading-tight">
                     {ownedBoardCount}/{limits.boards} boards used
                   </div>
                 </div>
@@ -148,16 +148,16 @@ export function Sidebar({ boards, ownedBoardCount }: SidebarProps) {
             ) : (
               <button
                 onClick={handleManageBilling}
-                className="flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm text-[var(--jk-text-faint)] dark:text-white/40 hover:text-[var(--jk-text-muted)] hover:bg-[var(--jk-surface-offset)] transition-colors w-full"
+                className="flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm text-jk-text-faint dark:text-white/40 hover:text-jk-text-muted hover:bg-jk-surface-offset transition-colors w-full"
               >
-                <CreditCard className="w-4 h-4 flex-shrink-0" />
+                <CreditCard className="w-4 h-4 shrink-0" />
                 <span>Pro · Manage billing</span>
               </button>
             )}
 
             <button
               onClick={() => setTheme(isDark ? 'light' : 'dark')}
-              className="flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm text-[var(--jk-text-faint)] dark:text-white/40 hover:text-[var(--jk-text-muted)] dark:hover:text-white/70 hover:bg-[var(--jk-surface-offset)] dark:hover:bg-white/8 transition-colors w-full"
+              className="flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm text-jk-text-faint dark:text-white/40 hover:text-jk-text-muted dark:hover:text-white/70 hover:bg-jk-surface-offset dark:hover:bg-white/8 transition-colors w-full"
             >
               {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               <span>{isDark ? 'Light mode' : 'Dark mode'}</span>
@@ -171,20 +171,20 @@ export function Sidebar({ boards, ownedBoardCount }: SidebarProps) {
                   title="Edit profile"
                 >
                   <div
-                    className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium flex-shrink-0 overflow-hidden ring-1 ring-black/10 dark:ring-white/20"
+                    className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium shrink-0 overflow-hidden ring-1 ring-black/10 dark:ring-white/20"
                     style={{ backgroundColor: avatarColor }}
                   >
                     {profile.avatar_url
                       ? <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
                       : initials}
                   </div>
-                  <span className="text-xs truncate text-[var(--jk-text-muted)] dark:text-white/60">
+                  <span className="text-xs truncate text-jk-text-muted dark:text-white/60">
                     {profile.display_name}
                   </span>
                 </button>
                 <button
                   onClick={handleSignOut}
-                  className="flex-shrink-0 text-[var(--jk-text-faint)] dark:text-white/30 hover:text-[var(--jk-text-muted)] dark:hover:text-white/70 transition-colors"
+                  className="shrink-0 text-jk-text-faint dark:text-white/30 hover:text-jk-text-muted dark:hover:text-white/70 transition-colors"
                   title="Sign out"
                 >
                   <LogOut className="w-3.5 h-3.5" />

@@ -91,7 +91,7 @@ export function UpgradeModal({
       });
       const data = await res.json();
       if (data.url) {
-        window.location.href = data.url;
+        window.location.assign(data.url);
       } else {
         setError(data.error ?? "Something went wrong. Please try again.");
         setLoading(null);
@@ -112,7 +112,7 @@ export function UpgradeModal({
       <DialogContent className="w-[60vw] max-w-none sm:max-w-none p-8">
         <DialogHeader className="mb-2">
           <DialogTitle className="flex items-center gap-2">
-            <Zap className="w-4 h-4 text-[var(--jk-accent)]" />
+            <Zap className="w-4 h-4 text-jk-accent" />
             Upgrade to Pro
           </DialogTitle>
           <DialogDescription>{description}</DialogDescription>
@@ -125,34 +125,34 @@ export function UpgradeModal({
               className={cn(
                 "relative rounded-xl border overflow-hidden flex flex-col",
                 plan.highlight
-                  ? "border-[var(--jk-accent)]/60"
-                  : "border-[var(--jk-border)]",
+                  ? "border-jk-accent/60"
+                  : "border-jk-border",
               )}
             >
               <div
                 className={cn(
-                  "px-5 pt-5 pb-4 bg-gradient-to-b to-transparent",
+                  "px-5 pt-5 pb-4 bg-linear-to-b to-transparent",
                   plan.gradientFrom,
                 )}
               >
                 {plan.badge && (
-                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--jk-accent)] mb-1.5">
+                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-jk-accent mb-1.5">
                     <Sparkles className="w-2.5 h-2.5" />
                     {plan.badge}
                   </span>
                 )}
-                <p className="text-[11px] font-medium text-[var(--jk-text-faint)] uppercase tracking-wider">
+                <p className="text-[11px] font-medium text-jk-text-faint uppercase tracking-wider">
                   {plan.name}
                 </p>
                 <div className="flex items-baseline gap-1 mt-1">
-                  <span className="text-2xl font-bold text-[var(--jk-text)]">
+                  <span className="text-2xl font-bold text-jk-text">
                     {plan.price}
                   </span>
-                  <span className="text-xs text-[var(--jk-text-faint)]">
+                  <span className="text-xs text-jk-text-faint">
                     {plan.period}
                   </span>
                 </div>
-                <p className="text-xs text-[var(--jk-text-faint)] mt-1 leading-relaxed">
+                <p className="text-xs text-jk-text-faint mt-1 leading-relaxed">
                   {plan.description}
                 </p>
               </div>
@@ -165,8 +165,8 @@ export function UpgradeModal({
                   className={cn(
                     "w-full text-xs h-8",
                     plan.highlight
-                      ? "bg-[var(--jk-accent)] hover:bg-sky-400 text-white"
-                      : "bg-[var(--jk-text)] text-[var(--jk-bg)] hover:bg-[var(--jk-text)]/90",
+                      ? "bg-jk-accent hover:bg-sky-400 text-white"
+                      : "bg-jk-text text-jk-bg hover:bg-jk-text/90",
                   )}
                 >
                   {loading === plan.id ? "Redirecting…" : plan.ctaLabel}
@@ -176,9 +176,9 @@ export function UpgradeModal({
                   {PRO_FEATURES.map((label) => (
                     <li
                       key={label}
-                      className="flex items-start gap-2 text-[11px] text-[var(--jk-text-faint)]"
+                      className="flex items-start gap-2 text-[11px] text-jk-text-faint"
                     >
-                      <Check className="w-3 h-3 text-[var(--jk-accent)] flex-shrink-0 mt-0.5" />
+                      <Check className="w-3 h-3 text-jk-accent shrink-0 mt-0.5" />
                       {label}
                     </li>
                   ))}
@@ -189,7 +189,7 @@ export function UpgradeModal({
         </div>
 
         {error && <p className="text-sm text-red-500 text-center">{error}</p>}
-        <p className="text-center text-xs text-[var(--jk-text-faint)]">
+        <p className="text-center text-xs text-jk-text-faint">
           Secure payment via Stripe · Monthly &amp; yearly plans can be
           cancelled anytime
         </p>

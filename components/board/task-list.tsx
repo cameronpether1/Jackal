@@ -63,12 +63,12 @@ export function TaskList({ items, onToggle, postId, currentUserId }: TaskListPro
           <Checkbox
             checked={item.checked}
             onCheckedChange={(checked) => handleToggle(item.id, checked as boolean)}
-            className="mt-0.5 flex-shrink-0"
+            className="mt-0.5 shrink-0"
           />
           <span
             className={cn(
-              'text-sm text-[var(--jk-text)] leading-tight',
-              item.checked && 'line-through text-[var(--jk-text-faint)]'
+              'text-sm text-jk-text leading-tight',
+              item.checked && 'line-through text-jk-text-faint'
             )}
           >
             {item.label}
@@ -84,16 +84,16 @@ export function TaskList({ items, onToggle, postId, currentUserId }: TaskListPro
             onChange={e => setNewLabel(e.target.value)}
             placeholder="Add task…"
             autoFocus
-            className="flex-1 text-sm bg-[var(--jk-surface-offset)] rounded px-2 py-1 outline-none text-[var(--jk-text)] placeholder:text-[var(--jk-text-faint)]"
+            className="flex-1 text-sm bg-jk-surface-offset rounded px-2 py-1 outline-none text-jk-text placeholder:text-jk-text-faint"
             onKeyDown={e => { if (e.key === 'Escape') setShowInput(false) }}
           />
-          <button type="submit" disabled={adding} className="text-xs text-[var(--jk-accent)] font-medium px-1">Add</button>
+          <button type="submit" disabled={adding} className="text-xs text-jk-accent font-medium px-1">Add</button>
         </form>
       ) : (
         <button
           type="button"
           onClick={() => setShowInput(true)}
-          className="flex items-center gap-1 text-xs text-[var(--jk-text-faint)] hover:text-[var(--jk-accent)] transition-colors mt-1"
+          className="flex items-center gap-1 text-xs text-jk-text-faint hover:text-jk-accent transition-colors mt-1"
         >
           <Plus className="w-3.5 h-3.5" />
           Add task

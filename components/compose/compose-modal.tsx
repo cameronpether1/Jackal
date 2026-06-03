@@ -132,7 +132,7 @@ export function ComposeModal({
                   'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors border',
                   type === pt.value
                     ? 'bg-sky-50 border-sky-300 text-sky-700 dark:bg-sky-950 dark:border-sky-700 dark:text-sky-300'
-                    : 'border-transparent bg-[var(--jk-surface-offset)] text-[var(--jk-text-muted)] hover:bg-sky-50/50'
+                    : 'border-transparent bg-jk-surface-offset text-jk-text-muted hover:bg-sky-50/50'
                 )}
               >
                 <span>{pt.emoji}</span>
@@ -161,7 +161,7 @@ export function ComposeModal({
                 : 'Write a note…'
             }
             rows={4}
-            className="w-full resize-none rounded-lg border border-[var(--jk-border)] bg-[var(--jk-surface-offset)] px-3 py-2 text-sm text-[var(--jk-text)] placeholder:text-[var(--jk-text-faint)] focus:outline-none focus:ring-2 focus:ring-[var(--jk-accent)]/30"
+            className="w-full resize-none rounded-lg border border-jk-border bg-jk-surface-offset px-3 py-2 text-sm text-jk-text placeholder:text-jk-text-faint focus:outline-none focus:ring-2 focus:ring-jk-accent/30"
           />
 
           {/* Footer */}
@@ -173,7 +173,7 @@ export function ComposeModal({
               >
                 {currentProfile?.display_name?.[0]?.toUpperCase() ?? '?'}
               </div>
-              <span className="text-xs text-[var(--jk-text-muted)]">
+              <span className="text-xs text-jk-text-muted">
                 Posting as {currentProfile?.display_name ?? 'you'}
               </span>
             </div>
@@ -190,7 +190,7 @@ export function ComposeModal({
                 type="submit"
                 size="sm"
                 disabled={loading}
-                className="bg-[var(--jk-accent)] hover:bg-sky-400 text-white"
+                className="bg-jk-accent hover:bg-sky-400 text-white"
               >
                 {loading ? 'Posting…' : 'Post'}
               </Button>

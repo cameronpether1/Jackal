@@ -48,9 +48,9 @@ export function ReadonlyCard({ post, replies }: ReadonlyCardProps) {
               .map(item => (
                 <li key={item.id} className="flex items-center gap-2">
                   <div className={cn(
-                    'w-4 h-4 rounded-sm border-2 flex items-center justify-center flex-shrink-0',
+                    'w-4 h-4 rounded-sm border-2 flex items-center justify-center shrink-0',
                     item.checked
-                      ? 'bg-[var(--jk-accent)] border-[var(--jk-accent)]'
+                      ? 'bg-jk-accent border-jk-accent'
                       : 'border-neutral-300'
                   )}>
                     {item.checked && (
@@ -88,7 +88,7 @@ export function ReadonlyCard({ post, replies }: ReadonlyCardProps) {
                 return (
                   <div key={reply.id} className={cn('flex items-start gap-2', isRight && 'flex-row-reverse')}>
                     <div
-                      className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold overflow-hidden"
+                      className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold overflow-hidden"
                       style={{ backgroundColor: replyColor }}
                     >
                       {reply.author?.avatar_url

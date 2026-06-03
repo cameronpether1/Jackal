@@ -33,7 +33,7 @@ export function ReactionRow({ reactions, currentUserId, onToggle }: ReactionRowP
             'flex items-center gap-1 px-2 py-0.5 rounded-full text-xs transition-colors',
             counts[emoji].hasMe
               ? 'bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-400'
-              : 'bg-[var(--jk-surface-offset)] text-[var(--jk-text-muted)] hover:bg-sky-50 dark:hover:bg-sky-950/50'
+              : 'bg-jk-surface-offset text-jk-text-muted hover:bg-sky-50 dark:hover:bg-sky-950/50'
           )}
         >
           <span>{emoji}</span>

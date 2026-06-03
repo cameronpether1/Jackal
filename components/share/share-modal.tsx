@@ -73,7 +73,7 @@ export function ShareModal({ open, onOpenChange, board }: ShareModalProps) {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Link className="w-4 h-4 text-[var(--jk-accent)]" />
+            <Link className="w-4 h-4 text-jk-accent" />
             Share "{board.name}"
           </DialogTitle>
           <DialogDescription>
@@ -82,21 +82,21 @@ export function ShareModal({ open, onOpenChange, board }: ShareModalProps) {
         </DialogHeader>
 
         {loading ? (
-          <div className="h-10 rounded-lg bg-[var(--jk-surface-offset)] animate-pulse" />
+          <div className="h-10 rounded-lg bg-jk-surface-offset animate-pulse" />
         ) : token ? (
           <div className="space-y-3">
             <div className="flex gap-2">
               <Input
                 readOnly
                 value={shareUrl ?? ''}
-                className="flex-1 text-xs font-mono text-[var(--jk-text-muted)]"
+                className="flex-1 text-xs font-mono text-jk-text-muted"
                 onClick={e => (e.target as HTMLInputElement).select()}
               />
               <Button
                 size="icon"
                 variant="outline"
                 onClick={handleCopy}
-                className="flex-shrink-0"
+                className="shrink-0"
               >
                 {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
               </Button>
@@ -116,14 +116,14 @@ export function ShareModal({ open, onOpenChange, board }: ShareModalProps) {
           <Button
             onClick={handleCreate}
             disabled={loading}
-            className="w-full bg-[var(--jk-accent)] hover:bg-sky-400 text-white gap-2"
+            className="w-full bg-jk-accent hover:bg-sky-400 text-white gap-2"
           >
             <Link className="w-4 h-4" />
             Create share link
           </Button>
         )}
 
-        <p className="text-xs text-[var(--jk-text-faint)]">
+        <p className="text-xs text-jk-text-faint">
           Guests can view posts but cannot reply, react, or add new posts.
         </p>
       </DialogContent>

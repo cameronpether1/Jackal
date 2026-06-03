@@ -27,6 +27,12 @@ export type BoardMember = {
 
 export type PostType = 'note' | 'tasks' | 'question'
 
+export type MapLocation = {
+  lat: number
+  lng: number
+  label: string
+}
+
 export type Post = {
   id: string
   board_id: string
@@ -35,6 +41,7 @@ export type Post = {
   title: string | null
   content: string | null
   image_url: string | null
+  map_location: MapLocation | null
   pos_x: number
   pos_y: number
   rotation: number
