@@ -290,10 +290,10 @@ create policy "Board owners can manage invites"
     )
   );
 
-create policy "Anyone can read their own invite by token"
+create policy "Users can read invites addressed to them"
   on public.board_invites for select
   to authenticated
-  using (true); -- token-based access, validated in app code
+  using (invited_email = (select email from auth.users where id = auth.uid()));
 
 -- ============================================================
 -- REALTIME

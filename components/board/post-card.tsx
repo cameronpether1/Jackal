@@ -85,18 +85,19 @@ export function PostCard({
           ref={cardRef}
           id={`post-${post.id}`}
           className={cn(
-            'absolute w-72 bg-white rounded-3xl select-none overflow-visible group/card',
-            'shadow-[0_4px_24px_rgba(0,0,0,0.10)]',
+            'absolute w-72 rounded-3xl select-none overflow-visible group/card border',
+            `post-type-${post.type}`,
+            'shadow-[0_4px_24px_rgba(0,0,0,0.09)]',
             isDragging
               ? 'cursor-grabbing shadow-[0_16px_48px_rgba(0,0,0,0.18)] z-50'
               : 'cursor-grab hover:shadow-[0_8px_32px_rgba(0,0,0,0.14)]',
-            'transition-shadow duration-150',
           )}
           style={{
             left: pos.x,
             top: pos.y,
-            transform: isDragging ? 'rotate(0deg) translateY(-2px)' : `rotate(${post.rotation}deg)`,
-            transition: isDragging ? 'none' : 'transform 200ms ease, box-shadow 150ms ease',
+            transform: isDragging ? 'rotate(0deg) translateY(-4px) scale(1.02)' : `rotate(${post.rotation}deg)`,
+            transition: isDragging ? 'none' : 'transform 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 150ms ease',
+            touchAction: 'none',
           }}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
@@ -122,10 +123,10 @@ export function PostCard({
 
           <div className="p-5 pt-6">
             {post.type === 'question' && (
-              <span className="inline-block text-xs font-semibold text-pink-500 mb-1.5">Question</span>
+              <span className="inline-block text-xs font-semibold text-[#1a6a30] mb-1.5">Question</span>
             )}
             {post.title && (
-              <h3 className="font-bold text-sm text-[#1c1b19] mb-2 leading-snug">{post.title}</h3>
+              <h3 className="font-bold text-sm text-jk-text mb-2 leading-snug">{post.title}</h3>
             )}
             {post.type === 'tasks' ? (
               <TaskList
@@ -136,7 +137,7 @@ export function PostCard({
               />
             ) : (
               post.content && (
-                <p className="text-sm text-[#6b6a67] leading-relaxed whitespace-pre-wrap">{renderContent(post.content)}</p>
+                <p className="text-sm text-jk-text-muted leading-relaxed whitespace-pre-wrap">{renderContent(post.content)}</p>
               )
             )}
 
@@ -161,16 +162,16 @@ export function PostCard({
                   className="w-full"
                   draggable={false}
                 />
-                <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#f8f7f5]">
-                  <MapPin className="w-3 h-3 text-[#ee4444] shrink-0" />
-                  <span className="text-[10px] text-[#1c1b19] truncate">{post.map_location.label}</span>
+                <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-jk-surface-offset">
+                  <MapPin className="w-3 h-3 text-destructive shrink-0" />
+                  <span className="text-[10px] text-jk-text truncate">{post.map_location.label}</span>
                 </div>
               </div>
             )}
 
             {/* Inline replies */}
             {replies.length > 0 && (
-              <div className="mt-4 pt-3 border-t border-[#f0ede8] space-y-3">
+              <div className="mt-4 pt-3 border-t border-jk-border space-y-3">
                 {[...replies]
                   .sort((a, b) => a.created_at.localeCompare(b.created_at))
                   .map((reply, index) => {
@@ -188,9 +189,9 @@ export function PostCard({
                             : replyInitials}
                         </div>
                         <div className={cn('flex-1 min-w-0', isRight && 'text-right')}>
-                          <span className="block text-[10px] font-semibold text-[#6b6a67]">{reply.author?.display_name}</span>
+                          <span className="block text-[10px] font-semibold text-jk-text-muted">{reply.author?.display_name}</span>
                           {reply.title && (
-                            <p className="text-xs font-bold text-[#1c1b19] mt-0.5 leading-snug">{reply.title}</p>
+                            <p className="text-xs font-bold text-jk-text mt-0.5 leading-snug">{reply.title}</p>
                           )}
                           {reply.type === 'tasks' ? (
                             <TaskList
@@ -201,7 +202,7 @@ export function PostCard({
                             />
                           ) : (
                             reply.content && (
-                              <p className="text-xs text-[#6b6a67] leading-relaxed whitespace-pre-wrap">{renderContent(reply.content)}</p>
+                              <p className="text-xs text-jk-text-muted leading-relaxed whitespace-pre-wrap">{renderContent(reply.content)}</p>
                             )
                           )}
                           {reply.image_url && (
@@ -225,7 +226,7 @@ export function PostCard({
                 <button
                   type="button"
                   onClick={() => onReply(post)}
-                  className="opacity-0 group-hover/card:opacity-100 transition-opacity duration-150 flex items-center gap-1 text-[11px] text-[#b0afa9] hover:text-jk-accent transition-colors"
+                  className="[@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/card:opacity-100 flex items-center gap-1 text-[11px] text-jk-text-faint hover:text-jk-accent transition-[opacity,color] duration-150"
                 >
                   <CornerUpLeft className="w-3 h-3" />
                   Reply

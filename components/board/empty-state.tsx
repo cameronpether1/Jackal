@@ -1,3 +1,5 @@
+import { PenLine } from 'lucide-react'
+
 interface EmptyStateProps {
   onCompose: () => void
 }
@@ -7,16 +9,22 @@ export function EmptyState({ onCompose }: EmptyStateProps) {
     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
       <div className="text-center pointer-events-auto">
         <div className="border-2 border-dashed border-jk-border rounded-2xl px-12 py-10 max-w-xs">
-          <div className="text-3xl mb-3">📌</div>
-          <p className="text-sm font-medium text-jk-text mb-1">No posts yet</p>
+          <div className="w-10 h-10 rounded-xl bg-jk-surface-offset flex items-center justify-center mx-auto mb-4">
+            <PenLine className="w-5 h-5 text-jk-text-muted" />
+          </div>
+          <p className="text-sm font-semibold text-jk-text mb-1">Start something</p>
           <p className="text-sm text-jk-text-muted mb-4">
-            Add your first post to the board
+            Drop the first thought — a note, task list, or question.
           </p>
           <button
             onClick={onCompose}
             className="inline-flex items-center gap-2 text-sm text-jk-accent font-medium hover:underline"
           >
-            Press <kbd className="bg-jk-surface-offset px-1.5 py-0.5 rounded text-xs font-mono">N</kbd> or click New Post ↗
+            <span className="hidden sm:inline">
+              Press <kbd className="bg-jk-surface border border-jk-border px-1.5 py-0.5 rounded text-xs font-mono">N</kbd> or tap
+            </span>
+            <span className="sm:hidden">Tap</span>
+            {' '}New Post below
           </button>
         </div>
       </div>

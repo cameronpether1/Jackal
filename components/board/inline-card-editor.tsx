@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { CornerUpLeft, Image, MapPin, X } from 'lucide-react'
+import { CornerUpLeft, Image, MapPin, X, Check } from 'lucide-react'
 import { getAvatarColor } from '@/lib/avatar-color'
 import { getMapImageUrl } from '@/lib/mapbox'
 import { cn } from '@/lib/utils'
@@ -13,6 +13,12 @@ const TYPE_OPTIONS: { value: PostType; label: string }[] = [
   { value: 'tasks', label: 'Tasks' },
   { value: 'question', label: 'Question' },
 ]
+
+const TYPE_ACTIVE_CLASS: Record<PostType, string> = {
+  note: 'bg-[#86d3fa]/30 text-[#1a5a7a]',
+  tasks: 'bg-[#faad86]/30 text-[#7a3a10]',
+  question: 'bg-[#86fa96]/30 text-[#1a6a30]',
+}
 
 interface InlineCardEditorProps {
   x: number
@@ -35,10 +41,19 @@ export function InlineCardEditor({
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [mapLocation, setMapLocation] = useState<MapLocation | null>(null)
   const [showLocationPicker, setShowLocationPicker] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   const titleRef = useRef<HTMLInputElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const authorColor = getAvatarColor(currentUserId)
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 639px)')
+    setIsMobile(mq.matches)
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
 
   useEffect(() => {
     return () => { if (imagePreview) URL.revokeObjectURL(imagePreview) }
@@ -48,7 +63,7 @@ export function InlineCardEditor({
     titleRef.current?.focus()
   }, [])
 
-  // Click-outside to save
+  // Click/touch-outside to save
   useEffect(() => {
     function handlePointerDown(e: PointerEvent) {
       if (cardRef.current && !cardRef.current.contains(e.target as Node)) {
@@ -84,10 +99,177 @@ export function InlineCardEditor({
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { handleSave(); return }
   }
 
+  const formContent = (
+    <div className={cn('space-y-2', isMobile ? 'px-4 pt-2 pb-4' : 'p-5 pt-6')}>
+      {/* Reply-to banner */}
+      {replyTo && (
+        <div className="flex items-center gap-1.5 pb-1 text-[11px] text-jk-text-faint">
+          <CornerUpLeft className="w-3 h-3 shrink-0" />
+          <span>Replying to <span className="font-medium text-jk-text-muted">{replyTo.authorName}</span></span>
+        </div>
+      )}
+
+      {/* Type selector + image/map buttons */}
+      <div className="flex items-center gap-1.5 mb-3">
+        {TYPE_OPTIONS.map(opt => (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => setType(opt.value)}
+            className={cn(
+              'text-xs px-2.5 py-1 rounded-full font-medium transition-colors',
+              isMobile ? 'px-3 py-1.5' : '',
+              type === opt.value ? TYPE_ACTIVE_CLASS[opt.value] : 'bg-jk-surface-offset text-jk-text-muted hover:bg-jk-border',
+            )}
+          >
+            {opt.label}
+          </button>
+        ))}
+        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
+        <div className="ml-auto flex items-center gap-0.5">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className={cn(
+              'p-1.5 rounded-full transition-colors',
+              isMobile ? 'p-2' : '',
+              imageFile ? 'text-jk-accent' : 'text-jk-text-faint hover:text-jk-text-muted',
+            )}
+            title="Add image"
+          >
+            <Image className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowLocationPicker(v => !v)}
+            className={cn(
+              'p-1.5 rounded-full transition-colors',
+              isMobile ? 'p-2' : '',
+              mapLocation ? 'text-jk-accent' : 'text-jk-text-faint hover:text-jk-text-muted',
+            )}
+            title="Add location"
+          >
+            <MapPin className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Title */}
+      <input
+        ref={titleRef}
+        value={title}
+        onChange={e => setTitle(e.target.value)}
+        placeholder={type === 'tasks' ? 'Tasks' : type === 'question' ? 'Your question…' : 'Title'}
+        className={cn(
+          'w-full font-bold text-sm text-jk-text outline-none placeholder:text-jk-text-faint bg-transparent',
+          isMobile && 'text-base',
+        )}
+      />
+
+      {/* Content */}
+      <textarea
+        value={content}
+        onChange={e => setContent(e.target.value)}
+        placeholder={
+          type === 'tasks' ? 'One task per line…'
+          : type === 'question' ? 'Add more detail…'
+          : 'Write something…'
+        }
+        rows={isMobile ? 4 : 3}
+        className={cn(
+          'w-full text-sm text-jk-text-muted outline-none resize-none placeholder:text-jk-text-faint bg-transparent',
+          isMobile && 'text-base leading-relaxed',
+        )}
+      />
+
+      {/* Image preview */}
+      {imagePreview && (
+        <div className="relative mt-1">
+          <img src={imagePreview} alt="" className="w-full rounded-2xl object-cover max-h-36" />
+          <button
+            type="button"
+            onClick={removeImage}
+            className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-black/70 transition-colors"
+          >
+            <X className="w-3 h-3" />
+          </button>
+        </div>
+      )}
+
+      {/* Location picker */}
+      {showLocationPicker && !mapLocation && (
+        <LocationPicker
+          onSelect={loc => { setMapLocation(loc); setShowLocationPicker(false) }}
+          onClose={() => setShowLocationPicker(false)}
+        />
+      )}
+
+      {/* Map preview */}
+      {mapLocation && (
+        <div className="relative mt-1 rounded-2xl overflow-hidden">
+          <img
+            src={getMapImageUrl(mapLocation.lat, mapLocation.lng)}
+            alt={mapLocation.label}
+            className="w-full"
+            draggable={false}
+          />
+          <div className="absolute bottom-0 inset-x-0 bg-white/90 backdrop-blur-sm px-2.5 py-1.5 flex items-center gap-1.5">
+            <MapPin className="w-3 h-3 text-destructive shrink-0" />
+            <span className="text-[10px] text-jk-text truncate flex-1">{mapLocation.label}</span>
+            <button
+              type="button"
+              onClick={() => setMapLocation(null)}
+              className="text-jk-text-faint hover:text-jk-text-muted transition-colors"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Hint / Save button */}
+      {isMobile ? (
+        <button
+          type="button"
+          onClick={handleSave}
+          className="w-full mt-1 h-11 rounded-xl bg-jk-accent text-white text-sm font-semibold flex items-center justify-center gap-2 transition-opacity active:opacity-80"
+        >
+          <Check className="w-4 h-4" />
+          Save post
+        </button>
+      ) : (
+        <p className="text-[10px] text-jk-text-faint pt-1">
+          ⌘↵ to save · Esc to discard · click away to save
+        </p>
+      )}
+    </div>
+  )
+
+  if (isMobile) {
+    return (
+      <div
+        ref={cardRef}
+        className={cn(
+          'fixed inset-x-0 z-[60] border-t border shadow-[0_-8px_32px_rgba(0,0,0,0.14)] rounded-t-3xl overflow-hidden',
+          `post-type-${type}`,
+        )}
+        style={{ bottom: 0, paddingBottom: 'env(safe-area-inset-bottom)' }}
+        onKeyDown={handleKeyDown}
+      >
+        {/* Drag handle indicator */}
+        <div className="w-10 h-1 rounded-full bg-jk-border mx-auto mt-3 mb-0" />
+        {formContent}
+      </div>
+    )
+  }
+
   return (
     <div
       ref={cardRef}
-      className="absolute w-72 bg-white rounded-3xl shadow-[0_8px_40px_rgba(0,0,0,0.16)] z-50 ring-2 ring-[#0ea5e9]/40"
+      className={cn(
+        'absolute w-72 rounded-3xl shadow-[0_8px_40px_rgba(0,0,0,0.16)] z-50 ring-2 ring-jk-accent/40 border',
+        `post-type-${type}`,
+      )}
       style={{ left: x, top: y, transform: `rotate(${rotation}deg)` }}
       onKeyDown={handleKeyDown}
     >
@@ -107,133 +289,7 @@ export function InlineCardEditor({
             : currentProfile?.display_name?.[0]?.toUpperCase() ?? '?'}
         </div>
       </div>
-
-      <div className="p-5 pt-6 space-y-2">
-        {/* Reply-to banner */}
-        {replyTo && (
-          <div className="flex items-center gap-1.5 pb-1 text-[11px] text-[#b0afa9]">
-            <CornerUpLeft className="w-3 h-3 shrink-0" />
-            <span>Replying to <span className="font-medium text-[#6b6a67]">{replyTo.authorName}</span></span>
-          </div>
-        )}
-        {/* Type selector + image button */}
-        <div className="flex items-center gap-1.5 mb-3">
-          {TYPE_OPTIONS.map(opt => (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => setType(opt.value)}
-              className={cn(
-                'text-xs px-2.5 py-1 rounded-full font-medium transition-colors',
-                type === opt.value
-                  ? 'bg-[#1c1b19] text-white'
-                  : 'bg-[#f0ede8] text-[#6b6a67] hover:bg-[#e5e2dc]'
-              )}
-            >
-              {opt.label}
-            </button>
-          ))}
-          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
-          <div className="ml-auto flex items-center gap-0.5">
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className={cn(
-                'p-1.5 rounded-full transition-colors',
-                imageFile ? 'text-jk-accent' : 'text-[#b0afa9] hover:text-[#6b6a67]'
-              )}
-              title="Add image"
-            >
-              <Image className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowLocationPicker(v => !v)}
-              className={cn(
-                'p-1.5 rounded-full transition-colors',
-                mapLocation ? 'text-jk-accent' : 'text-[#b0afa9] hover:text-[#6b6a67]'
-              )}
-              title="Add location"
-            >
-              <MapPin className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-
-        {/* Title */}
-        <input
-          ref={titleRef}
-          value={title}
-          onChange={e => setTitle(e.target.value)}
-          placeholder={type === 'tasks' ? 'Tasks' : type === 'question' ? 'Your question…' : 'Title'}
-          className="w-full font-bold text-sm text-[#1c1b19] outline-none placeholder:text-[#b0afa9] bg-transparent"
-        />
-
-        {/* Content */}
-        <textarea
-          value={content}
-          onChange={e => setContent(e.target.value)}
-          placeholder={
-            type === 'tasks'
-              ? 'One task per line…'
-              : type === 'question'
-              ? 'Add more detail…'
-              : 'Write something…'
-          }
-          rows={3}
-          className="w-full text-sm text-[#6b6a67] outline-none resize-none placeholder:text-[#b0afa9] bg-transparent"
-        />
-
-        {/* Image preview */}
-        {imagePreview && (
-          <div className="relative mt-1">
-            <img src={imagePreview} alt="" className="w-full rounded-2xl object-cover max-h-36" />
-            <button
-              type="button"
-              onClick={removeImage}
-              className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-black/70 transition-colors"
-            >
-              <X className="w-3 h-3" />
-            </button>
-          </div>
-        )}
-
-        {/* Location picker */}
-        {showLocationPicker && !mapLocation && (
-          <LocationPicker
-            onSelect={loc => { setMapLocation(loc); setShowLocationPicker(false) }}
-            onClose={() => setShowLocationPicker(false)}
-          />
-        )}
-
-        {/* Map preview */}
-        {mapLocation && (
-          <div className="relative mt-1 rounded-2xl overflow-hidden">
-            <img
-              src={getMapImageUrl(mapLocation.lat, mapLocation.lng)}
-              alt={mapLocation.label}
-              className="w-full"
-              draggable={false}
-            />
-            <div className="absolute bottom-0 inset-x-0 bg-white/90 backdrop-blur-sm px-2.5 py-1.5 flex items-center gap-1.5">
-              <MapPin className="w-3 h-3 text-[#ee4444] shrink-0" />
-              <span className="text-[10px] text-[#1c1b19] truncate flex-1">{mapLocation.label}</span>
-              <button
-                type="button"
-                onClick={() => setMapLocation(null)}
-                className="text-[#b0afa9] hover:text-[#6b6a67] transition-colors"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Hint */}
-        <p className="text-[10px] text-[#b0afa9] pt-1">
-          ⌘↵ to save · Esc to discard · click away to save
-        </p>
-      </div>
+      {formContent}
     </div>
   )
 }

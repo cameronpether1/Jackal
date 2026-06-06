@@ -62,9 +62,10 @@ export function Whiteboard({ boardId, boardName, initialPosts, currentUserId, cu
     const w = el?.clientWidth ?? 800
     const h = el?.clientHeight ?? 600
     const scale = zoom / 100
-    const x = (scrollX + w / 2) / scale - 144 + (Math.random() - 0.5) * 80
-    const y = (scrollY + h / 3) / scale + (Math.random() - 0.5) * 60
-    setDraft({ x, y, rotation: (Math.random() * 4 - 2) })
+    const isMobile = window.matchMedia('(max-width: 639px)').matches
+    const x = (scrollX + w / 2) / scale - 144 + (isMobile ? 0 : (Math.random() - 0.5) * 80)
+    const y = (scrollY + h / 3) / scale + (isMobile ? 0 : (Math.random() - 0.5) * 60)
+    setDraft({ x, y, rotation: isMobile ? 0 : (Math.random() * 4 - 2) })
   }
 
   // Keyboard shortcut N
@@ -438,6 +439,7 @@ export function Whiteboard({ boardId, boardName, initialPosts, currentUserId, cu
     <div
       ref={canvasRef}
       className="relative flex-1 overflow-auto bg-jk-bg dot-grid"
+      style={{ touchAction: 'pan-x pan-y' }}
     >
       <div
         ref={innerRef}
