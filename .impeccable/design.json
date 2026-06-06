@@ -1,0 +1,269 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-06T00:00:00.000Z",
+  "title": "Design System: Jackal",
+  "extensions": {
+    "colorMeta": {
+      "live-signal": {
+        "role": "primary",
+        "displayName": "Live Signal Blue",
+        "canonical": "oklch(0.66 0.18 228)",
+        "tonalRamp": ["#0a2a40", "#0a3d5c", "#0b5a88", "#0d7ab8", "#0ea5e9", "#42bbf0", "#84d5f7", "#c8edfd"]
+      },
+      "live-signal-dark": {
+        "role": "primary-dark",
+        "displayName": "Live Signal Blue (Dark Mode)",
+        "canonical": "oklch(0.74 0.16 226)",
+        "tonalRamp": ["#0b2f48", "#0d4a6e", "#1068a0", "#1a8dcf", "#38bdf8", "#6dd0fa", "#a5e3fc", "#d6f3fe"]
+      },
+      "frozen-lake": {
+        "role": "secondary",
+        "displayName": "Frozen Lake",
+        "canonical": "oklch(0.83 0.10 228)",
+        "tonalRamp": ["#0d2d3f", "#0f4668", "#1568a0", "#2c8fcc", "#5db0e4", "#86d3fa", "#b5e7fc", "#dff3fe"]
+      },
+      "tangerine-dream": {
+        "role": "secondary",
+        "displayName": "Tangerine Dream",
+        "canonical": "oklch(0.77 0.13 48)",
+        "tonalRamp": ["#3a1506", "#642609", "#974011", "#c8591b", "#e88048", "#faad86", "#fad0b8", "#fdf0e8"]
+      },
+      "mint": {
+        "role": "secondary",
+        "displayName": "Mint",
+        "canonical": "oklch(0.88 0.16 145)",
+        "tonalRamp": ["#04350e", "#085620", "#128334", "#28b050", "#55d56f", "#86fa96", "#b4fcc2", "#dfffea"]
+      },
+      "ivory": {
+        "role": "tertiary",
+        "displayName": "Ivory",
+        "canonical": "oklch(0.99 0.02 90)",
+        "tonalRamp": ["#3a3820", "#605d32", "#8c8748", "#b8b060", "#d9d196", "#fffced", "#fffef6", "#ffffff"]
+      },
+      "carbon-black": {
+        "role": "neutral",
+        "displayName": "Carbon Black",
+        "canonical": "oklch(0.23 0.003 55)",
+        "tonalRamp": ["#0a0a09", "#151513", "#1f1e1c", "#2e2d2b", "#3e3c39", "#545350", "#6b6967", "#888480"]
+      },
+      "warm-canvas": {
+        "role": "neutral-bg",
+        "displayName": "Warm Canvas",
+        "canonical": "oklch(0.965 0.003 75)",
+        "tonalRamp": ["#1a1917", "#2e2d2b", "#454341", "#5d5b58", "#7a7874", "#a0908a", "#ccc8c2", "#f4f3f0"]
+      },
+      "surface-white": {
+        "role": "neutral-surface",
+        "displayName": "Surface White",
+        "canonical": "oklch(1 0 0)",
+        "tonalRamp": ["#1a1917", "#302f2c", "#484643", "#636058", "#828070", "#a8a49c", "#d6d4cf", "#ffffff"]
+      },
+      "linen": {
+        "role": "neutral-offset",
+        "displayName": "Linen",
+        "canonical": "oklch(0.95 0.006 60)",
+        "tonalRamp": ["#1c1917", "#302c28", "#484138", "#615a4f", "#847c70", "#ada59a", "#d4cfc8", "#f0ede8"]
+      },
+      "near-black": {
+        "role": "ink",
+        "displayName": "Near Black",
+        "canonical": "oklch(0.155 0.005 55)",
+        "tonalRamp": ["#0c0b0a", "#1a1917", "#252422", "#313028", "#48463e", "#615e55", "#7a776e", "#959289"]
+      },
+      "warm-granite": {
+        "role": "ink-secondary",
+        "displayName": "Warm Granite",
+        "canonical": "oklch(0.47 0.01 55)",
+        "tonalRamp": ["#1a1917", "#2e2d2a", "#444240", "#5a5856", "#6b6a67", "#84827f", "#a09e9c", "#c0bebb"]
+      },
+      "charcoal": {
+        "role": "neutral-bg-dark",
+        "displayName": "Charcoal",
+        "canonical": "oklch(0.10 0.003 30)",
+        "tonalRamp": ["#060605", "#0d0c0b", "#111110", "#181715", "#22201e", "#2e2c2a", "#3c3a38", "#4a4846"]
+      },
+      "coal": {
+        "role": "neutral-surface-dark",
+        "displayName": "Coal",
+        "canonical": "oklch(0.14 0.005 30)",
+        "tonalRamp": ["#080807", "#100f0e", "#1c1b19", "#252320", "#302e2c", "#3d3b38", "#4d4b47", "#5e5c58"]
+      },
+      "destructive": {
+        "role": "semantic-error",
+        "displayName": "Destructive Red",
+        "canonical": "oklch(0.577 0.245 27.325)",
+        "tonalRamp": ["#300806", "#590e08", "#8c1410", "#c41e18", "#df3b27", "#e8655a", "#f3a09a", "#fad8d6"]
+      }
+    },
+    "shadows": [
+      {
+        "name": "card-ambient",
+        "value": "0 4px 20px rgba(0, 0, 0, 0.09)",
+        "purpose": "Post cards at rest on the board. Soft and diffuse — the card lifts off the canvas without competing."
+      },
+      {
+        "name": "card-dragging",
+        "value": "0 8px 32px rgba(0, 0, 0, 0.16)",
+        "purpose": "Post card being dragged. Doubled shadow signals elevation and active movement."
+      },
+      {
+        "name": "floating",
+        "value": "0 4px 24px rgba(0, 0, 0, 0.30)",
+        "purpose": "Floating toolbar, pill navbar, modals, dropdowns. Intentionally deep to separate from the board surface."
+      },
+      {
+        "name": "signal-glow",
+        "value": "0 0 0 3px #0ea5e9",
+        "purpose": "Focus ring and live-action pulse. Color-based, not elevation-based — communicates state."
+      },
+      {
+        "name": "signal-glow-soft",
+        "value": "0 8px 32px rgba(14, 165, 233, 0.3)",
+        "purpose": "Ambient glow under accent elements in the hero area and board pulse indicators."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-standard",
+        "value": "cubic-bezier(0.4, 0, 0.2, 1)",
+        "purpose": "Default easing for state transitions (button hover, input focus)."
+      },
+      {
+        "name": "ease-out-quart",
+        "value": "cubic-bezier(0.25, 1, 0.5, 1)",
+        "purpose": "Card drag release, modal entry, toolbar reveal. Snappy deceleration."
+      },
+      {
+        "name": "duration-fast",
+        "value": "150ms",
+        "purpose": "Button hover, focus ring, icon swaps."
+      },
+      {
+        "name": "duration-standard",
+        "value": "200ms",
+        "purpose": "Panel transitions, sidebar collapse, card state changes."
+      },
+      {
+        "name": "duration-enter",
+        "value": "250ms",
+        "purpose": "Modal entry, sheet open, dropdown reveal."
+      }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Main CTA. Sky-blue, full opacity, 10px radius. Used for the single most important action per context.",
+      "html": "<button class=\"ds-btn-primary\">Get started</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; height: 32px; padding: 0 10px; background: #0ea5e9; color: #ffffff; border: none; border-radius: 10px; font-family: 'Geist Sans', sans-serif; font-size: 0.875rem; font-weight: 500; letter-spacing: -0.01em; cursor: pointer; transition: background 150ms cubic-bezier(0.25, 1, 0.5, 1), transform 100ms; white-space: nowrap; outline: none; user-select: none; } .ds-btn-primary:hover { background: rgba(14, 165, 233, 0.82); } .ds-btn-primary:focus-visible { border: 1px solid #0ea5e9; box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.5); } .ds-btn-primary:active { transform: translateY(1px); } .ds-btn-primary:disabled { opacity: 0.5; pointer-events: none; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Inline and toolbar actions. Transparent until hover, then fills with Linen.",
+      "html": "<button class=\"ds-btn-ghost\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" fill=\"none\"><path d=\"M8 2v12M2 8h12\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg> Add post</button>",
+      "css": ".ds-btn-ghost { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 32px; padding: 0 10px; background: transparent; color: #1a1917; border: none; border-radius: 10px; font-family: 'Geist Sans', sans-serif; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: background 150ms cubic-bezier(0.4, 0, 0.2, 1); white-space: nowrap; outline: none; } .ds-btn-ghost:hover { background: #f0ede8; } .ds-btn-ghost:focus-visible { box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.5); } .ds-btn-ghost:active { transform: translateY(1px); } .ds-btn-ghost:disabled { opacity: 0.5; pointer-events: none; }"
+    },
+    {
+      "name": "Input Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Standard text input. Transparent background, subtle border that brightens on focus with a sky-blue ring.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Board name\">",
+      "css": ".ds-input { display: block; width: 100%; height: 32px; padding: 4px 10px; background: transparent; border: 1px solid rgba(0, 0, 0, 0.10); border-radius: 10px; font-family: 'Geist Sans', sans-serif; font-size: 0.875rem; color: #1a1917; outline: none; transition: border-color 150ms, box-shadow 150ms; } .ds-input::placeholder { color: #b0afa9; } .ds-input:hover { border-color: rgba(0, 0, 0, 0.18); } .ds-input:focus-visible { border-color: #0ea5e9; box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.25); } .ds-input:disabled { opacity: 0.5; pointer-events: none; background: rgba(0, 0, 0, 0.04); } .ds-input[aria-invalid='true'] { border-color: #df3b27; box-shadow: 0 0 0 3px rgba(223, 59, 39, 0.2); }"
+    },
+    {
+      "name": "Post Card — Note",
+      "kind": "card",
+      "refersTo": "post-card",
+      "description": "Draggable board card, Note type. White bg, 18px radius, Frozen Lake tint at top.",
+      "html": "<div class=\"ds-post-card ds-post-note\"><div class=\"ds-post-header\"><span class=\"ds-post-type-badge\">Note</span></div><div class=\"ds-post-body\"><p class=\"ds-post-title\">Q3 goals review</p><p class=\"ds-post-content\">Consolidate team OKRs before the planning session. Need input from design and eng.</p></div><div class=\"ds-post-footer\"><div class=\"ds-avatar\" style=\"background:#0ea5e9\">C</div><span class=\"ds-post-time\">2h ago</span></div></div>",
+      "css": ".ds-post-card { position: relative; width: 220px; background: #ffffff; border-radius: 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.09); padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 8px; cursor: grab; user-select: none; transition: box-shadow 200ms cubic-bezier(0.25,1,0.5,1); } .ds-post-card:hover { box-shadow: 0 6px 28px rgba(0,0,0,0.13); } .ds-post-note { border-top: 3px solid rgba(134, 211, 250, 0.6); } .ds-post-header { display: flex; align-items: center; } .ds-post-type-badge { font-family: 'Geist Sans', sans-serif; font-size: 0.7rem; font-weight: 600; color: #0ea5e9; text-transform: none; letter-spacing: 0; } .ds-post-body { display: flex; flex-direction: column; gap: 4px; } .ds-post-title { margin: 0; font-family: 'Geist Sans', sans-serif; font-size: 0.875rem; font-weight: 600; color: #1a1917; line-height: 1.3; } .ds-post-content { margin: 0; font-family: 'Geist Sans', sans-serif; font-size: 0.8rem; color: #6b6a67; line-height: 1.5; } .ds-post-footer { display: flex; align-items: center; gap: 6px; margin-top: 4px; } .ds-avatar { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Geist Sans', sans-serif; font-size: 0.65rem; font-weight: 700; color: #ffffff; flex-shrink: 0; } .ds-post-time { font-family: 'Geist Sans', sans-serif; font-size: 0.7rem; color: #b0afa9; }"
+    },
+    {
+      "name": "Post Card — Task List",
+      "kind": "card",
+      "refersTo": "post-card",
+      "description": "Board card, Task List type. Tangerine Dream tint. Shows task items with check state.",
+      "html": "<div class=\"ds-post-card ds-post-task\"><div class=\"ds-post-header\"><span class=\"ds-post-type-badge ds-task-badge\">Task list</span></div><div class=\"ds-post-body\"><p class=\"ds-post-title\">Ship v1</p><div class=\"ds-task-list\"><div class=\"ds-task ds-task-done\"><div class=\"ds-task-check\"><svg width=\"8\" height=\"8\" viewBox=\"0 0 8 8\" fill=\"none\"><path d=\"M1 4l2 2 4-4\" stroke=\"white\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></div><span class=\"ds-task-label\">Design review</span></div><div class=\"ds-task ds-task-done\"><div class=\"ds-task-check\"><svg width=\"8\" height=\"8\" viewBox=\"0 0 8 8\" fill=\"none\"><path d=\"M1 4l2 2 4-4\" stroke=\"white\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></div><span class=\"ds-task-label\">Write copy</span></div><div class=\"ds-task\"><div class=\"ds-task-uncheck\"></div><span class=\"ds-task-label\">Ship</span></div></div></div></div>",
+      "css": ".ds-post-task { border-top: 3px solid rgba(250, 173, 134, 0.6); } .ds-task-badge { color: #c85a14; } .ds-task-list { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; } .ds-task { display: flex; align-items: center; gap: 8px; } .ds-task-check { width: 14px; height: 14px; border-radius: 3px; background: #faad86; border: 2px solid #faad86; display: flex; align-items: center; justify-content: center; flex-shrink: 0; } .ds-task-uncheck { width: 14px; height: 14px; border-radius: 3px; border: 2px solid rgba(250,173,134,0.5); flex-shrink: 0; } .ds-task-label { font-family: 'Geist Sans', sans-serif; font-size: 0.8rem; color: #1a1917; line-height: 1.4; } .ds-task-done .ds-task-label { text-decoration: line-through; color: #b0afa9; }"
+    },
+    {
+      "name": "Sidebar Nav Item",
+      "kind": "nav",
+      "description": "Board entry in the always-dark sidebar. Colored dot indicator, active fill state.",
+      "html": "<nav class=\"ds-sidebar\"><a class=\"ds-sidebar-item ds-sidebar-active\" href=\"#\"><span class=\"ds-board-dot\" style=\"background:#38bdf8\"></span>Q3 Planning</a><a class=\"ds-sidebar-item\" href=\"#\"><span class=\"ds-board-dot\" style=\"background:#f472b6\"></span>Brand Refresh</a><a class=\"ds-sidebar-item\" href=\"#\"><span class=\"ds-board-dot\" style=\"background:#60a5fa\"></span>Eng Sprint</a></nav>",
+      "css": ".ds-sidebar { background: #1f1e1b; padding: 8px; border-radius: 10px; display: flex; flex-direction: column; gap: 2px; min-width: 180px; } .ds-sidebar-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; font-family: 'Geist Sans', sans-serif; font-size: 0.875rem; font-weight: 500; color: rgba(224,221,216,0.7); text-decoration: none; transition: background 150ms, color 150ms; white-space: nowrap; } .ds-sidebar-item:hover { background: rgba(255,255,255,0.08); color: rgba(224,221,216,0.95); } .ds-sidebar-active { background: rgba(255,255,255,0.10); color: #e0ddd8; } .ds-board-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }"
+    },
+    {
+      "name": "Board Canvas (dot grid)",
+      "kind": "custom",
+      "description": "The board surface. Dot-grid background at 24px pitch. Light and dark mode variants.",
+      "html": "<div class=\"ds-canvas\"><div class=\"ds-canvas-inner\"></div></div>",
+      "css": ".ds-canvas { width: 100%; height: 200px; border-radius: 14px; overflow: hidden; background: #f4f3f0; background-image: radial-gradient(circle, rgba(0,0,0,0.12) 1px, transparent 1px); background-size: 24px 24px; position: relative; } .ds-canvas-inner { position: absolute; inset: 0; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Live Room",
+    "overview": "Jackal feels like walking into a studio where a team is actively working. There is warmth in the air, color on the walls, and evidence of decisions in progress. The interface does not present itself as a blank slate waiting to be filled — it is a workspace already inhabited. Tonal warm neutrals and a tactile dot-grid canvas make the board feel physical and grounded. The four brand colors (Frozen Lake, Tangerine Dream, Mint, Ivory) are not decorative accents; they are semantic markers tied to post types, like colored sticky notes pinned to a real corkboard.\n\nTypography is quiet and functional. Geist Sans carries everything without drama. The system earns its character through color and motion, not typographic spectacle. Transitions run at 150–200ms because users in flow notice lag before they notice elegance. The dark sidebar anchors the product with a high-contrast left column that persists even in light mode.\n\nDelight lives in the moments: a confetti burst when a task list hits 100%, pulsing indicators when teammates are present, a smooth card drag that snaps into place. The baseline chrome is restrained; the board surface is where the energy lives.",
+    "keyCharacteristics": [
+      "Warm, tactile neutral surfaces anchored by a persistent dark sidebar",
+      "Four semantic brand colors that belong to post types, not to chrome",
+      "Single-family sans (Geist) — no typographic decoration, weight does the work",
+      "Snappy state transitions: 150–200ms, exponential ease-out",
+      "Dot-grid canvas as the board's physical material"
+    ],
+    "rules": [
+      {
+        "name": "The Semantic Color Rule",
+        "body": "Frozen Lake, Tangerine Dream, Mint, and Ivory are reserved for post-type tinting and board-level state. They do not appear as general decoration on navigation, buttons, or chrome. Their absence from UI structure is precisely what makes them legible as data on the board.",
+        "section": "colors"
+      },
+      {
+        "name": "The Signal Rule",
+        "body": "Live Signal Blue is the sole primary action color. It lives on CTAs, focus rings, active selection, and board pulse. Diluting it with decorative uses elsewhere kills its authority.",
+        "section": "colors"
+      },
+      {
+        "name": "The One-Family Rule",
+        "body": "Geist Sans covers all roles. Do not introduce a second sans or a display typeface. Weight contrast (400/500/600/700) provides hierarchy.",
+        "section": "typography"
+      },
+      {
+        "name": "The Earned Shadow Rule",
+        "body": "Surfaces start flat. Shadows appear only on interactive or elevated elements — cards, modals, floating toolbars. Static structural panels use tonal layering, not shadow.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do use Live Signal Blue (#0ea5e9) only for primary CTAs, focus rings, active selection, and board pulse.",
+      "Do keep the sidebar dark in all modes — it is a deliberate design decision, not a dark-mode artifact.",
+      "Do apply the four brand colors to post-type tinting and board-level state only.",
+      "Do use the three-step tonal surface stack for structural depth; reserve shadows for interactive elements.",
+      "Do run transitions at 150–200ms with ease-out-quart easing.",
+      "Do include prefers-reduced-motion alternatives for every animation.",
+      "Do maintain 4.5:1 minimum contrast for all body text.",
+      "Do use post-card's 18px radius for board content and 10px for UI controls."
+    ],
+    "donts": [
+      "Don't use Notion's document-heavy UI patterns: dense nesting, collapsible outline hierarchies, full-page text editor mode as the primary surface.",
+      "Don't design generic SaaS landing pages: cream backgrounds, bento grids of identical feature cards, eyebrows on every section, hero-metric number grids.",
+      "Don't introduce a second font family. Geist Sans covers all roles.",
+      "Don't use the four brand colors (Frozen Lake, Tangerine Dream, Mint, Ivory) as general decoration or hover states on chrome.",
+      "Don't use gradient text (background-clip: text) anywhere.",
+      "Don't add decorative motion that doesn't convey state.",
+      "Don't nest cards inside cards.",
+      "Don't use side-stripe borders (border-left > 1px) as accents on cards or list items.",
+      "Don't use all-caps body copy."
+    ]
+  }
+}

@@ -14,7 +14,10 @@ export function ReadonlyCard({ post, replies }: ReadonlyCardProps) {
   return (
     <div
       id={`post-${post.id}`}
-      className="absolute w-72 bg-white rounded-3xl overflow-visible shadow-[0_4px_24px_rgba(0,0,0,0.10)] select-none"
+      className={cn(
+        'absolute w-72 rounded-3xl overflow-visible shadow-[0_4px_24px_rgba(0,0,0,0.09)] select-none border',
+        `post-type-${post.type}`,
+      )}
       style={{
         left: post.pos_x,
         top: post.pos_y,
@@ -35,10 +38,10 @@ export function ReadonlyCard({ post, replies }: ReadonlyCardProps) {
 
       <div className="p-5 pt-6">
         {post.type === 'question' && (
-          <span className="inline-block text-xs font-semibold text-pink-500 mb-1.5">Question</span>
+          <span className="inline-block text-xs font-semibold text-[#1a6a30] mb-1.5">Question</span>
         )}
         {post.title && (
-          <h3 className="font-bold text-sm text-[#1c1b19] mb-2 leading-snug">{post.title}</h3>
+          <h3 className="font-bold text-sm text-jk-text mb-2 leading-snug">{post.title}</h3>
         )}
 
         {post.type === 'tasks' ? (
@@ -59,7 +62,7 @@ export function ReadonlyCard({ post, replies }: ReadonlyCardProps) {
                       </svg>
                     )}
                   </div>
-                  <span className={cn('text-sm', item.checked ? 'line-through text-neutral-400' : 'text-[#1c1b19]')}>
+                  <span className={cn('text-sm', item.checked ? 'line-through text-jk-text-faint' : 'text-jk-text')}>
                     {item.label}
                   </span>
                 </li>
@@ -67,7 +70,7 @@ export function ReadonlyCard({ post, replies }: ReadonlyCardProps) {
           </ul>
         ) : (
           post.content && (
-            <p className="text-sm text-[#6b6a67] leading-relaxed whitespace-pre-wrap">{post.content}</p>
+            <p className="text-sm text-jk-text-muted leading-relaxed whitespace-pre-wrap">{post.content}</p>
           )
         )}
 
@@ -78,7 +81,7 @@ export function ReadonlyCard({ post, replies }: ReadonlyCardProps) {
         )}
 
         {replies.length > 0 && (
-          <div className="mt-4 pt-3 border-t border-[#f0ede8] space-y-3">
+          <div className="mt-4 pt-3 border-t border-jk-border space-y-3">
             {[...replies]
               .sort((a, b) => a.created_at.localeCompare(b.created_at))
               .map((reply, i) => {
@@ -96,9 +99,9 @@ export function ReadonlyCard({ post, replies }: ReadonlyCardProps) {
                         : replyInitials}
                     </div>
                     <div className={cn('flex-1 min-w-0', isRight && 'text-right')}>
-                      <span className="block text-[10px] font-semibold text-[#6b6a67]">{reply.author?.display_name}</span>
-                      {reply.title && <p className="text-xs font-bold text-[#1c1b19] mt-0.5">{reply.title}</p>}
-                      {reply.content && <p className="text-xs text-[#6b6a67] leading-relaxed whitespace-pre-wrap">{reply.content}</p>}
+                      <span className="block text-[10px] font-semibold text-jk-text-muted">{reply.author?.display_name}</span>
+                      {reply.title && <p className="text-xs font-bold text-jk-text mt-0.5">{reply.title}</p>}
+                      {reply.content && <p className="text-xs text-jk-text-muted leading-relaxed whitespace-pre-wrap">{reply.content}</p>}
                       {reply.image_url && <img src={reply.image_url} alt="" className="mt-1.5 w-full rounded-xl object-cover" />}
                     </div>
                   </div>

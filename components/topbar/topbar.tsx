@@ -37,19 +37,19 @@ export function Topbar({ board, members, currentUser, currentUserId, isOwner, on
 
   return (
     <>
-      <header className="flex items-center justify-between pr-4 pl-14 h-14 bg-jk-surface border-b border-jk-border shrink-0 z-10">
-        <div className="flex items-center gap-3 min-w-0">
+      <header className="flex items-center justify-between pr-3 pl-14 h-12 sm:h-14 bg-jk-surface border-b border-jk-border shrink-0 z-10">
+        <div className="hidden sm:flex items-center gap-3 min-w-0">
           <MemberAvatarStack members={members} currentUserId={currentUserId} />
           <span className="text-jk-text-muted text-sm">
             {members.length} {members.length === 1 ? 'member' : 'members'}
           </span>
         </div>
 
-        <h1 className="text-sm font-semibold text-jk-text absolute left-1/2 -translate-x-1/2 truncate max-w-xs">
+        <h1 className="text-sm font-semibold text-jk-text absolute left-1/2 -translate-x-1/2 truncate max-w-[160px] sm:max-w-xs">
           {board.name}
         </h1>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           {isOwner && (
             <Button
               size="sm"

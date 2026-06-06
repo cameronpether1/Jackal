@@ -17,13 +17,13 @@ const HERO_WORDS = ['collaborate', 'create', 'organise', 'build', 'plan', 'ship'
 const FEATURES = [
   {
     name: 'Real-time collaboration',
-    description: 'Every change appears instantly for your whole team. No refresh, no conflicts — just flow.',
+    description: 'Every change appears instantly for your whole team. No refresh, no conflicts. Just flow.',
     Icon: Zap,
     href: '/login',
     cta: 'Get started',
     className: 'col-span-3 lg:col-span-2',
     background: (
-      <div className="absolute inset-0" style={{ background: 'rgba(134, 211, 250, 0.18)' }}>
+      <div className="absolute inset-0" style={{ background: 'rgba(134, 211, 250, 0.24)' }}>
         <svg width="100%" height="100%" className="absolute inset-0 opacity-30">
           <defs>
             <pattern id="dots-rt" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
@@ -46,7 +46,7 @@ const FEATURES = [
     cta: 'Get started',
     className: 'col-span-3 lg:col-span-1',
     background: (
-      <div className="absolute inset-0 p-6 pt-8" style={{ background: 'rgba(250, 173, 134, 0.15)' }}>
+      <div className="absolute inset-0 p-6 pt-8" style={{ background: 'rgba(250, 173, 134, 0.22)' }}>
         <div className="w-full space-y-3 opacity-70 mt-2">
           {[['Design review', true], ['Write copy', true], ['Ship v1', false]] .map(([task, done], i) => (
             <div key={i} className="flex items-center gap-2.5">
@@ -67,13 +67,13 @@ const FEATURES = [
   },
   {
     name: 'Rich post types',
-    description: 'Notes, questions, and task lists — express every kind of idea in its natural format.',
+    description: 'Notes, questions, and task lists: express every kind of idea in its natural format.',
     Icon: StickyNote,
     href: '/login',
     cta: 'Get started',
     className: 'col-span-3 lg:col-span-1',
     background: (
-      <div className="absolute inset-0" style={{ background: 'rgba(134, 250, 150, 0.15)' }}>
+      <div className="absolute inset-0" style={{ background: 'rgba(134, 250, 150, 0.22)' }}>
         <div className="absolute top-6 right-4 flex flex-col gap-2 opacity-60">
           {[['Note', '#86fa96'], ['Task list', '#86d3fa'], ['Question', '#faad86']].map(([type, color], i) => (
             <div key={i} className="rounded-full px-3 py-1 text-[10px] font-semibold" style={{ background: `${color}30`, color: '#262626', border: `1px solid ${color}60` }}>
@@ -122,7 +122,7 @@ const FEATURES = [
     cta: 'Get started',
     className: 'col-span-3 lg:col-span-1',
     background: (
-      <div className="absolute inset-0" style={{ background: 'rgba(134, 211, 250, 0.12)' }}>
+      <div className="absolute inset-0" style={{ background: 'rgba(134, 211, 250, 0.20)' }}>
         <div className="absolute top-5 right-4 w-28 h-28 rounded-xl overflow-hidden opacity-65" style={{ border: '1px solid rgba(134, 211, 250, 0.5)' }}>
           <div className="w-full h-full" style={{ background: 'linear-gradient(135deg, rgba(134,211,250,0.5) 0%, rgba(134,250,150,0.5) 100%)' }} />
           <div className="absolute inset-0 flex items-center justify-center">
@@ -143,12 +143,12 @@ const FEATURES = [
     cta: 'Get started',
     className: 'col-span-3 lg:col-span-2',
     background: (
-      <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(38, 38, 38, 0.05)' }}>
+      <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(38, 38, 38, 0.07)' }}>
         <div className="grid grid-cols-4 gap-2.5 scale-110 rotate-6">
           {[...Array(12)].map((_, i) => {
             const colors = ['#86d3fa', '#faad86', '#86fa96', '#fffced']
             return (
-              <div key={i} className="w-12 h-16 rounded-xl opacity-40" style={{ background: colors[i % colors.length], border: `1px solid ${colors[i % colors.length]}` }} />
+              <div key={i} className="w-12 h-16 rounded-xl opacity-65" style={{ background: colors[i % colors.length], border: `1px solid ${colors[i % colors.length]}` }} />
             )
           })}
         </div>
@@ -177,10 +177,10 @@ export function LandingPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-white text-neutral-900 antialiased">
+    <div className="min-h-screen bg-[var(--jk-bg)] text-[var(--jk-text)] antialiased">
 
       {/* ── Hero area with light-ray wash ── */}
-      <div className="relative overflow-hidden bg-linear-to-b from-sky-50 via-sky-50/40 to-white">
+      <div className="relative overflow-hidden bg-linear-to-b from-sky-50/70 via-sky-50/25 to-[var(--jk-bg)]">
         <LightRays
           color="rgba(14, 165, 233, 0.28)"
           count={9}
@@ -247,8 +247,8 @@ export function LandingPage() {
 
           <MorphingText texts={HERO_WORDS} className="text-[#0ea5e9]" />
 
-          <p className="mt-6 text-lg text-neutral-500 max-w-lg leading-relaxed">
-            Visual boards, task tracking, and real-time collaboration —
+          <p className="mt-6 text-lg text-[var(--jk-text-muted)] max-w-lg leading-relaxed">
+            Visual boards, task tracking, and real-time collaboration,
             all in one place. No setup. Just start.
           </p>
 
@@ -288,30 +288,35 @@ export function LandingPage() {
             ].map((card, i) => (
               <div
                 key={i}
-                className="absolute bg-white rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.09)] p-4"
-                style={{ left: card.x, top: card.y, width: card.w, height: card.h, transform: `rotate(${card.rotate})` }}
+                className="absolute float-card-wrapper"
+                style={{ left: card.x, top: card.y, width: card.w, height: card.h, animationDelay: `${i * 0.6}s` }}
               >
-                {card.type === 'question' && (
-                  <span className="text-[10px] font-semibold text-sky-500 block mb-1">Question</span>
-                )}
-                <div className="font-bold text-xs text-neutral-800">{card.label}</div>
-                {card.type === 'task' && (
-                  <div className="mt-2 space-y-1.5">
-                    {['Design review', 'Write copy', 'Ship'].map((t, j) => (
-                      <div key={j} className="flex items-center gap-1.5">
-                        <div className={`w-3 h-3 rounded border ${j < 2 ? 'bg-[#0ea5e9] border-[#0ea5e9]' : 'border-neutral-300'}`} />
-                        <span className={`text-[10px] ${j < 2 ? 'line-through text-neutral-400' : 'text-neutral-600'}`}>{t}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {card.type === 'note' && (
-                  <div className="mt-1.5 space-y-1">
-                    <div className="h-1.5 rounded-full bg-sky-50 w-full" />
-                    <div className="h-1.5 rounded-full bg-sky-50 w-3/4" />
-                    <div className="h-1.5 rounded-full bg-sky-50 w-5/6" />
-                  </div>
-                )}
+                <div
+                  className="w-full h-full bg-white rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.09)] p-4"
+                  style={{ transform: `rotate(${card.rotate})` }}
+                >
+                  {card.type === 'question' && (
+                    <span className="text-[10px] font-semibold text-sky-500 block mb-1">Question</span>
+                  )}
+                  <div className="font-bold text-xs text-neutral-800">{card.label}</div>
+                  {card.type === 'task' && (
+                    <div className="mt-2 space-y-1.5">
+                      {['Design review', 'Write copy', 'Ship'].map((t, j) => (
+                        <div key={j} className="flex items-center gap-1.5">
+                          <div className={`w-3 h-3 rounded border ${j < 2 ? 'bg-[#0ea5e9] border-[#0ea5e9]' : 'border-neutral-300'}`} />
+                          <span className={`text-[10px] ${j < 2 ? 'line-through text-neutral-400' : 'text-neutral-600'}`}>{t}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {card.type === 'note' && (
+                    <div className="mt-1.5 space-y-1">
+                      <div className="h-1.5 rounded-full bg-sky-50 w-full" />
+                      <div className="h-1.5 rounded-full bg-sky-50 w-3/4" />
+                      <div className="h-1.5 rounded-full bg-sky-50 w-5/6" />
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -322,11 +327,11 @@ export function LandingPage() {
       {/* ── Bento grid features ── */}
       <section id="features" className="px-4 sm:px-8 max-w-5xl mx-auto pb-24">
         <div className="text-center mb-12">
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight [text-wrap:balance]">
             Everything your team needs
           </h2>
-          <p className="mt-3 text-neutral-500">
-            Built for how teams actually work — together.
+          <p className="mt-3 text-[var(--jk-text-muted)]">
+            Built for how teams actually work, together.
           </p>
         </div>
 
@@ -338,11 +343,11 @@ export function LandingPage() {
       </section>
 
       {/* ── CTA strip ── */}
-      <section className="border-t border-sky-100 py-20 text-center px-4">
-        <h2 className="text-3xl font-bold tracking-tight mb-3">
+      <section className="border-t border-[var(--jk-border)] py-20 text-center px-4">
+        <h2 className="text-3xl font-bold tracking-tight mb-3 [text-wrap:balance]">
           Ready to bring your team together?
         </h2>
-        <p className="text-neutral-500 mb-8">Free to get started. No credit card required.</p>
+        <p className="text-[var(--jk-text-muted)] mb-8">Free to get started. No credit card required.</p>
         <Link
           href="/login"
           className="inline-flex items-center gap-2 rounded-full bg-[#0ea5e9] text-white px-8 py-3.5 text-sm font-semibold hover:bg-sky-400 transition-colors shadow-sm"
@@ -352,14 +357,14 @@ export function LandingPage() {
       </section>
 
       {/* ── Footer ── */}
-      <footer className="border-t border-sky-100 py-8 px-4 flex flex-col sm:flex-row items-center justify-between gap-4 max-w-5xl mx-auto">
-        <div className="flex items-center gap-2 text-sm text-neutral-400">
+      <footer className="border-t border-[var(--jk-border)] py-8 px-4 flex flex-col sm:flex-row items-center justify-between gap-4 max-w-5xl mx-auto">
+        <div className="flex items-center gap-2 text-sm text-[var(--jk-text-muted)]">
           <img src="/logo.png" alt="Jackal" className="w-5 h-5 rounded-md object-cover" />
           Jackal © {new Date().getFullYear()}
         </div>
-        <div className="flex items-center gap-6 text-sm text-neutral-400">
-          <Link href="/login" className="hover:text-sky-500 transition-colors">Log in</Link>
-          <Link href="/login" className="hover:text-sky-500 transition-colors">Sign up</Link>
+        <div className="flex items-center gap-6 text-sm text-[var(--jk-text-muted)]">
+          <Link href="/login" className="hover:text-[var(--jk-accent)] transition-colors">Log in</Link>
+          <Link href="/login" className="hover:text-[var(--jk-accent)] transition-colors">Sign up</Link>
         </div>
       </footer>
 

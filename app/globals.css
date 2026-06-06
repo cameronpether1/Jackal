@@ -55,6 +55,15 @@
   --color-text-muted: var(--jk-text-muted);
   --color-text-faint: var(--jk-text-faint);
   --color-jk-accent: var(--jk-accent);
+
+  /* jk-* aliases so bg-jk-surface, text-jk-text, border-jk-border etc. all resolve correctly */
+  --color-jk-bg: var(--jk-bg);
+  --color-jk-surface: var(--jk-surface);
+  --color-jk-surface-offset: var(--jk-surface-offset);
+  --color-jk-border: var(--jk-border);
+  --color-jk-text: var(--jk-text);
+  --color-jk-text-muted: var(--jk-text-muted);
+  --color-jk-text-faint: var(--jk-text-faint);
 }
 
 :root {
@@ -161,9 +170,36 @@
   background-size: 24px 24px;
 }
 
+/* Post card type color theming — semantic post-type borders + background tints */
+.post-type-note {
+  border-color: rgba(134, 211, 250, 0.38);
+  background-color: color-mix(in oklch, #86d3fa 7%, white);
+}
+.post-type-tasks {
+  border-color: rgba(250, 173, 134, 0.38);
+  background-color: color-mix(in oklch, #faad86 7%, white);
+}
+.post-type-question {
+  border-color: rgba(134, 250, 150, 0.38);
+  background-color: color-mix(in oklch, #86fa96 7%, white);
+}
+
+.dark .post-type-note {
+  border-color: rgba(134, 211, 250, 0.24);
+  background-color: color-mix(in oklch, #86d3fa 7%, #1c1b19);
+}
+.dark .post-type-tasks {
+  border-color: rgba(250, 173, 134, 0.24);
+  background-color: color-mix(in oklch, #faad86 7%, #1c1b19);
+}
+.dark .post-type-question {
+  border-color: rgba(134, 250, 150, 0.24);
+  background-color: color-mix(in oklch, #86fa96 7%, #1c1b19);
+}
+
 /* Reply target flash */
 @keyframes reply-flash {
-  0%, 100% { box-shadow: 0 4px_24px rgba(0,0,0,0.10); }
+  0%, 100% { box-shadow: 0 4px 24px rgba(0,0,0,0.10); }
   25%, 75% { box-shadow: 0 0 0 3px #0ea5e9, 0 8px 32px rgba(14,165,233,0.3); }
 }
 
@@ -181,4 +217,20 @@
   background: linear-gradient(90deg, var(--jk-surface-offset) 25%, var(--jk-surface) 50%, var(--jk-surface-offset) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
+}
+
+/* Board preview floating cards */
+@keyframes float-card {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+
+.float-card-wrapper {
+  animation: float-card 4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .float-card-wrapper {
+    animation: none;
+  }
 }
