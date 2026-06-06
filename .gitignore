@@ -42,3 +42,6 @@ next-env.d.ts
 
 # MCP config (contains access tokens)
 .mcp.json
+
+.claude
+.impeccable
