@@ -434,9 +434,11 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
     const pos_x = (scrollX + w / 2) / scale - 60 + (Math.random() - 0.5) * 120
     const pos_y = (scrollY + h / 2) / scale - 60 + (Math.random() - 0.5) * 120
 
+    const rotation = Math.random() * 20 - 10 // -10° to +10°
+
     const { data, error } = await supabase
       .from('stickers')
-      .insert({ board_id: boardId, created_by: currentUserId, image_src: imageSrc, pos_x, pos_y })
+      .insert({ board_id: boardId, created_by: currentUserId, image_src: imageSrc, pos_x, pos_y, rotation })
       .select()
       .single()
 
@@ -496,6 +498,8 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
             imageSrc={s.image_src}
             posX={s.pos_x}
             posY={s.pos_y}
+            rotate={s.rotation}
+            peelDirection={s.rotation}
             createdBy={s.created_by}
             currentUserId={currentUserId}
             onDragEnd={(x, y) => handleStickerDragEnd(s.id, x, y)}
