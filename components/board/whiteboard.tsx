@@ -4,15 +4,18 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import { PostCard } from '@/components/board/post-card'
+import { PostFocusOverlay } from '@/components/board/post-focus-overlay'
+import { StickerPeel } from '@/components/board/sticker-peel'
 import { InlineCardEditor } from '@/components/board/inline-card-editor'
 import { FloatingToolbar } from '@/components/board/floating-toolbar'
 import { EmptyState } from '@/components/board/empty-state'
-import type { PostType, PostWithRelations, Profile } from '@/lib/supabase/types'
+import type { PostType, PostWithRelations, Profile, Sticker } from '@/lib/supabase/types'
 
 interface WhiteboardProps {
   boardId: string
   boardName?: string
   initialPosts: PostWithRelations[]
+  initialStickers: Sticker[]
   currentUserId: string
   currentProfile: Profile | null
   onExportReady?: (fn: () => Promise<void>) => void
@@ -25,9 +28,11 @@ interface DraftCard {
   replyTo?: { postId: string; authorName: string }
 }
 
-export function Whiteboard({ boardId, boardName, initialPosts, currentUserId, currentProfile, onExportReady }: WhiteboardProps) {
+export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, currentUserId, currentProfile, onExportReady }: WhiteboardProps) {
   const [posts, setPosts] = useState<PostWithRelations[]>(initialPosts)
   const [draft, setDraft] = useState<DraftCard | null>(null)
+  const [focusedPost, setFocusedPost] = useState<{ post: PostWithRelations; rect: DOMRect } | null>(null)
+  const [stickers, setStickers] = useState<Sticker[]>(initialStickers)
   const [zoom, setZoom] = useState(100)
   const [isExporting, setIsExporting] = useState(false)
   const canvasRef = useRef<HTMLDivElement>(null)
@@ -166,6 +171,15 @@ export function Whiteboard({ boardId, boardName, initialPosts, currentUserId, cu
           }
         }
       )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'stickers', filter: `board_id=eq.${boardId}` }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          setStickers(prev => prev.some(s => s.id === payload.new.id) ? prev : [...prev, payload.new as Sticker])
+        } else if (payload.eventType === 'UPDATE') {
+          setStickers(prev => prev.map(s => s.id === payload.new.id ? { ...s, ...payload.new } : s))
+        } else if (payload.eventType === 'DELETE') {
+          setStickers(prev => prev.filter(s => s.id !== payload.old.id))
+        }
+      })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'task_items' }, (payload) => {
         if (payload.eventType === 'UPDATE') {
           setPosts(prev => prev.map(p => ({
@@ -406,34 +420,40 @@ export function Whiteboard({ boardId, boardName, initialPosts, currentUserId, cu
     })
   }, [rootPosts])
 
-  const handleFocusPost = useCallback((post: PostWithRelations) => {
-    const container = canvasRef.current
-    if (!container) return
-    const cardEl = document.getElementById(`post-${post.id}`)
-    if (!cardEl) return
-
-    // offsetWidth/Height give canvas-space dimensions (unaffected by ancestor scale transforms)
-    const cardW = cardEl.offsetWidth
-    const cardH = cardEl.offsetHeight
-    const padding = 240
-
-    const scaleToFitW = (container.clientWidth - padding) / cardW
-    const scaleToFitH = (container.clientHeight - padding) / cardH
-    const targetScale = Math.min(scaleToFitW, scaleToFitH, 1.0)
-    const targetZoom = Math.round(Math.max(80, Math.min(100, targetScale * 100)))
-    const effectiveScale = targetZoom / 100
-
-    setZoom(targetZoom)
-
-    // Scroll math is independent of DOM state so no need to wait for re-render
-    const scrollLeft = (post.pos_x + cardW / 2) * effectiveScale - container.clientWidth / 2
-    const scrollTop = (post.pos_y + cardH / 2) * effectiveScale - container.clientHeight / 2
-    container.scrollTo({
-      left: Math.max(0, scrollLeft),
-      top: Math.max(0, scrollTop),
-      behavior: 'smooth',
-    })
+  const handleFocusPost = useCallback((post: PostWithRelations, rect: DOMRect) => {
+    setFocusedPost({ post, rect })
   }, [])
+
+  const handleAddSticker = useCallback(async (imageSrc: string) => {
+    const el = canvasRef.current
+    const scrollX = el?.scrollLeft ?? 0
+    const scrollY = el?.scrollTop ?? 0
+    const w = el?.clientWidth ?? 800
+    const h = el?.clientHeight ?? 600
+    const scale = zoomRef.current / 100
+    const pos_x = (scrollX + w / 2) / scale - 60 + (Math.random() - 0.5) * 120
+    const pos_y = (scrollY + h / 2) / scale - 60 + (Math.random() - 0.5) * 120
+
+    const { data, error } = await supabase
+      .from('stickers')
+      .insert({ board_id: boardId, created_by: currentUserId, image_src: imageSrc, pos_x, pos_y })
+      .select()
+      .single()
+
+    if (!error && data) {
+      setStickers(prev => [...prev, data as Sticker])
+    }
+  }, [boardId, currentUserId, supabase])
+
+  const handleStickerDragEnd = useCallback(async (stickerId: string, x: number, y: number) => {
+    setStickers(prev => prev.map(s => s.id === stickerId ? { ...s, pos_x: x, pos_y: y } : s))
+    await supabase.from('stickers').update({ pos_x: x, pos_y: y }).eq('id', stickerId)
+  }, [supabase])
+
+  const handleStickerDelete = useCallback(async (stickerId: string) => {
+    setStickers(prev => prev.filter(s => s.id !== stickerId))
+    await supabase.from('stickers').delete().eq('id', stickerId)
+  }, [supabase])
 
   return (
     <div
@@ -470,6 +490,19 @@ export function Whiteboard({ boardId, boardName, initialPosts, currentUserId, cu
           />
         ))}
 
+        {stickers.map(s => (
+          <StickerPeel
+            key={s.id}
+            imageSrc={s.image_src}
+            posX={s.pos_x}
+            posY={s.pos_y}
+            createdBy={s.created_by}
+            currentUserId={currentUserId}
+            onDragEnd={(x, y) => handleStickerDragEnd(s.id, x, y)}
+            onDelete={() => handleStickerDelete(s.id)}
+          />
+        ))}
+
         {draft && (
           <InlineCardEditor
             x={draft.x}
@@ -486,10 +519,27 @@ export function Whiteboard({ boardId, boardName, initialPosts, currentUserId, cu
 
       <FloatingToolbar
         onNewPost={spawnDraft}
+        onAddSticker={handleAddSticker}
         zoom={zoom}
         onZoomChange={setZoom}
         onFitAll={handleFitAll}
       />
+
+
+      {focusedPost && (() => {
+        const livePost = posts.find(p => p.id === focusedPost.post.id) ?? focusedPost.post
+        return (
+          <PostFocusOverlay
+            post={livePost}
+            replies={repliesByParentId.get(focusedPost.post.id) ?? []}
+            currentUserId={currentUserId}
+            cardRect={focusedPost.rect}
+            onClose={() => setFocusedPost(null)}
+            onTaskToggle={handleTaskToggle}
+            onReply={handleReply}
+          />
+        )
+      })()}
     </div>
   )
 }

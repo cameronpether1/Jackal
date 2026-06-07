@@ -67,6 +67,16 @@ export type Reaction = {
   created_at: string
 }
 
+export type Sticker = {
+  id: string
+  board_id: string
+  created_by: string
+  image_src: string
+  pos_x: number
+  pos_y: number
+  created_at: string
+}
+
 export type BoardShare = {
   id: string
   board_id: string
@@ -135,6 +145,11 @@ export type Database = {
         Row: BoardInvite
         Insert: Omit<BoardInvite, 'id' | 'created_at' | 'token'>
         Update: Partial<Omit<BoardInvite, 'id' | 'created_at'>>
+      }
+      stickers: {
+        Row: Sticker
+        Insert: Omit<Sticker, 'id' | 'created_at'>
+        Update: Partial<Omit<Sticker, 'id' | 'created_at'>>
       }
     }
   }

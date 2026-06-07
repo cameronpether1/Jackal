@@ -234,3 +234,8 @@
     animation: none;
   }
 }
+
+/* Post focus overlay: reduced-motion fallback — disable clip-path transition */
+@media (prefers-reduced-motion: reduce) {
+  .post-focus-overlay { transition: none !important; }
+}
