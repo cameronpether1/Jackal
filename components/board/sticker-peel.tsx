@@ -183,9 +183,9 @@ export function StickerPeel({
     filter: `url(#${uid}-expandAndFill)`,
   }
 
-  return (
-    <ContextMenu>
-    <ContextMenuTrigger>
+  const isOwner = createdBy === currentUserId
+
+  const stickerEl = (
     <div
       ref={outerRef}
       className="absolute select-none"
@@ -286,17 +286,18 @@ export function StickerPeel({
         </div>
       </div>
     </div>
-    </ContextMenuTrigger>
-    <ContextMenuContent>
-      {createdBy === currentUserId && (
-        <ContextMenuItem
-          onClick={onDelete}
-          className="text-destructive focus:text-destructive"
-        >
+  )
+
+  if (!isOwner) return stickerEl
+
+  return (
+    <ContextMenu>
+      <ContextMenuTrigger>{stickerEl}</ContextMenuTrigger>
+      <ContextMenuContent>
+        <ContextMenuItem onClick={onDelete} className="text-destructive focus:text-destructive">
           <Trash2 className="w-4 h-4 mr-2" /> Delete
         </ContextMenuItem>
-      )}
-    </ContextMenuContent>
+      </ContextMenuContent>
     </ContextMenu>
   )
 }
