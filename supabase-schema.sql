@@ -303,6 +303,7 @@ create table public.stickers (
   image_src text not null,
   pos_x float not null default 100,
   pos_y float not null default 100,
+  rotation float not null default 0,
   created_at timestamptz default now() not null
 );
 

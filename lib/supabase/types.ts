@@ -74,6 +74,7 @@ export type Sticker = {
   image_src: string
   pos_x: number
   pos_y: number
+  rotation: number
   created_at: string
 }
 
