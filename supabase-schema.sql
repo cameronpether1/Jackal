@@ -295,12 +295,62 @@ create policy "Users can read invites addressed to them"
   to authenticated
   using (invited_email = (select email from auth.users where id = auth.uid()));
 
+-- Stickers
+create table public.stickers (
+  id uuid primary key default gen_random_uuid(),
+  board_id uuid references public.boards(id) on delete cascade not null,
+  created_by uuid references public.profiles(id) on delete cascade not null,
+  image_src text not null,
+  pos_x float not null default 100,
+  pos_y float not null default 100,
+  created_at timestamptz default now() not null
+);
+
+alter table public.stickers enable row level security;
+
+create policy "Board members can read stickers"
+  on public.stickers for select
+  to authenticated
+  using (
+    exists (
+      select 1 from public.board_members
+      where board_id = stickers.board_id
+        and user_id = auth.uid()
+    )
+  );
+
+create policy "Board members can create stickers"
+  on public.stickers for insert
+  to authenticated
+  with check (
+    created_by = auth.uid()
+    and exists (
+      select 1 from public.board_members
+      where board_id = stickers.board_id
+        and user_id = auth.uid()
+    )
+  );
+
+create policy "Board members can update stickers"
+  on public.stickers for update
+  to authenticated
+  using (
+    exists (
+      select 1 from public.board_members
+      where board_id = stickers.board_id
+        and user_id = auth.uid()
+    )
+  );
+
+create policy "Creators can delete stickers"
+  on public.stickers for delete
+  to authenticated
+  using (created_by = auth.uid());
+
 -- ============================================================
 -- REALTIME
 -- ============================================================
--- Enable realtime in the Supabase dashboard for:
--- public.posts, public.task_items, public.reactions
--- Or run:
 -- alter publication supabase_realtime add table public.posts;
 -- alter publication supabase_realtime add table public.task_items;
 -- alter publication supabase_realtime add table public.reactions;
+-- alter publication supabase_realtime add table public.stickers;

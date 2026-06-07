@@ -3,7 +3,7 @@
 import { useRef } from 'react'
 import { Topbar } from '@/components/topbar/topbar'
 import { Whiteboard } from '@/components/board/whiteboard'
-import type { Board, BoardMemberWithProfile, PostWithRelations, Profile } from '@/lib/supabase/types'
+import type { Board, BoardMemberWithProfile, PostWithRelations, Profile, Sticker } from '@/lib/supabase/types'
 
 interface BoardViewProps {
   board: Board
@@ -12,9 +12,10 @@ interface BoardViewProps {
   currentUserId: string
   isOwner: boolean
   initialPosts: PostWithRelations[]
+  initialStickers: Sticker[]
 }
 
-export function BoardView({ board, members, currentUser, currentUserId, isOwner, initialPosts }: BoardViewProps) {
+export function BoardView({ board, members, currentUser, currentUserId, isOwner, initialPosts, initialStickers }: BoardViewProps) {
   const exportFnRef = useRef<(() => Promise<void>) | null>(null)
 
   return (
@@ -31,6 +32,7 @@ export function BoardView({ board, members, currentUser, currentUserId, isOwner,
         boardId={board.id}
         boardName={board.name}
         initialPosts={initialPosts}
+        initialStickers={initialStickers}
         currentUserId={currentUserId}
         currentProfile={currentUser}
         onExportReady={fn => { exportFnRef.current = fn }}

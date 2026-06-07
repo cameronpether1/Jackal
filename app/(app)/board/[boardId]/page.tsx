@@ -15,6 +15,7 @@ export default async function BoardPage({ params }: PageProps<'/board/[boardId]'
     { data: members },
     { data: posts },
     { data: profile },
+    { data: stickers },
   ] = await Promise.all([
     supabase.from('boards').select('*').eq('id', boardId).single(),
     supabase
@@ -33,6 +34,11 @@ export default async function BoardPage({ params }: PageProps<'/board/[boardId]'
       .eq('board_id', boardId)
       .order('created_at', { ascending: true }),
     supabase.from('profiles').select('*').eq('id', user.id).single(),
+    supabase
+      .from('stickers')
+      .select('*')
+      .eq('board_id', boardId)
+      .order('created_at', { ascending: true }),
   ])
 
   if (!membership) {
@@ -61,6 +67,7 @@ export default async function BoardPage({ params }: PageProps<'/board/[boardId]'
       currentUserId={user.id}
       isOwner={isOwner}
       initialPosts={posts ?? []}
+      initialStickers={stickers ?? []}
     />
   )
 }

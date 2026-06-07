@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useCallback, useState } from 'react'
-import { Trash2, Copy, CornerUpLeft, MapPin } from 'lucide-react'
+import { Trash2, Copy, CornerUpLeft, MapPin, Maximize2 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   ContextMenu,
@@ -26,7 +26,7 @@ interface PostCardProps {
   onTaskToggle: (taskId: string, checked: boolean) => void
   onDelete: (postId: string) => void
   onReply?: (post: PostWithRelations) => void
-  onFocusPost?: (post: PostWithRelations) => void
+  onFocusPost?: (post: PostWithRelations, rect: DOMRect) => void
 }
 
 export function PostCard({
@@ -72,12 +72,6 @@ export function PostCard({
     if (Math.abs(dx) > 3 || Math.abs(dy) > 3) onDragEnd(post.id, newX, newY)
   }, [post.id, onDragEnd])
 
-  const onDoubleClick = useCallback((e: React.MouseEvent) => {
-    const target = e.target as HTMLElement
-    if (target.closest('button') || target.closest('input') || target.closest('textarea') || target.closest('[role="checkbox"]') || target.closest('a')) return
-    onFocusPost?.(post)
-  }, [post, onFocusPost])
-
   return (
     <ContextMenu>
       <ContextMenuTrigger>
@@ -102,7 +96,6 @@ export function PostCard({
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
-          onDoubleClick={onDoubleClick}
         >
           {/* Author badge */}
           <div className="absolute -top-5 -right-5 group z-10">
@@ -220,17 +213,29 @@ export function PostCard({
               </div>
             )}
 
-            {/* Reply button */}
-            {onReply && (
-              <div className="flex justify-end mt-2">
-                <button
-                  type="button"
-                  onClick={() => onReply(post)}
-                  className="[@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/card:opacity-100 flex items-center gap-1 text-[11px] text-jk-text-faint hover:text-jk-accent transition-[opacity,color] duration-150"
-                >
-                  <CornerUpLeft className="w-3 h-3" />
-                  Reply
-                </button>
+            {/* Expand + Reply buttons */}
+            {(onFocusPost || onReply) && (
+              <div className="flex items-center justify-between mt-2">
+                {onFocusPost ? (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); onFocusPost(post, cardRef.current!.getBoundingClientRect()) }}
+                    className="[@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/card:opacity-100 flex items-center gap-1 text-[11px] text-jk-text-faint hover:text-jk-accent transition-[opacity,color] duration-150"
+                  >
+                    <Maximize2 className="w-3 h-3" />
+                    Expand
+                  </button>
+                ) : <span />}
+                {onReply && (
+                  <button
+                    type="button"
+                    onClick={() => onReply(post)}
+                    className="[@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/card:opacity-100 flex items-center gap-1 text-[11px] text-jk-text-faint hover:text-jk-accent transition-[opacity,color] duration-150"
+                  >
+                    <CornerUpLeft className="w-3 h-3" />
+                    Reply
+                  </button>
+                )}
               </div>
             )}
           </div>
