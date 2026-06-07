@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useCallback, useState, useEffect, useMemo, CSSProperties } from 'react'
+import { useRef, useCallback, useState, useEffect, useId, useMemo, CSSProperties } from 'react'
 import { Trash2 } from 'lucide-react'
 import { gsap } from 'gsap'
 import {
@@ -65,7 +65,9 @@ export function StickerPeel({
   const pointLightRef = useRef<SVGFEPointLightElement>(null)
   const pointLightFlippedRef = useRef<SVGFEPointLightElement>(null)
 
-  const uid = useMemo(() => Math.random().toString(36).slice(2, 8), [])
+  // useId() produces the same value on server and client — no hydration mismatch.
+  // Strip colons so it's safe in CSS selectors and SVG id attributes.
+  const uid = useId().replace(/:/g, '')
   const defaultPadding = 12
 
   // Drag via pointer events (same pattern as PostCard, works in scaled canvas)
