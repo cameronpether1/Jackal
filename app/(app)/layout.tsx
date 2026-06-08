@@ -11,21 +11,30 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   if (!user) redirect('/login')
 
-  const [{ data: profile }, { data: memberships }] = await Promise.all([
+  const [{ data: profile }, { data: memberships }, { data: unreadRows }] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', user.id).single(),
     supabase
       .from('board_members')
       .select('board_id, role, boards(id, name)')
       .eq('user_id', user.id)
       .order('joined_at', { ascending: true }),
+    supabase.rpc('get_board_unread_counts', { p_user_id: user.id }),
   ])
+
+  const unreadMap = new Map<string, number>(
+    (unreadRows ?? []).map((r: { board_id: string; unread_count: number }) => [r.board_id, Number(r.unread_count)])
+  )
 
   const boards = (memberships ?? [])
     .flatMap((m: { board_id: string; role: string; boards: { id: string; name: string }[] | { id: string; name: string } | null }) => {
       const b = m.boards
       if (!b) return []
       const items = Array.isArray(b) ? b : [b]
-      return items.map(board => ({ ...board, isOwner: m.role === 'owner' }))
+      return items.map(board => ({
+        ...board,
+        isOwner: m.role === 'owner',
+        unreadCount: unreadMap.get(board.id) ?? 0,
+      }))
     })
 
   const ownedBoardCount = (memberships ?? []).filter(

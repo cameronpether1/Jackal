@@ -8,8 +8,9 @@ import { PostFocusOverlay } from '@/components/board/post-focus-overlay'
 import { StickerPeel } from '@/components/board/sticker-peel'
 import { InlineCardEditor } from '@/components/board/inline-card-editor'
 import { FloatingToolbar } from '@/components/board/floating-toolbar'
+import { WhatsNewPanel } from '@/components/board/whats-new-panel'
 import { EmptyState } from '@/components/board/empty-state'
-import type { PostType, PostWithRelations, Profile, Sticker } from '@/lib/supabase/types'
+import type { BoardActivity, PostType, PostWithRelations, Profile, Sticker } from '@/lib/supabase/types'
 
 interface WhiteboardProps {
   boardId: string
@@ -19,6 +20,9 @@ interface WhiteboardProps {
   currentUserId: string
   currentProfile: Profile | null
   onExportReady?: (fn: () => Promise<void>) => void
+  prevVisitedAt?: string | null
+  newActivities?: BoardActivity[]
+  notificationThreshold?: number
 }
 
 interface DraftCard {
@@ -28,13 +32,14 @@ interface DraftCard {
   replyTo?: { postId: string; authorName: string }
 }
 
-export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, currentUserId, currentProfile, onExportReady }: WhiteboardProps) {
+export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, currentUserId, currentProfile, onExportReady, prevVisitedAt, newActivities = [], notificationThreshold = 8 }: WhiteboardProps) {
   const [posts, setPosts] = useState<PostWithRelations[]>(initialPosts)
   const [draft, setDraft] = useState<DraftCard | null>(null)
   const [focusedPost, setFocusedPost] = useState<{ post: PostWithRelations; rect: DOMRect } | null>(null)
   const [stickers, setStickers] = useState<Sticker[]>(initialStickers)
   const [zoom, setZoom] = useState(100)
   const [isExporting, setIsExporting] = useState(false)
+  const [panelOpen, setPanelOpen] = useState(false)
   const canvasRef = useRef<HTMLDivElement>(null)
   const innerRef = useRef<HTMLDivElement>(null)
   const supabase = useMemo(() => createClient(), [])
@@ -45,6 +50,29 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
   useEffect(() => { postsRef.current = posts }, [posts])
   useEffect(() => { boardNameRef.current = boardName }, [boardName])
   useEffect(() => { zoomRef.current = zoom }, [zoom])
+
+  // Derive which root post IDs have new activity
+  const newPostIds = useMemo(() => {
+    const ids = new Set<string>()
+    newActivities.forEach(a => {
+      if (a.activity_type === 'post' || a.activity_type === 'task_change') {
+        ids.add(a.post_id)
+      } else {
+        // reply — find parent post
+        const reply = posts.find(p => p.id === a.post_id)
+        ids.add(reply?.reply_to_post_id ?? a.post_id)
+      }
+    })
+    return ids
+  }, [newActivities, posts])
+
+  // Auto-open the "What's new" panel when there are more new items than the threshold
+  useEffect(() => {
+    if (newActivities.length > notificationThreshold) {
+      setPanelOpen(true)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const rootPosts = useMemo(() => posts.filter(p => !p.reply_to_post_id), [posts])
 
@@ -424,6 +452,23 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
     setFocusedPost({ post, rect })
   }, [])
 
+  const handleJumpToPost = useCallback((postId: string) => {
+    setPanelOpen(false)
+    setTimeout(() => {
+      const inner = innerRef.current
+      const container = canvasRef.current
+      if (!inner || !container) return
+      const el = inner.querySelector<HTMLElement>(`#post-${postId}`)
+      if (!el) return
+      const scale = zoomRef.current / 100
+      container.scrollTo({
+        left: (el.offsetLeft + el.offsetWidth / 2) * scale - container.clientWidth / 2,
+        top: (el.offsetTop + el.offsetHeight / 2) * scale - container.clientHeight / 2,
+        behavior: 'smooth',
+      })
+    }, 280)
+  }, [])
+
   const handleAddSticker = useCallback(async (imageSrc: string) => {
     const el = canvasRef.current
     const scrollX = el?.scrollLeft ?? 0
@@ -484,6 +529,7 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
             post={post}
             currentUserId={currentUserId}
             replies={repliesByParentId.get(post.id) ?? []}
+            isNew={newPostIds.has(post.id)}
             onDragEnd={handleDragEnd}
             onTaskToggle={handleTaskToggle}
             onDelete={handleDeletePost}
@@ -527,6 +573,16 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
         zoom={zoom}
         onZoomChange={setZoom}
         onFitAll={handleFitAll}
+        notificationCount={newActivities.length}
+        onOpenNotifications={() => setPanelOpen(true)}
+      />
+
+      <WhatsNewPanel
+        open={panelOpen}
+        activities={newActivities}
+        prevVisitedAt={prevVisitedAt ?? null}
+        onClose={() => setPanelOpen(false)}
+        onJumpToPost={handleJumpToPost}
       />
 
 

@@ -1,13 +1,16 @@
 'use client'
 
-import { useState } from 'react'
-import { Send, Zap } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Send, Zap, UserMinus } from 'lucide-react'
 import { toast } from 'sonner'
+import { useRouter } from 'next/navigation'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -30,10 +33,17 @@ export function InvitePanel({ open, onOpenChange, board, members, currentUser, i
   const [email, setEmail] = useState('')
   const [sending, setSending] = useState(false)
   const [showUpgrade, setShowUpgrade] = useState(false)
+  const [localMembers, setLocalMembers] = useState(members)
+  const [confirmRemove, setConfirmRemove] = useState<BoardMemberWithProfile | null>(null)
+  const [removing, setRemoving] = useState(false)
+  const router = useRouter()
+
+  // Keep local list in sync when server data updates (e.g. after router.refresh)
+  useEffect(() => { setLocalMembers(members) }, [members])
 
   const plan = currentUser?.plan ?? 'free'
   const limits = getPlanLimits(plan)
-  const atMemberLimit = members.length >= limits.membersPerBoard
+  const atMemberLimit = localMembers.length >= limits.membersPerBoard
 
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault()
@@ -58,51 +68,89 @@ export function InvitePanel({ open, onOpenChange, board, members, currentUser, i
     }
   }
 
+  async function handleConfirmRemove() {
+    if (!confirmRemove) return
+    setRemoving(true)
+    try {
+      const res = await fetch(`/api/board-members/${confirmRemove.id}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error ?? 'Failed to remove member')
+      }
+      setLocalMembers(prev => prev.filter(m => m.id !== confirmRemove.id))
+      toast.success(`${confirmRemove.profile?.display_name ?? 'Member'} removed`)
+      setConfirmRemove(null)
+      router.refresh()
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to remove member')
+    } finally {
+      setRemoving(false)
+    }
+  }
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-md flex flex-col max-h-[85vh]">
+          <DialogHeader className="shrink-0">
             <DialogTitle>Members — {board.name}</DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-1 mt-2">
-            {members.map(member => {
-              const p = member.profile
-              const color = getAvatarColor(p?.id ?? '')
-              const isMe = p?.id === currentUser?.id
-              return (
-                <div key={member.id} className="flex items-center gap-3 py-2">
-                  <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium shrink-0 overflow-hidden"
-                    style={{ backgroundColor: color }}
-                  >
-                    {p?.avatar_url
-                      ? <img src={p.avatar_url} alt="" className="w-full h-full object-cover" />
-                      : p?.display_name?.[0]?.toUpperCase() ?? '?'}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-jk-text truncate">
-                      {p?.display_name ?? 'Unknown'}
-                      {isMe && <span className="text-jk-text-faint font-normal"> (you)</span>}
+          {/* Scrollable member list */}
+          <div className="overflow-y-auto flex-1 -mx-1 px-1">
+            <div className="space-y-0.5">
+              {localMembers.map(member => {
+                const p = member.profile
+                const color = getAvatarColor(p?.id ?? '')
+                const isMe = p?.id === currentUser?.id
+                const canRemove = isOwner && !isMe && member.role !== 'owner'
+                return (
+                  <div key={member.id} className="flex items-center gap-3 py-2 rounded-lg">
+                    <div
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium shrink-0 overflow-hidden"
+                      style={{ backgroundColor: color }}
+                    >
+                      {p?.avatar_url
+                        ? <img src={p.avatar_url} alt="" className="w-full h-full object-cover" />
+                        : p?.display_name?.[0]?.toUpperCase() ?? '?'}
                     </div>
-                    <div className="text-xs text-jk-text-muted truncate">{p?.username}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-jk-text truncate">
+                        {p?.display_name ?? 'Unknown'}
+                        {isMe && <span className="text-jk-text-faint font-normal"> (you)</span>}
+                      </div>
+                      <div className="text-xs text-jk-text-muted truncate">{p?.username}</div>
+                    </div>
+                    <Badge variant="outline" className="text-xs capitalize shrink-0">
+                      {member.role}
+                    </Badge>
+                    {canRemove ? (
+                      <button
+                        type="button"
+                        onClick={() => setConfirmRemove(member)}
+                        className="p-1.5 rounded-md text-jk-text-faint hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
+                        title={`Remove ${p?.display_name ?? 'member'}`}
+                      >
+                        <UserMinus className="w-3.5 h-3.5" />
+                      </button>
+                    ) : (
+                      // Spacer so rows without a button stay aligned
+                      <div className="w-7 shrink-0" />
+                    )}
                   </div>
-                  <Badge variant="outline" className="text-xs capitalize shrink-0">
-                    {member.role}
-                  </Badge>
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
           </div>
 
+          {/* Invite section — always visible, pinned to bottom */}
           {isOwner && (
-            <div className="space-y-2 pt-3 border-t border-border">
+            <div className="space-y-2 pt-3 border-t border-border shrink-0">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-medium text-jk-text">Invite by email</p>
                 {plan === 'free' && (
                   <span className="text-xs text-jk-text-faint">
-                    {members.length}/{limits.membersPerBoard} members
+                    {localMembers.length}/{limits.membersPerBoard} members
                   </span>
                 )}
               </div>
@@ -136,6 +184,27 @@ export function InvitePanel({ open, onOpenChange, board, members, currentUser, i
               )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Remove confirmation */}
+      <Dialog open={!!confirmRemove} onOpenChange={open => { if (!open) setConfirmRemove(null) }}>
+        <DialogContent showCloseButton={false} className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Remove member?</DialogTitle>
+            <DialogDescription>
+              <strong>{confirmRemove?.profile?.display_name ?? 'This member'}</strong> will lose access to{' '}
+              <strong>{board.name}</strong>. Their posts will remain on the board.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmRemove(null)} disabled={removing}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmRemove} disabled={removing}>
+              {removing ? 'Removing…' : 'Remove'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

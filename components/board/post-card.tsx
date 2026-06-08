@@ -22,6 +22,7 @@ interface PostCardProps {
   post: PostWithRelations
   currentUserId: string
   replies?: PostWithRelations[]
+  isNew?: boolean
   onDragEnd: (postId: string, x: number, y: number) => void
   onTaskToggle: (taskId: string, checked: boolean) => void
   onDelete: (postId: string) => void
@@ -30,7 +31,7 @@ interface PostCardProps {
 }
 
 export function PostCard({
-  post, currentUserId, replies = [],
+  post, currentUserId, replies = [], isNew,
   onDragEnd, onTaskToggle, onDelete, onReply, onFocusPost,
 }: PostCardProps) {
   const [pos, setPos] = useState({ x: post.pos_x, y: post.pos_y })
@@ -81,7 +82,7 @@ export function PostCard({
           className={cn(
             'absolute w-72 rounded-3xl select-none overflow-visible group/card border',
             `post-type-${post.type}`,
-            'shadow-[0_4px_24px_rgba(0,0,0,0.09)]',
+            isNew && !isDragging ? 'post-is-new' : 'shadow-[0_4px_24px_rgba(0,0,0,0.09)]',
             isDragging
               ? 'cursor-grabbing shadow-[0_16px_48px_rgba(0,0,0,0.18)] z-50'
               : 'cursor-grab hover:shadow-[0_8px_32px_rgba(0,0,0,0.14)]',
@@ -105,7 +106,10 @@ export function PostCard({
               </span>
             </div>
             <div
-              className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold ring-[3px] ring-white overflow-hidden shadow-md cursor-default"
+              className={cn(
+                'w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold overflow-hidden cursor-default',
+                isNew ? 'avatar-is-new' : 'ring-[3px] ring-white shadow-md',
+              )}
               style={{ backgroundColor: authorColor }}
             >
               {author?.avatar_url
