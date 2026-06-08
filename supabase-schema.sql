@@ -20,6 +20,7 @@ create table public.boards (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   owner_id uuid references public.profiles(id) on delete cascade,
+  notification_threshold integer not null default 8,
   created_at timestamptz default now()
 );
 
@@ -56,8 +57,13 @@ create table public.task_items (
   label text not null,
   checked boolean default false,
   position integer default 0,
-  created_at timestamptz default now()
+  created_at timestamptz default now(),
+  updated_at timestamptz default now() not null
 );
+
+create trigger task_items_updated_at
+  before update on public.task_items
+  for each row execute function public.set_updated_at();
 
 -- Reactions (emoji reactions on posts)
 create table public.reactions (
@@ -347,6 +353,46 @@ create policy "Creators can delete stickers"
   on public.stickers for delete
   to authenticated
   using (created_by = auth.uid());
+
+-- ============================================================
+-- BOARD VISITS (unread tracking)
+-- ============================================================
+create table public.board_visits (
+  user_id  uuid references public.profiles(id) on delete cascade not null,
+  board_id uuid references public.boards(id)   on delete cascade not null,
+  last_visited_at timestamptz not null default now(),
+  primary key (user_id, board_id)
+);
+
+alter table public.board_visits enable row level security;
+
+create policy "Users can manage their own visits"
+  on public.board_visits for all
+  to authenticated
+  using  (user_id = auth.uid())
+  with check (user_id = auth.uid());
+
+-- ============================================================
+-- NOTIFICATION RPCs
+-- ============================================================
+create or replace function public.set_updated_at()
+returns trigger language plpgsql as $$
+begin new.updated_at = now(); return new; end;
+$$;
+
+create or replace function public.get_board_unread_counts(p_user_id uuid)
+returns table (board_id uuid, unread_count bigint)
+language sql security definer set search_path = public as $$
+  select bm.board_id, count(p.id) as unread_count
+  from board_members bm
+  left join board_visits bv on bv.board_id = bm.board_id and bv.user_id = p_user_id
+  left join posts p
+    on  p.board_id   = bm.board_id
+    and p.author_id != p_user_id
+    and p.created_at > coalesce(bv.last_visited_at, '2000-01-01 00:00:00+00'::timestamptz)
+  where bm.user_id = p_user_id
+  group by bm.board_id
+$$;
 
 -- ============================================================
 -- REALTIME

@@ -1,6 +1,6 @@
 'use client'
 
-import { MousePointer2, Hand, Plus, Minus, Maximize2, Sparkles } from 'lucide-react'
+import { MousePointer2, Hand, Plus, Minus, Maximize2, Sparkles, Bell } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, MotionConfig } from 'motion/react'
 import { cn } from '@/lib/utils'
@@ -11,6 +11,8 @@ interface FloatingToolbarProps {
   zoom: number
   onZoomChange: (z: number) => void
   onFitAll: () => void
+  notificationCount?: number
+  onOpenNotifications?: () => void
 }
 
 type Tool = 'select' | 'pan'
@@ -24,7 +26,7 @@ const ITEM_SPRING = { type: 'spring' as const, stiffness: 440, damping: 18 }
 const BTN_SPRING  = { type: 'spring' as const, stiffness: 500, damping: 24 }
 const ICON_SPRING = { type: 'spring' as const, stiffness: 380, damping: 22 }
 
-export function FloatingToolbar({ onNewPost, onAddSticker, zoom, onZoomChange, onFitAll }: FloatingToolbarProps) {
+export function FloatingToolbar({ onNewPost, onAddSticker, zoom, onZoomChange, onFitAll, notificationCount, onOpenNotifications }: FloatingToolbarProps) {
   const [activeTool, setActiveTool] = useState<Tool>('select')
   const [pickerOpen, setPickerOpen] = useState(false)
   const [stickerSrcs, setStickerSrcs] = useState<string[]>([])
@@ -191,6 +193,25 @@ export function FloatingToolbar({ onNewPost, onAddSticker, zoom, onZoomChange, o
                   <Sparkles className="w-4 h-4" />
                 </motion.div>
               </motion.button>
+
+              {/* Notification bell — only shown when there are new activities */}
+              {!!notificationCount && notificationCount > 0 && (
+                <>
+                  <div className="w-px h-4 bg-white/[0.1] mx-1" />
+                  <motion.button
+                    onClick={onOpenNotifications}
+                    whileTap={{ scale: 0.88 }}
+                    transition={BTN_SPRING}
+                    className="relative flex items-center justify-center w-9 h-9 rounded-[12px] transition-colors duration-150 text-white/40 hover:text-white/70 hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                    title="What's new"
+                  >
+                    <Bell className="w-4 h-4" />
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[15px] h-[15px] px-0.5 rounded-full bg-red-500 text-white text-[8.5px] font-bold flex items-center justify-center leading-none">
+                      {notificationCount > 99 ? '99+' : notificationCount}
+                    </span>
+                  </motion.button>
+                </>
+              )}
 
               <div className="w-1.5" />
 
