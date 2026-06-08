@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Users, Share2, Download } from 'lucide-react'
+import { UserPlus, Share2, Download } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { InvitePanel } from '@/components/topbar/invite-panel'
 import { MemberAvatarStack } from '@/components/topbar/member-avatar-stack'
@@ -37,48 +37,55 @@ export function Topbar({ board, members, currentUser, currentUserId, isOwner, on
 
   return (
     <>
-      <header className="flex items-center justify-between pr-3 pl-14 h-12 sm:h-14 bg-jk-surface border-b border-jk-border shrink-0 z-10">
-        <div className="hidden sm:flex items-center gap-3 min-w-0">
-          <MemberAvatarStack members={members} currentUserId={currentUserId} />
-          <span className="text-jk-text-muted text-sm">
-            {members.length} {members.length === 1 ? 'member' : 'members'}
-          </span>
+      <header className="flex items-center pl-14 pr-3 h-12 bg-jk-surface border-b border-jk-border shrink-0 z-10 relative">
+        {/* Left: member avatars (clickable to open members/invite panel) */}
+        <div className="hidden sm:flex items-center">
+          <button
+            onClick={() => setInviteOpen(true)}
+            aria-label="View members"
+            className="flex items-center gap-2 group"
+          >
+            <MemberAvatarStack members={members} currentUserId={currentUserId} />
+            <span className="text-[11px] text-jk-text-faint tabular-nums group-hover:text-jk-text-muted transition-colors">
+              {members.length}
+            </span>
+          </button>
         </div>
 
-        <h1 className="text-sm font-semibold text-jk-text absolute left-1/2 -translate-x-1/2 truncate max-w-[160px] sm:max-w-xs">
+        {/* Center: board title */}
+        <h1 className="absolute left-1/2 -translate-x-1/2 text-sm font-semibold text-jk-text truncate max-w-[160px] sm:max-w-[240px] pointer-events-none">
           {board.name}
         </h1>
 
-        <div className="flex items-center gap-1.5 sm:gap-2">
+        {/* Right: secondary actions + primary CTA */}
+        <div className="flex items-center gap-0.5 ml-auto">
           {isOwner && (
             <Button
-              size="sm"
-              variant="outline"
-              className="gap-1.5 text-sm"
+              size="icon-sm"
+              variant="ghost"
               onClick={handleShare}
               title={isPro ? 'Share board' : 'Upgrade to share'}
+              className="text-jk-text-muted"
             >
-              <Share2 className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Share</span>
+              <Share2 />
             </Button>
           )}
           <Button
-            size="sm"
-            variant="outline"
-            className="gap-1.5 text-sm"
+            size="icon-sm"
+            variant="ghost"
             onClick={handleExport}
             title={isPro ? 'Export as image' : 'Upgrade to export'}
+            className="text-jk-text-muted"
           >
-            <Download className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Export</span>
+            <Download />
           </Button>
+          <div className="w-px h-4 bg-jk-border mx-1.5" />
           <Button
             size="sm"
-            variant="outline"
-            className="gap-1.5 text-sm"
+            className="bg-jk-accent hover:bg-sky-400 text-white gap-1.5 text-xs font-medium"
             onClick={() => setInviteOpen(true)}
           >
-            <Users className="w-3.5 h-3.5" />
+            <UserPlus className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Invite</span>
           </Button>
         </div>
