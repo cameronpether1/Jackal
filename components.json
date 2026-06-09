@@ -22,6 +22,7 @@
     "hooks": "@/hooks"
   },
   "registries": {
-    "@smoothui": "https://smoothui.dev/r/{name}.json"
+    "@smoothui": "https://smoothui.dev/r/{name}.json",
+    "@glasscn": "https://glasscn-components.vercel.app/r/{name}.json"
   }
 }
