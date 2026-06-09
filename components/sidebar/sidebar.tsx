@@ -11,6 +11,7 @@ import { createClient } from '@/lib/supabase/client'
 import { getAvatarColor } from '@/lib/avatar-color'
 import { cn } from '@/lib/utils'
 import { getPlanLimits } from '@/lib/plans'
+import { LiquidGlass } from '@/components/ui/glasscn/liquid-glass'
 import { CreateBoardModal } from '@/components/sidebar/create-board-modal'
 import { ProfileModal } from '@/components/profile/profile-modal'
 import { UpgradeModal } from '@/components/upgrade/upgrade-modal'
@@ -29,6 +30,23 @@ const BOARD_COLORS = [
   'bg-sky-400', 'bg-pink-400', 'bg-blue-400',
   'bg-green-400', 'bg-purple-400', 'bg-yellow-400',
 ]
+
+// Shared glass button style — applied to both <button> and <Link> elements
+const glassItem = [
+  'flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-all duration-150',
+  'border border-transparent',
+  'hover:border-white/45 hover:bg-white/30',
+].join(' ')
+
+const glassItemActive = 'border-white/45 bg-white/40 shadow-[0_8px_24px_rgba(255,255,255,0.18)]'
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="px-3 mb-1.5 text-[10px] font-semibold text-[#1a1917]/40 dark:text-white/40 uppercase tracking-widest select-none">
+      {children}
+    </p>
+  )
+}
 
 interface SidebarProps {
   boards: { id: string; name: string; isOwner: boolean; unreadCount: number }[]
@@ -66,11 +84,8 @@ export function Sidebar({ boards, ownedBoardCount }: SidebarProps) {
   }
 
   function handleNewBoard() {
-    if (atBoardLimit) {
-      setShowUpgrade(true)
-    } else {
-      setShowCreate(true)
-    }
+    if (atBoardLimit) setShowUpgrade(true)
+    else setShowCreate(true)
   }
 
   async function handleDeleteBoard() {
@@ -92,7 +107,7 @@ export function Sidebar({ boards, ownedBoardCount }: SidebarProps) {
   return (
     <>
       <Sheet>
-        {/* Trigger: logo button, visually part of the topbar's left edge */}
+        {/* Trigger: logo button in top-left */}
         <SheetTrigger
           className="fixed top-0 left-0 z-20 h-12 w-14 flex items-center justify-center bg-jk-surface border-b border-r border-jk-border hover:bg-jk-surface-offset transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-jk-accent/50"
           aria-label="Open menu"
@@ -100,146 +115,162 @@ export function Sidebar({ boards, ownedBoardCount }: SidebarProps) {
           <img src="/logo.png" alt="Jackal" className="w-6 h-6 rounded-[7px] object-cover" />
         </SheetTrigger>
 
-        {/* Sidebar: always dark regardless of app theme */}
         <SheetContent
           side="left"
           showCloseButton={false}
-          className="p-0 gap-0 bg-[#1c1b19] border-r border-white/10 flex flex-col"
-          style={{ width: '14rem' }}
+          className="p-3 gap-0 flex flex-col bg-transparent !border-0 !shadow-none"
+          style={{ width: 'calc(16rem + 1.5rem)' }}
         >
-          {/* Header */}
-          <Link
-            href="/"
-            className="flex items-center gap-2.5 px-4 py-4 border-b border-white/[0.08] hover:opacity-75 transition-opacity shrink-0"
-          >
-            <img src="/logo.png" alt="Jackal" className="w-7 h-7 rounded-lg object-cover shrink-0" />
-            <span className="font-semibold text-sm text-white">Jackal</span>
-          </Link>
+          <LiquidGlass className="flex-1 flex flex-col rounded-[1.75rem]">
+            {/* App header */}
+            <Link
+              href="/"
+              className="flex items-center gap-2.5 px-4 py-4 border-b border-white/20 dark:border-white/10 hover:opacity-75 transition-opacity shrink-0"
+            >
+              <img src="/logo.png" alt="Jackal" className="w-7 h-7 rounded-lg object-cover shrink-0" />
+              <span className="font-semibold text-sm text-[#1a1917] dark:text-white">Jackal</span>
+            </Link>
 
-          {/* Board list */}
-          <nav className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5 min-h-0">
-            {boards.map((board, i) => {
-              const isActive = pathname === `/board/${board.id}`
-              const color = BOARD_COLORS[i % BOARD_COLORS.length]
-              return (
-                <div key={board.id} className="group/row relative flex items-center">
-                  <Link
-                    href={`/board/${board.id}`}
+            {/* Scrollable body */}
+            <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6 min-h-0">
+
+              {/* ── Boards ── */}
+              <section>
+                <SectionLabel>Boards</SectionLabel>
+                <div className="space-y-0.5">
+                  {boards.map((board, i) => {
+                    const isActive = pathname === `/board/${board.id}`
+                    const color = BOARD_COLORS[i % BOARD_COLORS.length]
+                    return (
+                      <div key={board.id} className="group/row relative">
+                        <Link
+                          href={`/board/${board.id}`}
+                          className={cn(
+                            glassItem,
+                            'w-full pr-8 text-[#1a1917] dark:text-white',
+                            isActive && glassItemActive,
+                          )}
+                        >
+                          <span className={cn('w-2 h-2 rounded-full shrink-0', color)} />
+                          <span className="truncate flex-1 min-w-0">{board.name}</span>
+                          {board.unreadCount > 0 && !isActive && (
+                            <span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none">
+                              {board.unreadCount > 99 ? '99+' : board.unreadCount}
+                            </span>
+                          )}
+                        </Link>
+                        {board.isOwner && (
+                          <button
+                            type="button"
+                            onClick={() => setDeleteBoard({ id: board.id, name: board.name })}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover/row:opacity-100 transition-opacity p-1 rounded text-[#1a1917]/25 hover:text-red-500 dark:text-white/25 dark:hover:text-red-400"
+                            title="Delete board"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
+                    )
+                  })}
+
+                  {/* New board / upgrade */}
+                  <button
+                    type="button"
+                    onClick={handleNewBoard}
                     className={cn(
-                      'flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-sm transition-colors flex-1 min-w-0 pr-7',
-                      isActive
-                        ? 'bg-white/12 text-white'
-                        : 'text-white/55 hover:bg-white/8 hover:text-white/85'
+                      glassItem,
+                      'w-full',
+                      atBoardLimit
+                        ? 'text-sky-600 dark:text-sky-400'
+                        : 'text-[#1a1917]/45 dark:text-white/40',
                     )}
                   >
-                    <span className={cn('w-2 h-2 rounded-full shrink-0', color)} />
-                    <span className="truncate flex-1 min-w-0">{board.name}</span>
-                    {board.unreadCount > 0 && !isActive && (
-                      <span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none">
-                        {board.unreadCount > 99 ? '99+' : board.unreadCount}
-                      </span>
-                    )}
-                  </Link>
-                  {board.isOwner && (
+                    {atBoardLimit
+                      ? <Zap className="w-3.5 h-3.5 shrink-0" />
+                      : <Plus className="w-3.5 h-3.5 shrink-0" />}
+                    <span>{atBoardLimit ? 'Upgrade for more' : 'New board'}</span>
+                  </button>
+                </div>
+              </section>
+
+              {/* ── Account ── */}
+              <section>
+                <SectionLabel>Account</SectionLabel>
+                <div className="space-y-0.5">
+
+                  {/* Profile */}
+                  {profile && (
                     <button
                       type="button"
-                      onClick={() => setDeleteBoard({ id: board.id, name: board.name })}
-                      className="absolute right-1 opacity-0 group-hover/row:opacity-100 transition-opacity p-1 rounded text-white/25 hover:text-red-400 focus-visible:opacity-100"
-                      title="Delete board"
+                      onClick={() => setShowProfile(true)}
+                      className={cn(glassItem, 'w-full text-[#1a1917] dark:text-white')}
                     >
-                      <Trash2 className="w-3 h-3" />
+                      <div
+                        className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[10px] font-bold overflow-hidden shrink-0"
+                        style={{ backgroundColor: avatarColor }}
+                      >
+                        {profile.avatar_url
+                          ? <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                          : initials}
+                      </div>
+                      <span className="truncate">{profile.display_name}</span>
                     </button>
                   )}
-                </div>
-              )
-            })}
 
-            {/* New board */}
-            <button
-              onClick={handleNewBoard}
-              className={cn(
-                'flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-sm transition-colors w-full mt-0.5',
-                atBoardLimit
-                  ? 'text-sky-400 hover:bg-white/8'
-                  : 'text-white/30 hover:text-white/55 hover:bg-white/6'
-              )}
-            >
-              {atBoardLimit
-                ? <Zap className="w-3.5 h-3.5 shrink-0" />
-                : <Plus className="w-3.5 h-3.5 shrink-0" />
-              }
-              <span>{atBoardLimit ? 'Upgrade for more' : 'New board'}</span>
-            </button>
-          </nav>
-
-          {/* Footer */}
-          <div className="border-t border-white/[0.08] px-3 py-3 space-y-1 shrink-0">
-            {/* Upgrade prompt — free plan only */}
-            {plan === 'free' && (
-              <button
-                onClick={() => setShowUpgrade(true)}
-                className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-sm text-sky-400 hover:bg-white/8 transition-colors w-full"
-              >
-                <Zap className="w-3.5 h-3.5 shrink-0" />
-                <div className="text-left min-w-0">
-                  <div className="font-medium text-xs leading-tight">Upgrade to Pro</div>
-                  <div className="text-[10px] text-white/30 leading-tight tabular-nums">
-                    {ownedBoardCount}/{limits.boards} boards
-                  </div>
-                </div>
-              </button>
-            )}
-
-            {/* User row: avatar + name + icon actions */}
-            {profile && (
-              <div className="flex items-center gap-2 px-2 py-1.5">
-                <button
-                  onClick={() => setShowProfile(true)}
-                  className="flex items-center gap-2 flex-1 min-w-0 hover:opacity-75 transition-opacity"
-                  title="Edit profile"
-                >
-                  <div
-                    className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium shrink-0 overflow-hidden ring-1 ring-white/20"
-                    style={{ backgroundColor: avatarColor }}
+                  {/* Theme toggle */}
+                  <button
+                    type="button"
+                    onClick={() => setTheme(isDark ? 'light' : 'dark')}
+                    className={cn(glassItem, 'w-full text-[#1a1917] dark:text-white')}
                   >
-                    {profile.avatar_url
-                      ? <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
-                      : initials}
-                  </div>
-                  <span className="text-xs truncate text-white/50">
-                    {profile.display_name}
-                  </span>
-                </button>
+                    {isDark
+                      ? <Sun className="w-4 h-4 shrink-0" />
+                      : <Moon className="w-4 h-4 shrink-0" />}
+                    <span>{isDark ? 'Light mode' : 'Dark mode'}</span>
+                  </button>
 
-                {/* Icon actions */}
-                <div className="flex items-center shrink-0">
+                  {/* Billing — pro only */}
                   {plan === 'pro' && (
                     <button
+                      type="button"
                       onClick={handleManageBilling}
-                      className="p-1.5 rounded text-white/25 hover:text-white/55 transition-colors"
-                      title="Manage billing"
+                      className={cn(glassItem, 'w-full text-[#1a1917] dark:text-white')}
                     >
-                      <CreditCard className="w-3.5 h-3.5" />
+                      <CreditCard className="w-4 h-4 shrink-0" />
+                      <span>Manage billing</span>
                     </button>
                   )}
+
+                  {/* Upgrade — free plan */}
+                  {plan === 'free' && (
+                    <button
+                      type="button"
+                      onClick={() => setShowUpgrade(true)}
+                      className={cn(glassItem, 'w-full')}
+                    >
+                      <Zap className="w-4 h-4 shrink-0 text-sky-500" />
+                      <div className="text-left">
+                        <div className="text-xs font-medium text-sky-600 dark:text-sky-400 leading-tight">Upgrade to Pro</div>
+                        <div className="text-[10px] text-[#1a1917]/40 dark:text-white/30 leading-tight tabular-nums">
+                          {ownedBoardCount}/{limits.boards} boards
+                        </div>
+                      </div>
+                    </button>
+                  )}
+
+                  {/* Sign out */}
                   <button
-                    onClick={() => setTheme(isDark ? 'light' : 'dark')}
-                    className="p-1.5 rounded text-white/25 hover:text-white/55 transition-colors"
-                    title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-                  >
-                    {isDark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
-                  </button>
-                  <button
+                    type="button"
                     onClick={handleSignOut}
-                    className="p-1.5 rounded text-white/25 hover:text-white/55 transition-colors"
-                    title="Sign out"
+                    className={cn(glassItem, 'w-full text-[#1a1917] dark:text-white')}
                   >
-                    <LogOut className="w-3.5 h-3.5" />
+                    <LogOut className="w-4 h-4 shrink-0" />
+                    <span>Sign out</span>
                   </button>
                 </div>
-              </div>
-            )}
-          </div>
+              </section>
+            </div>
+          </LiquidGlass>
         </SheetContent>
       </Sheet>
 
