@@ -4,9 +4,8 @@ import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from "@repo/shadcn-ui/components/ui/avatar";
-import { cn } from "@repo/shadcn-ui/lib/utils";
-import { getImageKitUrl } from "@smoothui/data";
+} from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { useClickOutside } from "./use-click-outside";
@@ -46,15 +45,7 @@ export interface FigmaCommentProps {
 }
 
 export default function FigmaComment({
-  avatarUrl = getImageKitUrl(
-    "https://ik.imagekit.io/16u211libb/avatar-educalvolpz.jpeg?updatedAt=1765524159631",
-    {
-      width: 48,
-      height: 48,
-      quality: 85,
-      format: "auto",
-    }
-  ),
+  avatarUrl = "https://ik.imagekit.io/16u211libb/avatar-educalvolpz.jpeg?updatedAt=1765524159631",
   avatarAlt = "Avatar",
   className,
   authorName = "Edu Calvo",
