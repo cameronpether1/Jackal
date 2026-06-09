@@ -74,6 +74,14 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Auto-fit all posts into view on initial load
+  useEffect(() => {
+    if (initialPosts.filter(p => !p.reply_to_post_id).length === 0) return
+    const id = setTimeout(handleFitAll, 150)
+    return () => clearTimeout(id)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const rootPosts = useMemo(() => posts.filter(p => !p.reply_to_post_id), [posts])
 
   const repliesByParentId = useMemo(() => {
