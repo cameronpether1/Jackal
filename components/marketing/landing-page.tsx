@@ -7,7 +7,6 @@ import {
 } from 'lucide-react'
 import { MorphingText } from '@/components/magicui/morphing-text'
 import { BentoGrid, BentoCard } from '@/components/ui/bento-grid'
-import { LightRays } from '@/components/ui/light-rays'
 import { createClient } from '@/lib/supabase/client'
 import { getAvatarColor } from '@/lib/avatar-color'
 import type { Profile } from '@/lib/supabase/types'
@@ -157,6 +156,7 @@ const FEATURES = [
   },
 ]
 
+
 export function LandingPage() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [authChecked, setAuthChecked] = useState(false)
@@ -179,33 +179,25 @@ export function LandingPage() {
   return (
     <div className="min-h-screen bg-[var(--jk-bg)] text-[var(--jk-text)] antialiased">
 
-      {/* ── Hero area with light-ray wash ── */}
-      <div className="relative overflow-hidden bg-linear-to-b from-sky-50/70 via-sky-50/25 to-[var(--jk-bg)]">
-        <LightRays
-          color="rgba(14, 165, 233, 0.28)"
-          count={9}
-          speed={16}
-          blur={40}
-          length="80vh"
-        />
+      {/* ── Hero ── */}
+      <div
+        className="relative overflow-hidden min-h-screen pb-16"
+        style={{ background: 'linear-gradient(180deg, #2C353D 21.63%, #8F6E6F 100%)' }}
+      >
 
         {/* ── Floating dark navbar ── */}
         <div className="relative z-50 sticky top-0 flex justify-center pt-4 px-4">
           <nav className="flex items-center gap-6 bg-[#0c1a2e] text-white rounded-full px-5 py-2.5 shadow-[0_4px_24px_rgba(0,0,0,0.30)]">
-            {/* Logo */}
             <Link href="/" className="flex items-center gap-2 mr-2">
               <img src="/logo.png" alt="Jackal" className="w-6 h-6 rounded-md object-cover shrink-0" />
               <span className="font-semibold text-sm">Jackal</span>
             </Link>
-
-            {/* Links */}
             <Link href="#features" className="text-sm text-white/60 hover:text-white transition-colors hidden sm:block">
               Features
             </Link>
             <Link href="#features" className="text-sm text-white/60 hover:text-white transition-colors hidden sm:block">
               Pricing
             </Link>
-
             <div className="flex items-center gap-2 ml-2">
               {authChecked && profile ? (
                 <Link
@@ -238,94 +230,59 @@ export function LandingPage() {
           </nav>
         </div>
 
-        {/* ── Hero ── */}
-        <section className="relative z-10 flex flex-col items-center text-center px-4 pt-20 pb-16">
-          <div className="inline-flex items-center gap-2 bg-sky-100/80 border border-sky-200 rounded-full px-4 py-1.5 mb-8 backdrop-blur-sm">
-            <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />
-            <span className="text-sm text-sky-700 font-medium">Now in open beta</span>
+        {/* ── Hero text ── */}
+        <section className="relative z-10 flex flex-col items-center text-center px-4 pt-14 pb-10">
+          <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 mb-8 backdrop-blur-sm">
+            <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
+            <span className="text-sm text-white/80 font-medium">Now in open beta</span>
           </div>
 
-          <MorphingText texts={HERO_WORDS} className="text-[#0ea5e9]" />
+          <MorphingText texts={HERO_WORDS} className="text-white" />
 
-          <p className="mt-6 text-lg text-[var(--jk-text-muted)] max-w-lg leading-relaxed">
+          <p className="mt-6 text-lg text-white/55 max-w-lg leading-relaxed [text-wrap:balance]">
             Visual boards, task tracking, and real-time collaboration,
             all in one place. No setup. Just start.
           </p>
 
-          <div className="mt-8 flex flex-col sm:flex-row items-center gap-3">
+          <div className="mt-8">
             <Link
               href="/login"
-              className="rounded-full bg-[#0ea5e9] text-white px-7 py-3 text-sm font-medium hover:bg-sky-400 transition-colors shadow-sm"
+              className="rounded-full bg-white text-[#1a1917] px-8 py-3.5 text-sm font-semibold hover:bg-white/90 transition-colors shadow-lg"
             >
-              Get started for free
-            </Link>
-            <Link
-              href="/login"
-              className="rounded-full border border-sky-200 px-7 py-3 text-sm font-medium text-sky-700 hover:bg-sky-50 transition-colors"
-            >
-              Log in
+              Get started free
             </Link>
           </div>
         </section>
 
-        {/* ── Board preview / hero visual (inside ambient area so light fades into it) ── */}
-        <section className="relative z-10 px-4 sm:px-8 max-w-5xl mx-auto pb-24">
-        <div className="w-full aspect-[16/7] rounded-2xl overflow-hidden border border-sky-100 shadow-[0_8px_48px_rgba(14,165,233,0.10)] bg-[#f0f8ff]">
-          {/* Dot-grid canvas preview */}
-          <div className="w-full h-full relative"
+        {/* ── Hero image placeholder ── */}
+        {/* Replace this div with an <img> or <Image> when ready */}
+        <div className="relative z-10 px-4 sm:px-6 max-w-5xl mx-auto">
+          <div
+            className="w-full rounded-t-2xl"
             style={{
-              backgroundImage: 'radial-gradient(circle, rgba(14,165,233,0.12) 1px, transparent 1px)',
-              backgroundSize: '24px 24px',
+              height: '504px',
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px dashed rgba(255,255,255,0.15)',
             }}
-          >
-            {/* Simulated post cards */}
-            {[
-              { x: '8%',  y: '12%', w: '22%', h: '44%', label: 'Q3 goals',     type: 'note',     rotate: '-1.5deg' },
-              { x: '32%', y: '8%',  w: '24%', h: '52%', label: 'Ship it 🚀',   type: 'task',     rotate: '1deg'    },
-              { x: '58%', y: '14%', w: '22%', h: '40%', label: 'Design notes',  type: 'note',     rotate: '-0.8deg' },
-              { x: '18%', y: '56%', w: '20%', h: '32%', label: 'Ideas?',        type: 'question', rotate: '1.2deg'  },
-              { x: '68%', y: '52%', w: '22%', h: '38%', label: 'Assets',        type: 'note',     rotate: '-1deg'   },
-            ].map((card, i) => (
-              <div
-                key={i}
-                className="absolute float-card-wrapper"
-                style={{ left: card.x, top: card.y, width: card.w, height: card.h, animationDelay: `${i * 0.6}s` }}
-              >
-                <div
-                  className="w-full h-full bg-white rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.09)] p-4"
-                  style={{ transform: `rotate(${card.rotate})` }}
-                >
-                  {card.type === 'question' && (
-                    <span className="text-[10px] font-semibold text-sky-500 block mb-1">Question</span>
-                  )}
-                  <div className="font-bold text-xs text-neutral-800">{card.label}</div>
-                  {card.type === 'task' && (
-                    <div className="mt-2 space-y-1.5">
-                      {['Design review', 'Write copy', 'Ship'].map((t, j) => (
-                        <div key={j} className="flex items-center gap-1.5">
-                          <div className={`w-3 h-3 rounded border ${j < 2 ? 'bg-[#0ea5e9] border-[#0ea5e9]' : 'border-neutral-300'}`} />
-                          <span className={`text-[10px] ${j < 2 ? 'line-through text-neutral-400' : 'text-neutral-600'}`}>{t}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {card.type === 'note' && (
-                    <div className="mt-1.5 space-y-1">
-                      <div className="h-1.5 rounded-full bg-sky-50 w-full" />
-                      <div className="h-1.5 rounded-full bg-sky-50 w-3/4" />
-                      <div className="h-1.5 rounded-full bg-sky-50 w-5/6" />
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
+          />
         </div>
-      </section>
+
+        {/* ── Scroll-through blur ── */}
+        <div
+          className="absolute bottom-0 left-0 right-0 z-20 pointer-events-none"
+          style={{
+            height: '240px',
+            backdropFilter: 'blur(20px) saturate(0.75)',
+            WebkitBackdropFilter: 'blur(20px) saturate(0.75)',
+            maskImage: 'linear-gradient(to bottom, transparent 0%, black 40%)',
+            WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 40%)',
+          }}
+        />
+
       </div>
 
       {/* ── Bento grid features ── */}
-      <section id="features" className="px-4 sm:px-8 max-w-5xl mx-auto pb-24">
+      <section id="features" className="px-4 sm:px-8 max-w-5xl mx-auto pt-16 pb-24">
         <div className="text-center mb-12">
           <h2 className="text-3xl sm:text-4xl font-bold tracking-tight [text-wrap:balance]">
             Everything your team needs

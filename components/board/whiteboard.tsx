@@ -513,8 +513,8 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
   return (
     <div
       ref={canvasRef}
-      className="relative flex-1 overflow-auto bg-jk-bg dot-grid"
-      style={{ touchAction: 'pan-x pan-y' }}
+      className="relative flex-1 overflow-auto bg-jk-bg"
+      style={{ touchAction: 'pan-x pan-y', overscrollBehavior: 'none' }}
     >
       <div
         ref={innerRef}
@@ -525,6 +525,7 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
           minWidth: '200%',
           minHeight: '200%',
           transition: isExporting ? 'none' : 'transform 550ms cubic-bezier(0.4, 0, 0.2, 1)',
+          willChange: 'transform',
         }}
       >
         {posts.length === 0 && !draft && (
