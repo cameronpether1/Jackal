@@ -71,7 +71,7 @@ export function WelcomeScreen({ profile, ownedBoardCount }: WelcomeScreenProps) 
   }
 
   return (
-    <div className="min-h-full flex items-center justify-center bg-jk-bg dot-grid px-4">
+    <div className="min-h-full flex items-center justify-center bg-jk-bg px-4">
       <div className="bg-jk-surface rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] p-10 w-full max-w-sm text-center">
         <img src="/logo.png" alt="Jackal" className="w-12 h-12 rounded-xl object-cover mb-5 mx-auto" />
 

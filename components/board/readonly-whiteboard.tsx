@@ -68,7 +68,7 @@ export function ReadonlyWhiteboard({ posts }: ReadonlyWhiteboardProps) {
   }
 
   return (
-    <div ref={canvasRef} className="relative flex-1 overflow-auto bg-jk-bg dot-grid">
+    <div ref={canvasRef} className="relative flex-1 overflow-auto bg-jk-bg">
       <div
         style={{
           transform: `scale(${zoom / 100})`,

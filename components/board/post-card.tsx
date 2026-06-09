@@ -42,6 +42,9 @@ export function PostCard({
   const { profile: currentProfile } = useProfile()
   const isAuthor = post.author_id === currentUserId
   const author = isAuthor && currentProfile ? currentProfile : post.author
+  const isImageOnly = !!post.image_url && !post.title && !post.content && post.type !== 'tasks'
+  const isMapOnly = !!post.map_location && !post.image_url && !post.title && !post.content && post.type !== 'tasks'
+  const isFullBleed = isImageOnly || isMapOnly
   const authorColor = getAvatarColor(author?.id ?? '')
   const initials = author?.display_name?.[0]?.toUpperCase() ?? '?'
 
@@ -80,7 +83,8 @@ export function PostCard({
           ref={cardRef}
           id={`post-${post.id}`}
           className={cn(
-            'absolute w-72 rounded-3xl select-none overflow-visible group/card border',
+            'absolute w-72 rounded-3xl select-none group/card border',
+            isFullBleed ? 'overflow-hidden' : 'overflow-visible',
             `post-type-${post.type}`,
             isNew && !isDragging ? 'post-is-new' : 'shadow-[0_4px_24px_rgba(0,0,0,0.09)]',
             isDragging
@@ -99,7 +103,7 @@ export function PostCard({
           onPointerUp={onPointerUp}
         >
           {/* Author badge */}
-          <div className="absolute -top-5 -right-5 group z-10">
+          <div className={cn('group z-10', isFullBleed ? 'absolute top-2 right-2' : 'absolute -top-5 -right-5')}>
             <div className="absolute right-full top-1/2 -translate-y-1/2 mr-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
               <span className="bg-[#1c1b19] text-white text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap shadow-sm">
                 {author?.display_name ?? 'Unknown'}
@@ -117,6 +121,83 @@ export function PostCard({
                 : initials}
             </div>
           </div>
+
+          {/* Full-bleed layouts */}
+          {isImageOnly ? (
+            <>
+              <img
+                src={post.image_url!}
+                alt=""
+                className="w-full block object-cover"
+                draggable={false}
+              />
+              {(onFocusPost || onReply) && (
+                <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between opacity-0 group-hover/card:opacity-100 transition-opacity duration-150">
+                  {onFocusPost ? (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); onFocusPost(post, cardRef.current!.getBoundingClientRect()) }}
+                      className="flex items-center gap-1 text-[11px] text-white/80 hover:text-white bg-black/30 hover:bg-black/50 backdrop-blur-sm rounded-full px-2.5 py-1 transition-colors"
+                    >
+                      <Maximize2 className="w-3 h-3" />
+                      Expand
+                    </button>
+                  ) : <span />}
+                  {onReply && (
+                    <button
+                      type="button"
+                      onClick={() => onReply(post)}
+                      className="flex items-center gap-1 text-[11px] text-white/80 hover:text-white bg-black/30 hover:bg-black/50 backdrop-blur-sm rounded-full px-2.5 py-1 transition-colors"
+                    >
+                      <CornerUpLeft className="w-3 h-3" />
+                      Reply
+                    </button>
+                  )}
+                </div>
+              )}
+            </>
+          ) : isMapOnly ? (
+            <>
+              <img
+                src={getMapImageUrl(post.map_location!.lat, post.map_location!.lng)}
+                alt={post.map_location!.label}
+                className="w-full block"
+                draggable={false}
+              />
+              {/* Location label */}
+              <div className="absolute bottom-0 left-0 right-0 flex items-center gap-1.5 px-3 py-2.5"
+                style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 100%)' }}
+              >
+                <MapPin className="w-3 h-3 text-white/90 shrink-0" />
+                <span className="text-[11px] text-white font-medium truncate">{post.map_location!.label}</span>
+              </div>
+              {/* Action buttons on hover */}
+              {(onFocusPost || onReply) && (
+                <div className="absolute top-2 left-2 right-14 flex items-center gap-1.5 opacity-0 group-hover/card:opacity-100 transition-opacity duration-150">
+                  {onFocusPost && (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); onFocusPost(post, cardRef.current!.getBoundingClientRect()) }}
+                      className="flex items-center gap-1 text-[11px] text-white/80 hover:text-white bg-black/30 hover:bg-black/50 backdrop-blur-sm rounded-full px-2.5 py-1 transition-colors"
+                    >
+                      <Maximize2 className="w-3 h-3" />
+                      Expand
+                    </button>
+                  )}
+                  {onReply && (
+                    <button
+                      type="button"
+                      onClick={() => onReply(post)}
+                      className="flex items-center gap-1 text-[11px] text-white/80 hover:text-white bg-black/30 hover:bg-black/50 backdrop-blur-sm rounded-full px-2.5 py-1 transition-colors"
+                    >
+                      <CornerUpLeft className="w-3 h-3" />
+                      Reply
+                    </button>
+                  )}
+                </div>
+              )}
+            </>
+          ) : (
 
           <div className="p-5 pt-6">
             {post.type === 'question' && (
@@ -138,7 +219,7 @@ export function PostCard({
               )
             )}
 
-            {/* Image */}
+            {/* Image alongside text */}
             {post.image_url && (
               <div className="mt-3">
                 <img
@@ -150,7 +231,7 @@ export function PostCard({
               </div>
             )}
 
-            {/* Map */}
+            {/* Map alongside text */}
             {post.map_location && (
               <div className="mt-3 rounded-2xl overflow-hidden">
                 <img
@@ -243,6 +324,7 @@ export function PostCard({
               </div>
             )}
           </div>
+          )}
         </div>
       </ContextMenuTrigger>
 
