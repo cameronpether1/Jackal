@@ -147,30 +147,34 @@ export function PostFocusOverlay({ post, replies, currentUserId, cardRect, onClo
             </div>
           )}
 
-          {/* Replies */}
+          {/* Comments */}
           {sortedReplies.length > 0 && (
             <div className="mt-10 pt-6 border-t border-jk-border space-y-6">
               <p className="text-xs text-jk-text-faint">
-                {sortedReplies.length} {sortedReplies.length === 1 ? 'reply' : 'replies'}
+                {sortedReplies.length} {sortedReplies.length === 1 ? 'comment' : 'comments'}
               </p>
-              {sortedReplies.map((reply, index) => {
-                const isRight = index % 2 === 1
+              {sortedReplies.map((reply) => {
                 const replyColor = getAvatarColor(reply.author?.id ?? '')
                 const replyInitials = reply.author?.display_name?.[0]?.toUpperCase() ?? '?'
                 return (
-                  <div key={reply.id} className={cn('flex items-start gap-3', isRight && 'flex-row-reverse')}>
+                  <div key={reply.id} className="flex items-start gap-3">
                     <div
-                      className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold overflow-hidden"
+                      className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold overflow-hidden mt-0.5"
                       style={{ backgroundColor: replyColor }}
                     >
                       {reply.author?.avatar_url
                         ? <img src={reply.author.avatar_url} alt="" className="w-full h-full object-cover" />
                         : replyInitials}
                     </div>
-                    <div className={cn('flex-1 min-w-0', isRight && 'text-right')}>
-                      <span className="block text-xs font-semibold text-jk-text-muted mb-0.5">
-                        {reply.author?.display_name}
-                      </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-baseline gap-2 mb-1">
+                        <span className="text-sm font-semibold text-jk-text">
+                          {reply.author?.display_name ?? 'Unknown'}
+                        </span>
+                        <span className="text-xs text-jk-text-faint">
+                          {new Date(reply.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </span>
+                      </div>
                       {reply.title && (
                         <p className="text-sm font-bold text-jk-text leading-snug mb-1">{reply.title}</p>
                       )}
@@ -192,7 +196,7 @@ export function PostFocusOverlay({ post, replies, currentUserId, cardRect, onClo
                         <img
                           src={reply.image_url}
                           alt=""
-                          className="mt-2 w-full rounded-xl object-cover"
+                          className="mt-2 w-full rounded-xl object-cover max-h-48"
                           draggable={false}
                         />
                       )}
@@ -234,7 +238,7 @@ export function PostFocusOverlay({ post, replies, currentUserId, cardRect, onClo
 
         {sortedReplies.length > 0 && (
           <div>
-            <p className="text-[9px] font-semibold text-jk-text-faint uppercase tracking-widest mb-1.5">Replies</p>
+            <p className="text-[9px] font-semibold text-jk-text-faint uppercase tracking-widest mb-1.5">Comments</p>
             <p className="text-xs text-jk-text">{sortedReplies.length}</p>
           </div>
         )}
@@ -249,7 +253,7 @@ export function PostFocusOverlay({ post, replies, currentUserId, cardRect, onClo
             className="flex items-center gap-1.5 text-xs text-white/75 hover:text-white px-2.5 py-1.5 rounded-full hover:bg-white/10 transition-colors"
           >
             <CornerUpLeft className="w-3.5 h-3.5" />
-            Reply
+            Comment
           </button>
         </div>
       </div>

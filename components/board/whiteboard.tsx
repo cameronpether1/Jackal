@@ -356,7 +356,8 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
   }, [supabase])
 
   const handleDeletePost = useCallback(async (postId: string) => {
-    setPosts(prev => prev.filter(p => p.id !== postId))
+    setPosts(prev => prev.filter(p => p.id !== postId && p.reply_to_post_id !== postId))
+    await supabase.from('posts').delete().eq('reply_to_post_id', postId)
     await supabase.from('posts').delete().eq('id', postId)
   }, [supabase])
 

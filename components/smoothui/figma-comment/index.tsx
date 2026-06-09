@@ -21,7 +21,6 @@ const EXIT_BLUR_PX = 3;
 const MEASURE_DELAY_SHORT = 100;
 const MEASURE_DELAY_LONG = 500;
 const CONTAINER_CLOSE_DELAY = 0.08;
-const _BLUR_DURATION = 0.4;
 const BLUR_EASE_X1 = 0.22;
 const BLUR_EASE_Y1 = 1;
 const BLUR_EASE_X2 = 0.36;
@@ -37,7 +36,9 @@ export interface FigmaCommentProps {
   authorName?: string;
   avatarAlt?: string;
   avatarUrl?: string;
+  avatarColor?: string;
   className?: string;
+  imageUrl?: string;
   message?: string;
   onOpenChange?: (isOpen: boolean) => void;
   timestamp?: string;
@@ -45,58 +46,54 @@ export interface FigmaCommentProps {
 }
 
 export default function FigmaComment({
-  avatarUrl = "https://ik.imagekit.io/16u211libb/avatar-educalvolpz.jpeg?updatedAt=1765524159631",
+  avatarUrl,
   avatarAlt = "Avatar",
+  avatarColor,
   className,
-  authorName = "Edu Calvo",
+  imageUrl,
+  authorName = "Someone",
   timestamp = "Just now",
-  message = "What happens if we adjust this to handle a light and dark mode? I'm not sure if we're ready to handle...",
-  width = 180,
+  message = "",
+  width = 200,
   onOpenChange,
 }: FigmaCommentProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isPinned, setIsPinned] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const isOpen = isPinned || isHovered;
   const contentRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [contentHeight, setContentHeight] = useState(CLOSED_SIZE);
   const shouldReduceMotion = useReducedMotion();
 
-  // Close comment when clicking outside
   useClickOutside(containerRef, () => {
-    if (isOpen) {
-      setIsOpen(false);
+    if (isPinned || isHovered) {
+      setIsPinned(false);
+      setIsHovered(false);
     }
   });
 
-  // Notify parent of open state changes
   useEffect(() => {
     onOpenChange?.(isOpen);
   }, [isOpen, onOpenChange]);
 
-  // Measure content height when component mounts or message changes
   useEffect(() => {
     const measureHeight = () => {
       if (contentRef.current) {
         const innerDiv = contentRef.current.firstElementChild as HTMLElement;
         if (innerDiv) {
           const height = innerDiv.scrollHeight;
-          if (height > 0) {
-            setContentHeight(height);
-          }
+          if (height > 0) setContentHeight(height);
         }
       }
     };
-
-    // Use setTimeout to ensure DOM is fully rendered
-    const timeoutId = setTimeout(measureHeight, MEASURE_DELAY_SHORT);
-    const timeoutId2 = setTimeout(measureHeight, MEASURE_DELAY_LONG);
-    return () => {
-      clearTimeout(timeoutId);
-      clearTimeout(timeoutId2);
-    };
-  }, []);
+    const t1 = setTimeout(measureHeight, MEASURE_DELAY_SHORT);
+    const t2 = setTimeout(measureHeight, MEASURE_DELAY_LONG);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [message]);
 
   const handleToggle = () => {
-    setIsOpen((prev) => !prev);
+    setIsPinned(prev => !prev);
+    setIsHovered(false);
   };
 
   return (
@@ -110,8 +107,10 @@ export default function FigmaComment({
                 height: isOpen ? contentHeight : CLOSED_SIZE,
               }
         }
-        className="absolute bottom-0 left-0 cursor-pointer overflow-hidden rounded-2xl rounded-bl-none bg-background shadow-[0px_0px_0.5px_0px_rgba(0,0,0,0.18),0px_3px_8px_0px_rgba(0,0,0,0.1),0px_1px_3px_0px_rgba(0,0,0,0.1)]"
+        className="absolute top-0 left-0 cursor-pointer overflow-hidden rounded-2xl rounded-tl-none bg-background shadow-[0px_0px_0.5px_0px_rgba(0,0,0,0.18),0px_3px_8px_0px_rgba(0,0,0,0.1),0px_1px_3px_0px_rgba(0,0,0,0.1)]"
         onClick={handleToggle}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
         ref={containerRef}
         style={
           shouldReduceMotion
@@ -134,7 +133,7 @@ export default function FigmaComment({
               }
         }
       >
-        {/* Avatar - animates position */}
+        {/* Avatar */}
         <motion.div
           animate={
             shouldReduceMotion
@@ -166,100 +165,78 @@ export default function FigmaComment({
         >
           <Avatar className="h-6 w-6">
             <AvatarImage alt={avatarAlt} src={avatarUrl} />
-            <AvatarFallback>{authorName.charAt(0)}</AvatarFallback>
+            <AvatarFallback
+              style={avatarColor ? { backgroundColor: avatarColor, color: 'white', fontSize: '10px', fontWeight: 700 } : undefined}
+            >
+              {authorName.charAt(0).toUpperCase()}
+            </AvatarFallback>
           </Avatar>
         </motion.div>
 
-        {/* Content - always rendered but hidden when closed for measurement */}
+        {/* Hidden measurement div */}
         <div
           className="pointer-events-none absolute"
           ref={contentRef}
-          style={{
-            width: `${width}px`,
-            top: "-9999px",
-            left: 0,
-            position: "absolute",
-          }}
+          style={{ width: `${width}px`, top: "-9999px", left: 0, position: "absolute" }}
         >
           <div className="flex flex-col items-start gap-0.5 py-3 pr-4 pl-11">
-            {/* Attribution */}
-            <div className="flex items-start gap-0.5">
-              <p className="font-semibold text-[11px] text-foreground leading-4">
-                {authorName}
-              </p>
-              <p className="font-medium text-[11px] text-muted-foreground leading-4">
-                {timestamp}
-              </p>
+            <div className="flex items-center gap-1.5">
+              <p className="font-semibold text-[11px] text-foreground leading-4">{authorName}</p>
+              <p className="font-medium text-[11px] text-muted-foreground leading-4">{timestamp}</p>
             </div>
-            {/* Message */}
-            <p className="text-left font-medium text-[11px] text-foreground leading-4">
-              {message}
-            </p>
+            {message ? (
+              <p className="text-left font-medium text-[11px] text-foreground leading-4 whitespace-pre-wrap">{message}</p>
+            ) : null}
+            {imageUrl ? (
+              <div className="mt-1.5 w-full rounded-lg overflow-hidden" style={{ height: '120px' }} />
+            ) : null}
           </div>
         </div>
 
-        {/* Content - visible when open */}
+        {/* Visible content when open */}
         <AnimatePresence>
           {isOpen && (
             <motion.div
               animate={
-                shouldReduceMotion
-                  ? { opacity: 1 }
-                  : {
-                      opacity: 1,
-                      filter: "blur(0px)",
-                    }
+                shouldReduceMotion ? { opacity: 1 } : { opacity: 1, filter: "blur(0px)" }
               }
               className="absolute inset-0 flex flex-col items-start gap-0.5 py-3 pr-4 pl-11"
               exit={
                 shouldReduceMotion
                   ? { opacity: 0, transition: { duration: 0 } }
-                  : {
-                      opacity: 0,
-                      filter: `blur(${String(EXIT_BLUR_PX)}px)`,
-                    }
+                  : { opacity: 0, filter: `blur(${String(EXIT_BLUR_PX)}px)` }
               }
               initial={
                 shouldReduceMotion
                   ? { opacity: 0 }
-                  : {
-                      opacity: 0,
-                      filter: `blur(${String(INITIAL_BLUR_PX)}px)`,
-                    }
+                  : { opacity: 0, filter: `blur(${String(INITIAL_BLUR_PX)}px)` }
               }
-              style={{
-                width: `${width}px`,
-              }}
+              style={{ width: `${width}px` }}
               transition={
                 (shouldReduceMotion
                   ? { duration: 0 }
                   : (isExiting: boolean) => ({
-                      opacity: {
-                        duration: 0.25,
-                        ease: BLUR_EASE,
-                        delay: isExiting ? 0 : CONTENT_DELAY,
-                      },
-                      filter: {
-                        duration: 0.25,
-                        ease: BLUR_EASE,
-                        delay: isExiting ? 0 : CONTENT_DELAY,
-                      },
+                      opacity: { duration: 0.25, ease: BLUR_EASE, delay: isExiting ? 0 : CONTENT_DELAY },
+                      filter: { duration: 0.25, ease: BLUR_EASE, delay: isExiting ? 0 : CONTENT_DELAY },
                     })) as import("motion/react").Transition
               }
             >
-              {/* Attribution */}
-              <div className="flex items-start gap-0.5">
-                <p className="font-semibold text-[11px] text-foreground leading-4">
-                  {authorName}
-                </p>
-                <p className="font-medium text-[11px] text-muted-foreground leading-4">
-                  {timestamp}
-                </p>
+              <div className="flex items-center gap-1.5">
+                <p className="font-semibold text-[11px] text-foreground leading-4">{authorName}</p>
+                <p className="font-medium text-[11px] text-muted-foreground leading-4">{timestamp}</p>
               </div>
-              {/* Message */}
-              <p className="text-left font-medium text-[11px] text-foreground leading-4">
-                {message}
-              </p>
+              {message ? (
+                <p className="text-left font-medium text-[11px] text-foreground leading-4 whitespace-pre-wrap">{message}</p>
+              ) : null}
+              {imageUrl ? (
+                <img
+                  src={imageUrl}
+                  alt=""
+                  className="mt-1.5 w-full rounded-lg object-cover"
+                  style={{ height: '120px' }}
+                  draggable={false}
+                />
+              ) : null}
             </motion.div>
           )}
         </AnimatePresence>
