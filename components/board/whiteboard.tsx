@@ -12,6 +12,9 @@ import { EmptyState } from '@/components/board/empty-state'
 import { LiquidGlass } from '@/components/ui/glasscn/liquid-glass'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useBoardActions } from '@/contexts/board-actions-context'
+import { getAvatarColor } from '@/lib/avatar-color'
+import { PresenceCursors, type OnlineUser } from '@/components/board/presence-cursors'
+import { OnlineAvatars } from '@/components/board/online-avatars'
 import type { BoardActivity, PostType, PostWithRelations, Profile, Sticker } from '@/lib/supabase/types'
 
 interface WhiteboardProps {
@@ -46,16 +49,22 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
   const [stickerSrcs, setStickerSrcs] = useState<string[]>([])
   const [stickerLoading, setStickerLoading] = useState(false)
   const [stickerError, setStickerError] = useState(false)
+  const [onlineUsers, setOnlineUsers] = useState<Record<string, OnlineUser>>({})
   const canvasRef = useRef<HTMLDivElement>(null)
   const innerRef = useRef<HTMLDivElement>(null)
   const supabase = useMemo(() => createClient(), [])
   const postsRef = useRef(posts)
   const boardNameRef = useRef(boardName)
   const zoomRef = useRef(zoom)
+  const currentProfileRef = useRef(currentProfile)
   const wheelZoomTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
+  const lastCursorRef = useRef(0)
+  const cursorTimeoutsRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
   useEffect(() => { postsRef.current = posts }, [posts])
   useEffect(() => { boardNameRef.current = boardName }, [boardName])
   useEffect(() => { zoomRef.current = zoom }, [zoom])
+  useEffect(() => { currentProfileRef.current = currentProfile }, [currentProfile])
 
   // Load sticker sources when picker opens; re-fetch if there was a previous error
   useEffect(() => {
@@ -200,7 +209,74 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
   // Supabase realtime
   useEffect(() => {
     const channel = supabase
-      .channel(`board:${boardId}`)
+      .channel(`board:${boardId}`, { config: { presence: { key: currentUserId } } })
+
+      // ── Broadcast: position drops ──────────────────────────────────────────
+      .on('broadcast', { event: 'post-move' }, ({ payload }) => {
+        setPosts(prev => prev.map(p =>
+          p.id === payload.id ? { ...p, pos_x: payload.x, pos_y: payload.y } : p
+        ))
+      })
+      .on('broadcast', { event: 'sticker-move' }, ({ payload }) => {
+        setStickers(prev => prev.map(s =>
+          s.id === payload.id ? { ...s, pos_x: payload.x, pos_y: payload.y } : s
+        ))
+      })
+
+      // ── Broadcast: cursor positions ────────────────────────────────────────
+      .on('broadcast', { event: 'cursor' }, ({ payload }) => {
+        if (payload.userId === currentUserId) return
+        setOnlineUsers(prev => ({
+          ...prev,
+          [payload.userId]: {
+            userId: payload.userId,
+            displayName: prev[payload.userId]?.displayName ?? '',
+            avatarUrl: prev[payload.userId]?.avatarUrl ?? null,
+            avatarColor: prev[payload.userId]?.avatarColor ?? getAvatarColor(payload.userId),
+            cursor: { x: payload.x, y: payload.y },
+          },
+        }))
+        clearTimeout(cursorTimeoutsRef.current[payload.userId])
+        cursorTimeoutsRef.current[payload.userId] = setTimeout(() => {
+          setOnlineUsers(prev =>
+            prev[payload.userId]
+              ? { ...prev, [payload.userId]: { ...prev[payload.userId], cursor: null } }
+              : prev
+          )
+        }, 3000)
+      })
+
+      // ── Presence: who's online ─────────────────────────────────────────────
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState<{
+          userId: string; displayName: string; avatarUrl: string | null; avatarColor: string
+        }>()
+        setOnlineUsers(prev => {
+          const next: Record<string, OnlineUser> = {}
+          for (const presences of Object.values(state)) {
+            for (const p of presences) {
+              if (p.userId === currentUserId) continue
+              next[p.userId] = {
+                userId: p.userId,
+                displayName: p.displayName,
+                avatarUrl: p.avatarUrl,
+                avatarColor: p.avatarColor,
+                cursor: prev[p.userId]?.cursor ?? null,
+              }
+            }
+          }
+          return next
+        })
+      })
+      .on('presence', { event: 'leave' }, ({ key }) => {
+        setOnlineUsers(prev => {
+          const next = { ...prev }
+          delete next[key]
+          return next
+        })
+      })
+
+      // ── Postgres Changes: posts ────────────────────────────────────────────
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'posts', filter: `board_id=eq.${boardId}` },
@@ -221,19 +297,28 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
               )
             }
           } else if (payload.eventType === 'UPDATE') {
-            setPosts(prev => prev.map(p => p.id === payload.new.id ? { ...p, ...payload.new } : p))
+            // Positions come via Broadcast; only apply other field changes here
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { pos_x, pos_y, ...rest } = payload.new as Record<string, unknown>
+            setPosts(prev => prev.map(p => p.id === payload.new.id ? { ...p, ...rest } : p))
           }
         }
       )
+
+      // ── Postgres Changes: stickers ─────────────────────────────────────────
       .on('postgres_changes', { event: '*', schema: 'public', table: 'stickers', filter: `board_id=eq.${boardId}` }, (payload) => {
         if (payload.eventType === 'INSERT') {
           setStickers(prev => prev.some(s => s.id === payload.new.id) ? prev : [...prev, payload.new as Sticker])
         } else if (payload.eventType === 'UPDATE') {
-          setStickers(prev => prev.map(s => s.id === payload.new.id ? { ...s, ...payload.new } : s))
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { pos_x, pos_y, ...rest } = payload.new as Record<string, unknown>
+          setStickers(prev => prev.map(s => s.id === payload.new.id ? { ...s, ...rest } : s))
         } else if (payload.eventType === 'DELETE') {
           setStickers(prev => prev.filter(s => s.id !== payload.old.id))
         }
       })
+
+      // ── Postgres Changes: task_items ───────────────────────────────────────
       .on('postgres_changes', { event: '*', schema: 'public', table: 'task_items' }, (payload) => {
         if (payload.eventType === 'UPDATE') {
           setPosts(prev => prev.map(p => ({
@@ -243,7 +328,7 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
         } else if (payload.eventType === 'INSERT') {
           setPosts(prev => prev.map(p => {
             if (p.id !== payload.new.post_id) return p
-            if (p.task_items?.some(t => t.id === payload.new.id)) return p  // already added by insert response
+            if (p.task_items?.some(t => t.id === payload.new.id)) return p
             return { ...p, task_items: [...(p.task_items ?? []), payload.new as any] }
           }))
         } else if (payload.eventType === 'DELETE') {
@@ -253,14 +338,30 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
           })))
         }
       })
-      .subscribe((status, err) => {
+
+      .subscribe(async (status, err) => {
         if (err) console.error('[realtime] subscription error', err)
         if (status === 'CHANNEL_ERROR') console.error('[realtime] channel error')
         if (status === 'TIMED_OUT') console.warn('[realtime] subscription timed out')
+        if (status === 'SUBSCRIBED') {
+          const profile = currentProfileRef.current
+          await channel.track({
+            userId: currentUserId,
+            displayName: profile?.display_name ?? 'Unknown',
+            avatarUrl: profile?.avatar_url ?? null,
+            avatarColor: getAvatarColor(currentUserId),
+          })
+        }
       })
 
-    return () => { supabase.removeChannel(channel) }
-  }, [boardId, supabase])
+    channelRef.current = channel
+
+    return () => {
+      Object.values(cursorTimeoutsRef.current).forEach(clearTimeout)
+      supabase.removeChannel(channel)
+      channelRef.current = null
+    }
+  }, [boardId, currentUserId, supabase])
 
   const handleReply = useCallback((post: PostWithRelations) => {
     setDraft({
@@ -366,6 +467,7 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
 
   const handleDragEnd = useCallback(async (postId: string, x: number, y: number) => {
     setPosts(prev => prev.map(p => p.id === postId ? { ...p, pos_x: x, pos_y: y } : p))
+    channelRef.current?.send({ type: 'broadcast', event: 'post-move', payload: { id: postId, x, y } })
     await supabase.from('posts').update({ pos_x: x, pos_y: y }).eq('id', postId)
   }, [supabase])
 
@@ -541,6 +643,7 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
 
   const handleStickerDragEnd = useCallback(async (stickerId: string, x: number, y: number) => {
     setStickers(prev => prev.map(s => s.id === stickerId ? { ...s, pos_x: x, pos_y: y } : s))
+    channelRef.current?.send({ type: 'broadcast', event: 'sticker-move', payload: { id: stickerId, x, y } })
     await supabase.from('stickers').update({ pos_x: x, pos_y: y }).eq('id', stickerId)
   }, [supabase])
 
@@ -549,12 +652,30 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
     await supabase.from('stickers').delete().eq('id', stickerId)
   }, [supabase])
 
+  const handleCanvasPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    const now = Date.now()
+    if (now - lastCursorRef.current < 50) return
+    lastCursorRef.current = now
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const rect = canvas.getBoundingClientRect()
+    const scale = zoomRef.current / 100
+    const x = (e.clientX - rect.left + canvas.scrollLeft) / scale
+    const y = (e.clientY - rect.top + canvas.scrollTop) / scale
+    channelRef.current?.send({ type: 'broadcast', event: 'cursor', payload: { userId: currentUserId, x, y } })
+  }, [currentUserId])
+
+  const onlineUsersList = useMemo(() => Object.values(onlineUsers), [onlineUsers])
+
   return (
-    <div
-      ref={canvasRef}
-      className="relative flex-1 overflow-auto bg-jk-bg"
-      style={{ touchAction: 'pan-x pan-y', overscrollBehavior: 'none' }}
-    >
+    <div className="relative flex-1 flex flex-col overflow-hidden">
+      <OnlineAvatars users={onlineUsersList} />
+      <div
+        ref={canvasRef}
+        className="relative flex-1 overflow-auto bg-jk-bg"
+        style={{ touchAction: 'pan-x pan-y', overscrollBehavior: 'none' }}
+        onPointerMove={handleCanvasPointerMove}
+      >
       <div
         ref={innerRef}
         className="relative"
@@ -613,6 +734,8 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
             onDiscard={() => setDraft(null)}
           />
         )}
+
+        <PresenceCursors users={onlineUsersList} />
       </div>
 
       <Dialog open={stickerPickerOpen} onOpenChange={setStickerPickerOpen}>
@@ -687,6 +810,7 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
           />
         )
       })()}
+    </div>
     </div>
   )
 }
