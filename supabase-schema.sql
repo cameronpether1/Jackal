@@ -39,10 +39,12 @@ create table public.posts (
   id uuid primary key default gen_random_uuid(),
   board_id uuid references public.boards(id) on delete cascade,
   author_id uuid references public.profiles(id) on delete cascade,
+  reply_to_post_id uuid references public.posts(id) on delete cascade,
   type text not null check (type in ('note', 'tasks', 'question')),
   title text,
   content text,
   image_url text,
+  map_location jsonb,
   pos_x float default 100,
   pos_y float default 100,
   rotation float default 0,
@@ -397,7 +399,13 @@ $$;
 -- ============================================================
 -- REALTIME
 -- ============================================================
--- alter publication supabase_realtime add table public.posts;
--- alter publication supabase_realtime add table public.task_items;
--- alter publication supabase_realtime add table public.reactions;
--- alter publication supabase_realtime add table public.stickers;
+-- Tables are already added to the supabase_realtime publication.
+-- REPLICA IDENTITY FULL ensures UPDATE and DELETE events include all columns.
+-- Without it, the board_id filter silently drops UPDATE/DELETE events because
+-- only the primary key is in the WAL by default.
+alter table public.posts replica identity full;
+alter table public.task_items replica identity full;
+alter table public.stickers replica identity full;
+alter publication supabase_realtime add table public.posts;
+alter publication supabase_realtime add table public.task_items;
+alter publication supabase_realtime add table public.stickers;

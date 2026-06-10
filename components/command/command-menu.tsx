@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Layout, LogOut, Moon, Plus, Sun, CreditCard, Zap, User, Maximize2, ZoomIn, ZoomOut, Sparkles, Bell } from 'lucide-react'
 import { useTheme } from '@/hooks/use-theme'
@@ -57,10 +57,14 @@ export function CommandMenu({ boards, ownedBoardCount }: CommandMenuProps) {
     return () => document.removeEventListener('keydown', down)
   }, [])
 
+  const runTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => () => { if (runTimerRef.current) clearTimeout(runTimerRef.current) }, [])
+
   // Close first, then run so the dialog exit animation completes
   const run = (fn: () => void) => {
     setOpen(false)
-    setTimeout(fn, 120)
+    if (runTimerRef.current) clearTimeout(runTimerRef.current)
+    runTimerRef.current = setTimeout(fn, 120)
   }
 
   async function handleManageBilling() {

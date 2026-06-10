@@ -45,6 +45,7 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
   const [stickerPickerOpen, setStickerPickerOpen] = useState(false)
   const [stickerSrcs, setStickerSrcs] = useState<string[]>([])
   const [stickerLoading, setStickerLoading] = useState(false)
+  const [stickerError, setStickerError] = useState(false)
   const canvasRef = useRef<HTMLDivElement>(null)
   const innerRef = useRef<HTMLDivElement>(null)
   const supabase = useMemo(() => createClient(), [])
@@ -56,32 +57,17 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
   useEffect(() => { boardNameRef.current = boardName }, [boardName])
   useEffect(() => { zoomRef.current = zoom }, [zoom])
 
-  const { setActions } = useBoardActions()
+  // Load sticker sources when picker opens; re-fetch if there was a previous error
   useEffect(() => {
-    setActions({
-      onNewPost: spawnDraft,
-      onAddSticker: () => setStickerPickerOpen(true),
-      onFitAll: handleFitAll,
-      onZoomIn: () => setZoom(z => Math.min(200, z + 10)),
-      onZoomOut: () => setZoom(z => Math.max(20, z - 10)),
-      zoom,
-      onOpenNotifications: () => setPanelOpen(true),
-      notificationCount: newActivities.length,
-    })
-    return () => setActions(null)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [zoom, newActivities.length])
-
-  // Load sticker sources when picker opens
-  useEffect(() => {
-    if (!stickerPickerOpen || stickerSrcs.length > 0) return
+    if (!stickerPickerOpen || (stickerSrcs.length > 0 && !stickerError)) return
     setStickerLoading(true)
+    setStickerError(false)
     fetch('/api/stickers')
-      .then(r => r.json())
+      .then(r => { if (!r.ok) throw new Error('stickers fetch failed'); return r.json() })
       .then(setStickerSrcs)
-      .catch(() => {})
+      .catch(() => setStickerError(true))
       .finally(() => setStickerLoading(false))
-  }, [stickerPickerOpen, stickerSrcs.length])
+  }, [stickerPickerOpen, stickerSrcs.length, stickerError])
 
   // Derive which root post IDs have new activity
   const newPostIds = useMemo(() => {
@@ -128,18 +114,18 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
     return m
   }, [posts])
 
-  function spawnDraft() {
+  const spawnDraft = useCallback(() => {
     const el = canvasRef.current
     const scrollX = el?.scrollLeft ?? 0
     const scrollY = el?.scrollTop ?? 0
     const w = el?.clientWidth ?? 800
     const h = el?.clientHeight ?? 600
-    const scale = zoom / 100
+    const scale = zoomRef.current / 100
     const isMobile = window.matchMedia('(max-width: 639px)').matches
     const x = (scrollX + w / 2) / scale - 144 + (isMobile ? 0 : (Math.random() - 0.5) * 80)
     const y = (scrollY + h / 3) / scale + (isMobile ? 0 : (Math.random() - 0.5) * 60)
     setDraft({ x, y, rotation: isMobile ? 0 : (Math.random() * 4 - 2) })
-  }
+  }, [])
 
   // Keyboard shortcut N
   useEffect(() => {
@@ -267,7 +253,11 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
           })))
         }
       })
-      .subscribe()
+      .subscribe((status, err) => {
+        if (err) console.error('[realtime] subscription error', err)
+        if (status === 'CHANNEL_ERROR') console.error('[realtime] channel error')
+        if (status === 'TIMED_OUT') console.warn('[realtime] subscription timed out')
+      })
 
     return () => { supabase.removeChannel(channel) }
   }, [boardId, supabase])
@@ -388,9 +378,10 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
   }, [supabase])
 
   const handleDeletePost = useCallback(async (postId: string) => {
-    setPosts(prev => prev.filter(p => p.id !== postId && p.reply_to_post_id !== postId))
-    await supabase.from('posts').delete().eq('reply_to_post_id', postId)
-    await supabase.from('posts').delete().eq('id', postId)
+    const { error } = await supabase.from('posts').delete().eq('id', postId)
+    if (!error) {
+      setPosts(prev => prev.filter(p => p.id !== postId && p.reply_to_post_id !== postId))
+    }
   }, [supabase])
 
   const doExport = useCallback(async () => {
@@ -488,6 +479,21 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
       behavior: 'smooth',
     })
   }, [rootPosts])
+
+  const { setActions } = useBoardActions()
+  useEffect(() => {
+    setActions({
+      onNewPost: spawnDraft,
+      onAddSticker: () => setStickerPickerOpen(true),
+      onFitAll: handleFitAll,
+      onZoomIn: () => setZoom(z => Math.min(200, z + 10)),
+      onZoomOut: () => setZoom(z => Math.max(20, z - 10)),
+      zoom,
+      onOpenNotifications: () => setPanelOpen(true),
+      notificationCount: newActivities.length,
+    })
+    return () => setActions(null)
+  }, [zoom, newActivities.length, spawnDraft, handleFitAll, setActions])
 
   const handleFocusPost = useCallback((post: PostWithRelations, rect: DOMRect) => {
     setFocusedPost({ post, rect })
@@ -610,13 +616,13 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
       </div>
 
       <Dialog open={stickerPickerOpen} onOpenChange={setStickerPickerOpen}>
-        <DialogHeader className="sr-only">
-          <DialogTitle>Add Sticker</DialogTitle>
-        </DialogHeader>
         <DialogContent
           showCloseButton={false}
           className="border-0 bg-transparent p-0 shadow-none ring-0 sm:max-w-xs top-1/3 translate-y-0"
         >
+          <DialogHeader className="sr-only">
+            <DialogTitle>Add Sticker</DialogTitle>
+          </DialogHeader>
           <LiquidGlass className="rounded-[1.25rem] p-4">
             <p className="text-xs font-semibold text-foreground/50 uppercase tracking-wider mb-3">
               Stickers
@@ -626,6 +632,17 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
                 {Array.from({ length: 6 }).map((_, i) => (
                   <div key={i} className="w-14 h-14 rounded-xl bg-foreground/10 animate-pulse" />
                 ))}
+              </div>
+            ) : stickerError ? (
+              <div className="py-2 flex flex-col gap-2">
+                <p className="text-sm text-foreground/40">Failed to load stickers.</p>
+                <button
+                  type="button"
+                  onClick={() => setStickerError(false)}
+                  className="text-xs text-foreground/60 hover:text-foreground underline self-start"
+                >
+                  Try again
+                </button>
               </div>
             ) : stickerSrcs.length === 0 ? (
               <p className="text-sm text-foreground/40 py-2">No stickers yet.</p>

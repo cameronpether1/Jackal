@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useCallback, useState, useMemo } from 'react'
+import { useRef, useCallback, useState, useMemo, useEffect } from 'react'
 import { Trash2, Copy, CornerUpLeft, MapPin, Maximize2 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -53,6 +53,10 @@ export function PostCard({
 }: PostCardProps) {
   const [pos, setPos] = useState({ x: post.pos_x, y: post.pos_y })
   const [isDragging, setIsDragging] = useState(false)
+
+  useEffect(() => {
+    if (!isDragging) setPos({ x: post.pos_x, y: post.pos_y })
+  }, [post.pos_x, post.pos_y, isDragging])
   const outerRef = useRef<HTMLDivElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
   const dragState = useRef<{ startX: number; startY: number; startPosX: number; startPosY: number } | null>(null)
@@ -119,7 +123,7 @@ export function PostCard({
           {/* Author badge — always overlapping top-right corner, outside overflow-hidden */}
           <div className="absolute -top-5 -right-5 group z-10">
             <div className="absolute right-full top-1/2 -translate-y-1/2 mr-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
-              <span className="bg-[#1c1b19] text-white text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap shadow-sm">
+              <span className="bg-[#1c1b19] text-white text-xs font-medium px-2.5 py-1 rounded-full rounded-br-none whitespace-nowrap shadow-sm">
                 {author?.display_name ?? 'Unknown'}
               </span>
             </div>
@@ -230,8 +234,9 @@ export function PostCard({
                 {onFocusPost ? (
                   <GlassButton
                     size="sm"
+                    glassVariant="liquid-refract"
                     className="pointer-events-auto gap-1 text-[11px] h-7 px-2.5"
-                    onClick={(e) => { e.stopPropagation(); onFocusPost(post, cardRef.current!.getBoundingClientRect()) }}
+                    onClick={(e) => { e.stopPropagation(); if (cardRef.current) onFocusPost(post, cardRef.current.getBoundingClientRect()) }}
                   >
                     <Maximize2 className="w-3 h-3" />
                     Expand
@@ -240,6 +245,7 @@ export function PostCard({
                 {onReply ? (
                   <GlassButton
                     size="sm"
+                    glassVariant="liquid-refract"
                     className="pointer-events-auto gap-1 text-[11px] h-7 px-2.5"
                     onClick={(e) => { e.stopPropagation(); onReply(post) }}
                   >
