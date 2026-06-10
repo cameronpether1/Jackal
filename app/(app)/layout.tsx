@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { CommandMenu } from '@/components/command/command-menu'
 import { ProfileProvider } from '@/components/providers/profile-provider'
+import { BoardActionsProvider } from '@/contexts/board-actions-context'
 
 export const dynamic = 'force-dynamic'
 
@@ -37,10 +38,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <ProfileProvider initial={profile}>
-      <div className="h-full">
+      <BoardActionsProvider>
         <CommandMenu boards={boards} ownedBoardCount={ownedBoardCount} />
         <main className="h-full overflow-hidden">{children}</main>
-      </div>
+      </BoardActionsProvider>
     </ProfileProvider>
   )
 }

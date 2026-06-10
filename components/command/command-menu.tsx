@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Layout, LogOut, Moon, Plus, Sun, CreditCard, Zap, User } from 'lucide-react'
+import { Layout, LogOut, Moon, Plus, Sun, CreditCard, Zap, User, Maximize2, ZoomIn, ZoomOut, Sparkles, Bell } from 'lucide-react'
 import { useTheme } from '@/hooks/use-theme'
 import { useProfile } from '@/components/providers/profile-provider'
+import { useBoardActions } from '@/contexts/board-actions-context'
 import { getPlanLimits } from '@/lib/plans'
 import { createClient } from '@/lib/supabase/client'
 import { GlassCommandDialog, GlassCommandInput } from '@/components/ui/glasscn/glass-command'
@@ -34,6 +35,7 @@ export function CommandMenu({ boards, ownedBoardCount }: CommandMenuProps) {
   const { theme, setTheme } = useTheme()
   const isDark = theme === 'dark'
   const { profile, setProfile } = useProfile()
+  const { actions } = useBoardActions()
   const plan = profile?.plan ?? 'free'
   const limits = getPlanLimits(plan)
   const atBoardLimit = ownedBoardCount >= limits.boards
@@ -55,7 +57,7 @@ export function CommandMenu({ boards, ownedBoardCount }: CommandMenuProps) {
     return () => document.removeEventListener('keydown', down)
   }, [])
 
-  // Close first, then run action so the dialog exit animation plays
+  // Close first, then run so the dialog exit animation completes
   const run = (fn: () => void) => {
     setOpen(false)
     setTimeout(fn, 120)
@@ -79,6 +81,51 @@ export function CommandMenu({ boards, ownedBoardCount }: CommandMenuProps) {
         <GlassCommandInput placeholder="Search boards and actions..." />
         <CommandList>
           <CommandEmpty>No results found.</CommandEmpty>
+
+          {/* Board-specific actions — only shown when on a board */}
+          {actions && (
+            <>
+              <CommandGroup heading="Board">
+                {actions.onNewPost && (
+                  <CommandItem value="new post create write" onSelect={() => run(actions.onNewPost!)}>
+                    <Plus className="w-4 h-4 opacity-60" />
+                    New post
+                  </CommandItem>
+                )}
+                {actions.onFitAll && (
+                  <CommandItem value="fit all posts view" onSelect={() => run(actions.onFitAll!)}>
+                    <Maximize2 className="w-4 h-4 opacity-60" />
+                    Fit all posts
+                  </CommandItem>
+                )}
+                {actions.onZoomIn && (
+                  <CommandItem value="zoom in bigger" onSelect={() => run(actions.onZoomIn!)}>
+                    <ZoomIn className="w-4 h-4 opacity-60" />
+                    Zoom in{actions.zoom !== undefined ? ` (${actions.zoom}%)` : ''}
+                  </CommandItem>
+                )}
+                {actions.onZoomOut && (
+                  <CommandItem value="zoom out smaller" onSelect={() => run(actions.onZoomOut!)}>
+                    <ZoomOut className="w-4 h-4 opacity-60" />
+                    Zoom out{actions.zoom !== undefined ? ` (${actions.zoom}%)` : ''}
+                  </CommandItem>
+                )}
+                {actions.onAddSticker && (
+                  <CommandItem value="add sticker sparkle" onSelect={() => run(actions.onAddSticker!)}>
+                    <Sparkles className="w-4 h-4 opacity-60" />
+                    Add sticker
+                  </CommandItem>
+                )}
+                {actions.onOpenNotifications && (actions.notificationCount ?? 0) > 0 && (
+                  <CommandItem value="notifications activity new" onSelect={() => run(actions.onOpenNotifications!)}>
+                    <Bell className="w-4 h-4 opacity-60" />
+                    What&apos;s new ({actions.notificationCount})
+                  </CommandItem>
+                )}
+              </CommandGroup>
+              <CommandSeparator />
+            </>
+          )}
 
           {boards.length > 0 && (
             <CommandGroup heading="Boards">
