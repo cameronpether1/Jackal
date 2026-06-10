@@ -7,9 +7,11 @@ import { PostCard } from '@/components/board/post-card'
 import { PostFocusOverlay } from '@/components/board/post-focus-overlay'
 import { StickerPeel } from '@/components/board/sticker-peel'
 import { InlineCardEditor } from '@/components/board/inline-card-editor'
-import { FloatingToolbar } from '@/components/board/floating-toolbar'
 import { WhatsNewPanel } from '@/components/board/whats-new-panel'
 import { EmptyState } from '@/components/board/empty-state'
+import { LiquidGlass } from '@/components/ui/glasscn/liquid-glass'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { useBoardActions } from '@/contexts/board-actions-context'
 import type { BoardActivity, PostType, PostWithRelations, Profile, Sticker } from '@/lib/supabase/types'
 
 interface WhiteboardProps {
@@ -40,6 +42,9 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
   const [zoom, setZoom] = useState(100)
   const [isExporting, setIsExporting] = useState(false)
   const [panelOpen, setPanelOpen] = useState(false)
+  const [stickerPickerOpen, setStickerPickerOpen] = useState(false)
+  const [stickerSrcs, setStickerSrcs] = useState<string[]>([])
+  const [stickerLoading, setStickerLoading] = useState(false)
   const canvasRef = useRef<HTMLDivElement>(null)
   const innerRef = useRef<HTMLDivElement>(null)
   const supabase = useMemo(() => createClient(), [])
@@ -50,6 +55,33 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
   useEffect(() => { postsRef.current = posts }, [posts])
   useEffect(() => { boardNameRef.current = boardName }, [boardName])
   useEffect(() => { zoomRef.current = zoom }, [zoom])
+
+  const { setActions } = useBoardActions()
+  useEffect(() => {
+    setActions({
+      onNewPost: spawnDraft,
+      onAddSticker: () => setStickerPickerOpen(true),
+      onFitAll: handleFitAll,
+      onZoomIn: () => setZoom(z => Math.min(200, z + 10)),
+      onZoomOut: () => setZoom(z => Math.max(20, z - 10)),
+      zoom,
+      onOpenNotifications: () => setPanelOpen(true),
+      notificationCount: newActivities.length,
+    })
+    return () => setActions(null)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zoom, newActivities.length])
+
+  // Load sticker sources when picker opens
+  useEffect(() => {
+    if (!stickerPickerOpen || stickerSrcs.length > 0) return
+    setStickerLoading(true)
+    fetch('/api/stickers')
+      .then(r => r.json())
+      .then(setStickerSrcs)
+      .catch(() => {})
+      .finally(() => setStickerLoading(false))
+  }, [stickerPickerOpen, stickerSrcs.length])
 
   // Derive which root post IDs have new activity
   const newPostIds = useMemo(() => {
@@ -577,15 +609,43 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
         )}
       </div>
 
-      <FloatingToolbar
-        onNewPost={spawnDraft}
-        onAddSticker={handleAddSticker}
-        zoom={zoom}
-        onZoomChange={setZoom}
-        onFitAll={handleFitAll}
-        notificationCount={newActivities.length}
-        onOpenNotifications={() => setPanelOpen(true)}
-      />
+      <Dialog open={stickerPickerOpen} onOpenChange={setStickerPickerOpen}>
+        <DialogHeader className="sr-only">
+          <DialogTitle>Add Sticker</DialogTitle>
+        </DialogHeader>
+        <DialogContent
+          showCloseButton={false}
+          className="border-0 bg-transparent p-0 shadow-none ring-0 sm:max-w-xs top-1/3 translate-y-0"
+        >
+          <LiquidGlass className="rounded-[1.25rem] p-4">
+            <p className="text-xs font-semibold text-foreground/50 uppercase tracking-wider mb-3">
+              Stickers
+            </p>
+            {stickerLoading ? (
+              <div className="flex flex-wrap gap-2">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="w-14 h-14 rounded-xl bg-foreground/10 animate-pulse" />
+                ))}
+              </div>
+            ) : stickerSrcs.length === 0 ? (
+              <p className="text-sm text-foreground/40 py-2">No stickers yet.</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {stickerSrcs.map(src => (
+                  <button
+                    key={src}
+                    type="button"
+                    onClick={() => { handleAddSticker(src); setStickerPickerOpen(false) }}
+                    className="w-14 h-14 rounded-xl bg-foreground/[0.06] hover:bg-foreground/[0.12] flex items-center justify-center transition-colors"
+                  >
+                    <img src={src} alt="" className="w-10 h-10 object-contain" draggable={false} />
+                  </button>
+                ))}
+              </div>
+            )}
+          </LiquidGlass>
+        </DialogContent>
+      </Dialog>
 
       <WhatsNewPanel
         open={panelOpen}
