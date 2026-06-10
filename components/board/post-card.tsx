@@ -11,6 +11,7 @@ import {
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
 import { TaskList } from '@/components/board/task-list'
+import { GlassButton } from '@/components/ui/glasscn/glass-button'
 import { getAvatarColor } from '@/lib/avatar-color'
 import { useProfile } from '@/components/providers/profile-provider'
 import { cn } from '@/lib/utils'
@@ -61,7 +62,6 @@ export function PostCard({
   const author = isAuthor && currentProfile ? currentProfile : post.author
   const isImageOnly = !!post.image_url && !post.title && !post.content && post.type !== 'tasks'
   const isMapOnly = !!post.map_location && !post.image_url && !post.title && !post.content && post.type !== 'tasks'
-  const isFullBleed = isImageOnly || isMapOnly
   const authorColor = getAvatarColor(author?.id ?? '')
   const initials = author?.display_name?.[0]?.toUpperCase() ?? '?'
 
@@ -101,7 +101,7 @@ export function PostCard({
   return (
     <ContextMenu>
       <ContextMenuTrigger>
-        {/* Outer wrapper — handles absolute positioning, drag, and rotation */}
+        {/* Outer wrapper — handles absolute positioning, drag, rotation, and badge */}
         <div
           ref={outerRef}
           className={cn('absolute select-none', isDragging ? 'cursor-grabbing z-50' : 'cursor-grab')}
@@ -116,13 +116,32 @@ export function PostCard({
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
         >
-          {/* Card */}
+          {/* Author badge — always overlapping top-right corner, outside overflow-hidden */}
+          <div className="absolute -top-5 -right-5 group z-10">
+            <div className="absolute right-full top-1/2 -translate-y-1/2 mr-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+              <span className="bg-[#1c1b19] text-white text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap shadow-sm">
+                {author?.display_name ?? 'Unknown'}
+              </span>
+            </div>
+            <div
+              className={cn(
+                'w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold overflow-hidden cursor-default',
+                isNew ? 'avatar-is-new' : 'ring-[3px] ring-white shadow-md',
+              )}
+              style={{ backgroundColor: authorColor }}
+            >
+              {author?.avatar_url
+                ? <img src={author.avatar_url} alt="" className="w-full h-full object-cover" />
+                : initials}
+            </div>
+          </div>
+
+          {/* Card — always overflow-hidden since badge is now outside */}
           <div
             ref={cardRef}
             id={`post-${post.id}`}
             className={cn(
-              'relative w-72 rounded-3xl group/card border',
-              isFullBleed ? 'overflow-hidden' : 'overflow-visible',
+              'relative w-72 rounded-3xl group/card border overflow-hidden',
               `post-type-${post.type}`,
               isNew && !isDragging ? 'post-is-new' : 'shadow-[0_4px_24px_rgba(0,0,0,0.09)]',
               isDragging
@@ -131,61 +150,18 @@ export function PostCard({
             )}
             style={{ transition: 'box-shadow 150ms ease' }}
           >
-            {/* Author badge */}
-            <div className={cn('group z-10', isFullBleed ? 'absolute top-2 right-2' : 'absolute -top-5 -right-5')}>
-              <div className="absolute right-full top-1/2 -translate-y-1/2 mr-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
-                <span className="bg-[#1c1b19] text-white text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap shadow-sm">
-                  {author?.display_name ?? 'Unknown'}
-                </span>
-              </div>
-              <div
-                className={cn(
-                  'w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold overflow-hidden cursor-default',
-                  isNew ? 'avatar-is-new' : 'ring-[3px] ring-white shadow-md',
-                )}
-                style={{ backgroundColor: authorColor }}
-              >
-                {author?.avatar_url
-                  ? <img src={author.avatar_url} alt="" className="w-full h-full object-cover" />
-                  : initials}
-              </div>
-            </div>
+            {/* Image-only */}
+            {isImageOnly && (
+              <img
+                src={post.image_url!}
+                alt=""
+                className="w-full block object-cover"
+                draggable={false}
+              />
+            )}
 
-            {/* Full-bleed layouts */}
-            {isImageOnly ? (
-              <>
-                <img
-                  src={post.image_url!}
-                  alt=""
-                  className="w-full block object-cover"
-                  draggable={false}
-                />
-                {(onFocusPost || onReply) && (
-                  <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between opacity-0 group-hover/card:opacity-100 transition-opacity duration-150">
-                    {onFocusPost ? (
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); onFocusPost(post, cardRef.current!.getBoundingClientRect()) }}
-                        className="flex items-center gap-1 text-[11px] text-white/80 hover:text-white bg-black/30 hover:bg-black/50 backdrop-blur-sm rounded-full px-2.5 py-1 transition-colors"
-                      >
-                        <Maximize2 className="w-3 h-3" />
-                        Expand
-                      </button>
-                    ) : <span />}
-                    {onReply && (
-                      <button
-                        type="button"
-                        onClick={() => onReply(post)}
-                        className="flex items-center gap-1 text-[11px] text-white/80 hover:text-white bg-black/30 hover:bg-black/50 backdrop-blur-sm rounded-full px-2.5 py-1 transition-colors"
-                      >
-                        <CornerUpLeft className="w-3 h-3" />
-                        Comment
-                      </button>
-                    )}
-                  </div>
-                )}
-              </>
-            ) : isMapOnly ? (
+            {/* Map-only */}
+            {isMapOnly && (
               <>
                 <img
                   src={getMapImageUrl(post.map_location!.lat, post.map_location!.lng)}
@@ -200,33 +176,12 @@ export function PostCard({
                   <MapPin className="w-3 h-3 text-white/90 shrink-0" />
                   <span className="text-[11px] text-white font-medium truncate">{post.map_location!.label}</span>
                 </div>
-                {(onFocusPost || onReply) && (
-                  <div className="absolute top-2 left-2 right-14 flex items-center gap-1.5 opacity-0 group-hover/card:opacity-100 transition-opacity duration-150">
-                    {onFocusPost && (
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); onFocusPost(post, cardRef.current!.getBoundingClientRect()) }}
-                        className="flex items-center gap-1 text-[11px] text-white/80 hover:text-white bg-black/30 hover:bg-black/50 backdrop-blur-sm rounded-full px-2.5 py-1 transition-colors"
-                      >
-                        <Maximize2 className="w-3 h-3" />
-                        Expand
-                      </button>
-                    )}
-                    {onReply && (
-                      <button
-                        type="button"
-                        onClick={() => onReply(post)}
-                        className="flex items-center gap-1 text-[11px] text-white/80 hover:text-white bg-black/30 hover:bg-black/50 backdrop-blur-sm rounded-full px-2.5 py-1 transition-colors"
-                      >
-                        <CornerUpLeft className="w-3 h-3" />
-                        Comment
-                      </button>
-                    )}
-                  </div>
-                )}
               </>
-            ) : (
-              <div className="p-5 pt-6">
+            )}
+
+            {/* Text / task posts */}
+            {!isImageOnly && !isMapOnly && (
+              <div className="p-5 pt-6 pb-12">
                 {post.type === 'question' && (
                   <span className="inline-block text-xs font-semibold text-[#1a6a30] mb-1.5">Question</span>
                 )}
@@ -266,32 +221,32 @@ export function PostCard({
                     </div>
                   </div>
                 )}
+              </div>
+            )}
 
-                {/* Expand + Comment buttons */}
-                {(onFocusPost || onReply) && (
-                  <div className="flex items-center justify-between mt-2">
-                    {onFocusPost ? (
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); onFocusPost(post, cardRef.current!.getBoundingClientRect()) }}
-                        className="[@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/card:opacity-100 flex items-center gap-1 text-[11px] text-jk-text-faint hover:text-jk-accent transition-[opacity,color] duration-150"
-                      >
-                        <Maximize2 className="w-3 h-3" />
-                        Expand
-                      </button>
-                    ) : <span />}
-                    {onReply && (
-                      <button
-                        type="button"
-                        onClick={() => onReply(post)}
-                        className="[@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/card:opacity-100 flex items-center gap-1 text-[11px] text-jk-text-faint hover:text-jk-accent transition-[opacity,color] duration-150"
-                      >
-                        <CornerUpLeft className="w-3 h-3" />
-                        Comment
-                      </button>
-                    )}
-                  </div>
-                )}
+            {/* Unified button overlay — bottom-left (expand) and bottom-right (comment), hover to reveal */}
+            {(onFocusPost || onReply) && (
+              <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between opacity-0 group-hover/card:opacity-100 transition-opacity duration-150 pointer-events-none">
+                {onFocusPost ? (
+                  <GlassButton
+                    size="sm"
+                    className="pointer-events-auto gap-1 text-[11px] h-7 px-2.5"
+                    onClick={(e) => { e.stopPropagation(); onFocusPost(post, cardRef.current!.getBoundingClientRect()) }}
+                  >
+                    <Maximize2 className="w-3 h-3" />
+                    Expand
+                  </GlassButton>
+                ) : <span />}
+                {onReply ? (
+                  <GlassButton
+                    size="sm"
+                    className="pointer-events-auto gap-1 text-[11px] h-7 px-2.5"
+                    onClick={(e) => { e.stopPropagation(); onReply(post) }}
+                  >
+                    <CornerUpLeft className="w-3 h-3" />
+                    Comment
+                  </GlassButton>
+                ) : <span />}
               </div>
             )}
           </div>
