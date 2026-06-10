@@ -39,7 +39,7 @@ create table public.posts (
   id uuid primary key default gen_random_uuid(),
   board_id uuid references public.boards(id) on delete cascade,
   author_id uuid references public.profiles(id) on delete cascade,
-  reply_to_post_id uuid references public.posts(id) on delete cascade,
+  reply_to_post_id uuid references public.posts(id) on delete cascade,  -- cascade ensures replies are deleted with their parent
   type text not null check (type in ('note', 'tasks', 'question')),
   title text,
   content text,
