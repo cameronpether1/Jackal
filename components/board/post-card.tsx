@@ -113,7 +113,7 @@ export function PostCard({
             left: pos.x,
             top: pos.y,
             transform: isDragging ? 'rotate(0deg) translateY(-4px) scale(1.02)' : `rotate(${post.rotation}deg)`,
-            transition: isDragging ? 'none' : 'transform 200ms cubic-bezier(0.16, 1, 0.3, 1)',
+            transition: isDragging ? 'none' : 'transform 200ms cubic-bezier(0.16, 1, 0.3, 1), left 350ms ease-in-out, top 350ms ease-in-out',
             touchAction: 'none',
           }}
           onPointerDown={onPointerDown}
