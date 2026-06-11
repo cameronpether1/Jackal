@@ -573,7 +573,6 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
   }, [])
 
   const handleJumpToPost = useCallback((postId: string) => {
-    setPanelOpen(false)
     setTimeout(() => {
       const inner = innerRef.current
       const container = canvasRef.current
