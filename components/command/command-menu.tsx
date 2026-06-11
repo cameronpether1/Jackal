@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Layout, LogOut, Moon, Plus, Sun, CreditCard, Zap, User, Maximize2, ZoomIn, ZoomOut, Sparkles, Bell } from 'lucide-react'
+import { Layout, LogOut, Moon, Plus, Sun, CreditCard, Zap, User, Maximize2, ZoomIn, ZoomOut, Sparkles } from 'lucide-react'
 import { useTheme } from '@/hooks/use-theme'
 import { useProfile } from '@/components/providers/profile-provider'
 import { useBoardActions } from '@/contexts/board-actions-context'
@@ -118,12 +118,6 @@ export function CommandMenu({ boards, ownedBoardCount }: CommandMenuProps) {
                   <CommandItem value="add sticker sparkle" onSelect={() => run(actions.onAddSticker!)}>
                     <Sparkles className="w-4 h-4 opacity-60" />
                     Add sticker
-                  </CommandItem>
-                )}
-                {actions.onOpenNotifications && (actions.notificationCount ?? 0) > 0 && (
-                  <CommandItem value="notifications activity new" onSelect={() => run(actions.onOpenNotifications!)}>
-                    <Bell className="w-4 h-4 opacity-60" />
-                    What&apos;s new ({actions.notificationCount})
                   </CommandItem>
                 )}
               </CommandGroup>

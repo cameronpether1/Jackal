@@ -3,7 +3,7 @@
 import { useRef } from 'react'
 import { Topbar } from '@/components/topbar/topbar'
 import { Whiteboard } from '@/components/board/whiteboard'
-import type { Board, BoardActivity, BoardMemberWithProfile, PostWithRelations, Profile, Sticker } from '@/lib/supabase/types'
+import type { Board, BoardMemberWithProfile, PostWithRelations, Profile, Sticker } from '@/lib/supabase/types'
 
 interface BoardViewProps {
   board: Board
@@ -13,13 +13,11 @@ interface BoardViewProps {
   isOwner: boolean
   initialPosts: PostWithRelations[]
   initialStickers: Sticker[]
-  prevVisitedAt: string | null
-  newActivities: BoardActivity[]
 }
 
 export function BoardView({
   board, members, currentUser, currentUserId, isOwner,
-  initialPosts, initialStickers, prevVisitedAt, newActivities,
+  initialPosts, initialStickers,
 }: BoardViewProps) {
   const exportFnRef = useRef<(() => Promise<void>) | null>(null)
 
@@ -41,9 +39,6 @@ export function BoardView({
         currentUserId={currentUserId}
         currentProfile={currentUser}
         onExportReady={fn => { exportFnRef.current = fn }}
-        prevVisitedAt={prevVisitedAt}
-        newActivities={newActivities}
-        notificationThreshold={board.notification_threshold}
       />
     </div>
   )

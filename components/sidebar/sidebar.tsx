@@ -49,7 +49,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 }
 
 interface SidebarProps {
-  boards: { id: string; name: string; isOwner: boolean; unreadCount: number }[]
+  boards: { id: string; name: string; isOwner: boolean }[]
   ownedBoardCount: number
 }
 
@@ -153,11 +153,6 @@ export function Sidebar({ boards, ownedBoardCount }: SidebarProps) {
                         >
                           <span className={cn('w-2 h-2 rounded-full shrink-0', color)} />
                           <span className="truncate flex-1 min-w-0">{board.name}</span>
-                          {board.unreadCount > 0 && !isActive && (
-                            <span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none">
-                              {board.unreadCount > 99 ? '99+' : board.unreadCount}
-                            </span>
-                          )}
                         </Link>
                         {board.isOwner && (
                           <button
