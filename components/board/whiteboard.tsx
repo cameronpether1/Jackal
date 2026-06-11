@@ -7,7 +7,6 @@ import { PostCard } from '@/components/board/post-card'
 import { PostFocusOverlay } from '@/components/board/post-focus-overlay'
 import { StickerPeel } from '@/components/board/sticker-peel'
 import { InlineCardEditor } from '@/components/board/inline-card-editor'
-import { WhatsNewPanel } from '@/components/board/whats-new-panel'
 import { EmptyState } from '@/components/board/empty-state'
 import { LiquidGlass } from '@/components/ui/glasscn/liquid-glass'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -15,7 +14,7 @@ import { useBoardActions } from '@/contexts/board-actions-context'
 import { getAvatarColor } from '@/lib/avatar-color'
 import { PresenceCursors, type OnlineUser } from '@/components/board/presence-cursors'
 import { OnlineAvatars } from '@/components/board/online-avatars'
-import type { BoardActivity, PostType, PostWithRelations, Profile, Sticker } from '@/lib/supabase/types'
+import type { PostType, PostWithRelations, Profile, Sticker } from '@/lib/supabase/types'
 
 interface WhiteboardProps {
   boardId: string
@@ -25,9 +24,6 @@ interface WhiteboardProps {
   currentUserId: string
   currentProfile: Profile | null
   onExportReady?: (fn: () => Promise<void>) => void
-  prevVisitedAt?: string | null
-  newActivities?: BoardActivity[]
-  notificationThreshold?: number
 }
 
 interface DraftCard {
@@ -37,14 +33,13 @@ interface DraftCard {
   replyTo?: { postId: string; authorName: string }
 }
 
-export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, currentUserId, currentProfile, onExportReady, prevVisitedAt, newActivities = [], notificationThreshold = 8 }: WhiteboardProps) {
+export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, currentUserId, currentProfile, onExportReady }: WhiteboardProps) {
   const [posts, setPosts] = useState<PostWithRelations[]>(initialPosts)
   const [draft, setDraft] = useState<DraftCard | null>(null)
   const [focusedPost, setFocusedPost] = useState<{ post: PostWithRelations; rect: DOMRect } | null>(null)
   const [stickers, setStickers] = useState<Sticker[]>(initialStickers)
   const [zoom, setZoom] = useState(100)
   const [isExporting, setIsExporting] = useState(false)
-  const [panelOpen, setPanelOpen] = useState(false)
   const [stickerPickerOpen, setStickerPickerOpen] = useState(false)
   const [stickerSrcs, setStickerSrcs] = useState<string[]>([])
   const [stickerLoading, setStickerLoading] = useState(false)
@@ -78,28 +73,6 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
       .finally(() => setStickerLoading(false))
   }, [stickerPickerOpen, stickerSrcs.length, stickerError])
 
-  // Derive which root post IDs have new activity
-  const newPostIds = useMemo(() => {
-    const ids = new Set<string>()
-    newActivities.forEach(a => {
-      if (a.activity_type === 'post' || a.activity_type === 'task_change') {
-        ids.add(a.post_id)
-      } else {
-        // reply — find parent post
-        const reply = posts.find(p => p.id === a.post_id)
-        ids.add(reply?.reply_to_post_id ?? a.post_id)
-      }
-    })
-    return ids
-  }, [newActivities, posts])
-
-  // Auto-open the "What's new" panel when there are more new items than the threshold
-  useEffect(() => {
-    if (newActivities.length > notificationThreshold) {
-      setPanelOpen(true)
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
 
   // Auto-fit all posts into view on initial load
   useEffect(() => {
@@ -591,18 +564,15 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
       onZoomIn: () => setZoom(z => Math.min(200, z + 10)),
       onZoomOut: () => setZoom(z => Math.max(20, z - 10)),
       zoom,
-      onOpenNotifications: () => setPanelOpen(true),
-      notificationCount: newActivities.length,
     })
     return () => setActions(null)
-  }, [zoom, newActivities.length, spawnDraft, handleFitAll, setActions])
+  }, [zoom, spawnDraft, handleFitAll, setActions])
 
   const handleFocusPost = useCallback((post: PostWithRelations, rect: DOMRect) => {
     setFocusedPost({ post, rect })
   }, [])
 
   const handleJumpToPost = useCallback((postId: string) => {
-    setPanelOpen(false)
     setTimeout(() => {
       const inner = innerRef.current
       const container = canvasRef.current
@@ -698,7 +668,6 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
             post={post}
             currentUserId={currentUserId}
             replies={repliesByParentId.get(post.id) ?? []}
-            isNew={newPostIds.has(post.id)}
             onDragEnd={handleDragEnd}
             onTaskToggle={handleTaskToggle}
             onDelete={handleDeletePost}
@@ -787,13 +756,6 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
         </DialogContent>
       </Dialog>
 
-      <WhatsNewPanel
-        open={panelOpen}
-        activities={newActivities}
-        prevVisitedAt={prevVisitedAt ?? null}
-        onClose={() => setPanelOpen(false)}
-        onJumpToPost={handleJumpToPost}
-      />
 
 
       {focusedPost && (() => {

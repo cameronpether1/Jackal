@@ -9,8 +9,6 @@ export interface BoardActions {
   onZoomIn?: () => void
   onZoomOut?: () => void
   zoom?: number
-  onOpenNotifications?: () => void
-  notificationCount?: number
 }
 
 interface BoardActionsContextValue {

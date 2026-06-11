@@ -24,7 +24,6 @@ interface PostCardProps {
   post: PostWithRelations
   currentUserId: string
   replies?: PostWithRelations[]
-  isNew?: boolean
   onDragEnd: (postId: string, x: number, y: number) => void
   onTaskToggle: (taskId: string, checked: boolean) => void
   onDelete: (postId: string) => void
@@ -48,7 +47,7 @@ function formatTimestamp(iso: string): string {
 }
 
 export function PostCard({
-  post, currentUserId, replies = [], isNew,
+  post, currentUserId, replies = [],
   onDragEnd, onTaskToggle, onDelete, onReply, onFocusPost,
 }: PostCardProps) {
   const [pos, setPos] = useState({ x: post.pos_x, y: post.pos_y })
@@ -130,7 +129,7 @@ export function PostCard({
             <div
               className={cn(
                 'w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold overflow-hidden cursor-default',
-                isNew ? 'avatar-is-new' : 'ring-[3px] ring-white shadow-md',
+                'ring-[3px] ring-white shadow-md',
               )}
               style={{ backgroundColor: authorColor }}
             >
@@ -147,7 +146,7 @@ export function PostCard({
             className={cn(
               'relative w-72 rounded-3xl group/card border overflow-hidden',
               `post-type-${post.type}`,
-              isNew && !isDragging ? 'post-is-new' : 'shadow-[0_4px_24px_rgba(0,0,0,0.09)]',
+              'shadow-[0_4px_24px_rgba(0,0,0,0.09)]',
               isDragging
                 ? 'shadow-[0_16px_48px_rgba(0,0,0,0.18)]'
                 : 'hover:shadow-[0_8px_32px_rgba(0,0,0,0.14)]',

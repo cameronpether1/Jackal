@@ -14,7 +14,6 @@ export type Board = {
   id: string
   name: string
   owner_id: string
-  notification_threshold: number
   created_at: string
 }
 
@@ -61,20 +60,6 @@ export type TaskItem = {
   updated_at: string
 }
 
-export type BoardActivity = {
-  id: string
-  activity_type: 'post' | 'reply' | 'task_change'
-  post_id: string
-  post_title: string | null
-  content_preview: string | null
-  author_id: string
-  author_name: string
-  author_avatar_url: string | null
-  replied_to_author_name: string | null
-  task_label: string | null
-  task_checked: boolean | null
-  occurred_at: string
-}
 
 export type Reaction = {
   id: string
@@ -138,11 +123,6 @@ export type Database = {
         Row: Board
         Insert: Omit<Board, 'id' | 'created_at'>
         Update: Partial<Omit<Board, 'id' | 'created_at'>>
-      }
-      board_visits: {
-        Row: { user_id: string; board_id: string; last_visited_at: string }
-        Insert: { user_id: string; board_id: string; last_visited_at?: string }
-        Update: { last_visited_at?: string }
       }
       board_members: {
         Row: BoardMember
