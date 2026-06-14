@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useCallback, useState, useMemo, useEffect } from 'react'
-import { Trash2, Copy, CornerUpLeft, MapPin, Maximize2 } from 'lucide-react'
+import { Trash2, Copy, CornerUpLeft, MapPin } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   ContextMenu,
@@ -115,8 +115,12 @@ export function PostCard({
     const newY = dragState.current.startPosY + dy
     dragState.current = null
     setIsDragging(false)
-    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) onDragEnd(post.id, newX, newY)
-  }, [post.id, onDragEnd])
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+      onDragEnd(post.id, newX, newY)
+    } else if (onFocusPost && cardRef.current) {
+      onFocusPost(post, cardRef.current.getBoundingClientRect())
+    }
+  }, [post, onDragEnd, onFocusPost])
 
   return (
     <ContextMenu>
@@ -247,31 +251,18 @@ export function PostCard({
               </div>
             )}
 
-            {/* Unified button overlay — bottom-left (expand) and bottom-right (comment), hover to reveal */}
-            {(onFocusPost || onReply) && (
-              <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between opacity-0 group-hover/card:opacity-100 transition-opacity duration-150 pointer-events-none">
-                {onFocusPost ? (
-                  <GlassButton
-                    size="sm"
-                    glassVariant="liquid-refract"
-                    className="pointer-events-auto gap-1 text-[11px] h-7 px-2.5"
-                    onClick={(e) => { e.stopPropagation(); if (cardRef.current) onFocusPost(post, cardRef.current.getBoundingClientRect()) }}
-                  >
-                    <Maximize2 className="w-3 h-3" />
-                    Expand
-                  </GlassButton>
-                ) : <span />}
-                {onReply ? (
-                  <GlassButton
-                    size="sm"
-                    glassVariant="liquid-refract"
-                    className="pointer-events-auto gap-1 text-[11px] h-7 px-2.5"
-                    onClick={(e) => { e.stopPropagation(); onReply(post) }}
-                  >
-                    <CornerUpLeft className="w-3 h-3" />
-                    Comment
-                  </GlassButton>
-                ) : <span />}
+            {/* Comment button — bottom-right, hover to reveal */}
+            {onReply && (
+              <div className="absolute bottom-2 right-2 opacity-0 group-hover/card:opacity-100 transition-opacity duration-150 pointer-events-none">
+                <GlassButton
+                  size="sm"
+                  glassVariant="liquid-refract"
+                  className="pointer-events-auto gap-1 text-[11px] h-7 px-2.5"
+                  onClick={(e) => { e.stopPropagation(); onReply(post) }}
+                >
+                  <CornerUpLeft className="w-3 h-3" />
+                  Comment
+                </GlassButton>
               </div>
             )}
           </div>
