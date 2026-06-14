@@ -181,31 +181,17 @@
   background-size: 24px 24px;
 }
 
-/* Post card type color theming — semantic post-type borders + background tints */
-.post-type-note {
-  border-color: rgba(134, 211, 250, 0.38);
-  background-color: color-mix(in oklch, #86d3fa 7%, white);
-}
-.post-type-tasks {
-  border-color: rgba(250, 173, 134, 0.38);
-  background-color: color-mix(in oklch, #faad86 7%, white);
-}
+/* Post card border color */
+.post-type-note,
+.post-type-tasks,
 .post-type-question {
-  border-color: rgba(134, 250, 150, 0.38);
-  background-color: color-mix(in oklch, #86fa96 7%, white);
+  border-color: rgba(0, 0, 0, 0.08);
 }
 
-.dark .post-type-note {
-  border-color: rgba(134, 211, 250, 0.24);
-  background-color: color-mix(in oklch, #86d3fa 7%, #1c1b19);
-}
-.dark .post-type-tasks {
-  border-color: rgba(250, 173, 134, 0.24);
-  background-color: color-mix(in oklch, #faad86 7%, #1c1b19);
-}
+.dark .post-type-note,
+.dark .post-type-tasks,
 .dark .post-type-question {
-  border-color: rgba(134, 250, 150, 0.24);
-  background-color: color-mix(in oklch, #86fa96 7%, #1c1b19);
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
 /* Reply target flash */

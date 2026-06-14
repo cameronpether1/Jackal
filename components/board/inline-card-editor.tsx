@@ -5,7 +5,7 @@ import { CornerUpLeft, Image, MapPin, X, Check } from 'lucide-react'
 import { getAvatarColor } from '@/lib/avatar-color'
 import { getMapImageUrl } from '@/lib/mapbox'
 import { cn } from '@/lib/utils'
-import type { MapLocation, PostType, Profile } from '@/lib/supabase/types'
+import type { MapLocation, PostType, PostWithRelations, Profile } from '@/lib/supabase/types'
 import { LocationPicker } from '@/components/board/location-picker'
 
 const TYPE_OPTIONS: { value: PostType; label: string }[] = [
@@ -27,12 +27,13 @@ interface InlineCardEditorProps {
   currentProfile: Profile | null
   currentUserId: string
   replyTo?: { postId: string; authorName: string } | null
+  posts?: PostWithRelations[]
   onSave: (data: { type: PostType; title: string; content: string; imageFile?: File | null; mapLocation?: MapLocation | null }) => void
   onDiscard: () => void
 }
 
 export function InlineCardEditor({
-  x, y, rotation, currentProfile, currentUserId, replyTo, onSave, onDiscard
+  x, y, rotation, currentProfile, currentUserId, replyTo, posts = [], onSave, onDiscard
 }: InlineCardEditorProps) {
   const [type, setType] = useState<PostType>('note')
   const [title, setTitle] = useState('')
@@ -42,9 +43,35 @@ export function InlineCardEditor({
   const [mapLocation, setMapLocation] = useState<MapLocation | null>(null)
   const [showLocationPicker, setShowLocationPicker] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const [linkSearch, setLinkSearch] = useState<string | null>(null)
   const titleRef = useRef<HTMLInputElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
+  const contentRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const linkMatches = linkSearch !== null
+    ? posts.filter(p => {
+        if (p.reply_to_post_id) return false
+        const hay = (p.title || p.content || '').toLowerCase()
+        return linkSearch === '' || hay.includes(linkSearch.toLowerCase())
+      }).slice(0, 5)
+    : []
+
+  function insertLink(post: PostWithRelations) {
+    const ta = contentRef.current
+    if (!ta) return
+    const caret = ta.selectionStart ?? content.length
+    const before = content.slice(0, caret)
+    const after = content.slice(caret)
+    const newBefore = before.replace(/\[\[[^\]]*$/, `[[${post.id}]] `)
+    setContent(newBefore + after)
+    setLinkSearch(null)
+    requestAnimationFrame(() => {
+      ta.focus()
+      const pos = newBefore.length
+      ta.setSelectionRange(pos, pos)
+    })
+  }
   const authorColor = getAvatarColor(currentUserId)
 
   useEffect(() => {
@@ -94,8 +121,20 @@ export function InlineCardEditor({
     onSave({ type, title: title.trim(), content: content.trim(), imageFile, mapLocation })
   }
 
+  function handleContentChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    const val = e.target.value
+    setContent(val)
+    const caret = e.target.selectionStart ?? val.length
+    const before = val.slice(0, caret)
+    const match = before.match(/\[\[([^\]]*)$/)
+    setLinkSearch(match ? match[1] : null)
+  }
+
   function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === 'Escape') { onDiscard(); return }
+    if (e.key === 'Escape') {
+      if (linkSearch !== null) { setLinkSearch(null); return }
+      onDiscard(); return
+    }
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { handleSave(); return }
   }
 
@@ -167,20 +206,43 @@ export function InlineCardEditor({
       />
 
       {/* Content */}
-      <textarea
-        value={content}
-        onChange={e => setContent(e.target.value)}
-        placeholder={
-          type === 'tasks' ? 'One task per line…'
-          : type === 'question' ? 'Add more detail…'
-          : 'Write something…'
-        }
-        rows={isMobile ? 4 : 3}
-        className={cn(
-          'w-full text-sm text-jk-text-muted outline-none resize-none placeholder:text-jk-text-faint bg-transparent',
-          isMobile && 'text-base leading-relaxed',
+      <div className="relative">
+        <textarea
+          ref={contentRef}
+          value={content}
+          onChange={handleContentChange}
+          placeholder={
+            type === 'tasks' ? 'One task per line…'
+            : type === 'question' ? 'Add more detail…'
+            : 'Write something… (type [[ to link a post)'
+          }
+          rows={isMobile ? 4 : 3}
+          className={cn(
+            'w-full text-sm text-jk-text-muted outline-none resize-none placeholder:text-jk-text-faint bg-transparent',
+            isMobile && 'text-base leading-relaxed',
+          )}
+        />
+        {linkSearch !== null && linkMatches.length > 0 && (
+          <div className="absolute left-0 right-0 bottom-full mb-1 bg-jk-surface border border-jk-border rounded-2xl shadow-lg z-50 overflow-hidden">
+            {linkMatches.map(p => (
+              <button
+                key={p.id}
+                type="button"
+                onMouseDown={e => { e.preventDefault(); insertLink(p) }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-jk-surface-offset transition-colors"
+              >
+                <span className="text-[10px] text-jk-text-faint capitalize shrink-0">{p.type}</span>
+                <span className="truncate text-jk-text">{p.title || p.content?.slice(0, 40) || 'Untitled'}</span>
+              </button>
+            ))}
+          </div>
         )}
-      />
+        {linkSearch !== null && linkMatches.length === 0 && (
+          <div className="absolute left-0 right-0 bottom-full mb-1 bg-jk-surface border border-jk-border rounded-2xl shadow-lg z-50 px-3 py-2 text-xs text-jk-text-faint">
+            No posts found
+          </div>
+        )}
+      </div>
 
       {/* Image preview */}
       {imagePreview && (
@@ -249,11 +311,8 @@ export function InlineCardEditor({
     return (
       <div
         ref={cardRef}
-        className={cn(
-          'fixed inset-x-0 z-[60] border-t border shadow-[0_-8px_32px_rgba(0,0,0,0.14)] rounded-t-3xl overflow-hidden',
-          `post-type-${type}`,
-        )}
-        style={{ bottom: 0, paddingBottom: 'env(safe-area-inset-bottom)' }}
+        className="fixed inset-x-0 z-[60] border-t border shadow-[0_-8px_32px_rgba(0,0,0,0.14)] rounded-t-3xl overflow-hidden"
+        style={{ bottom: 0, paddingBottom: 'env(safe-area-inset-bottom)', backgroundColor: '#F4F4F4', borderColor: 'rgba(0,0,0,0.08)' }}
         onKeyDown={handleKeyDown}
       >
         {/* Drag handle indicator */}
@@ -266,11 +325,8 @@ export function InlineCardEditor({
   return (
     <div
       ref={cardRef}
-      className={cn(
-        'absolute w-72 rounded-3xl shadow-[0_8px_40px_rgba(0,0,0,0.16)] z-50 ring-2 ring-jk-accent/40 border',
-        `post-type-${type}`,
-      )}
-      style={{ left: x, top: y, transform: `rotate(${rotation}deg)` }}
+      className="absolute w-72 rounded-3xl shadow-[0_8px_40px_rgba(0,0,0,0.16)] z-50 ring-2 ring-jk-accent/40 border"
+      style={{ left: x, top: y, transform: `rotate(${rotation}deg)`, backgroundColor: '#F4F4F4', borderColor: 'rgba(0,0,0,0.08)' }}
       onKeyDown={handleKeyDown}
     >
       {/* Author badge */}

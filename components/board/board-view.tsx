@@ -38,6 +38,7 @@ export function BoardView({
         initialStickers={initialStickers}
         currentUserId={currentUserId}
         currentProfile={currentUser}
+        isOwner={isOwner}
         onExportReady={fn => { exportFnRef.current = fn }}
       />
     </div>

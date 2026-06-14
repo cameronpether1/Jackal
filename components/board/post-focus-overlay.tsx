@@ -8,6 +8,7 @@ import { TaskList } from '@/components/board/task-list'
 import { getAvatarColor } from '@/lib/avatar-color'
 import { getMapImageUrl } from '@/lib/mapbox'
 import { renderContent } from '@/lib/render-content'
+import { PostLinkChip } from '@/components/board/post-link-chip'
 import type { PostWithRelations } from '@/lib/supabase/types'
 
 const TYPE_LABEL: Record<string, string> = { note: 'Note', tasks: 'Tasks', question: 'Question' }
@@ -27,12 +28,14 @@ interface PostFocusOverlayProps {
   replies: PostWithRelations[]
   currentUserId: string
   cardRect: DOMRect
+  allPosts?: PostWithRelations[]
   onClose: () => void
   onTaskToggle: (taskId: string, checked: boolean) => void
   onReply: (post: PostWithRelations) => void
+  onJumpToPost?: (postId: string) => void
 }
 
-export function PostFocusOverlay({ post, replies, currentUserId, cardRect, onClose, onTaskToggle, onReply }: PostFocusOverlayProps) {
+export function PostFocusOverlay({ post, replies, currentUserId, cardRect, allPosts = [], onClose, onTaskToggle, onReply, onJumpToPost }: PostFocusOverlayProps) {
   const [clipPath, setClipPath] = useState(() => rectToClipPath(cardRect))
   const [easing, setEasing] = useState<'open' | 'close'>('open')
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -41,6 +44,7 @@ export function PostFocusOverlay({ post, replies, currentUserId, cardRect, onClo
   const authorColor = getAvatarColor(author?.id ?? '')
   const initials = author?.display_name?.[0]?.toUpperCase() ?? '?'
   const sortedReplies = [...replies].sort((a, b) => a.created_at.localeCompare(b.created_at))
+  const linkedFrom = allPosts.filter(p => p.id !== post.id && p.content?.includes(`[[${post.id}]]`))
   const formattedDate = new Date(post.created_at).toLocaleDateString('en-US', {
     month: 'short', day: 'numeric', year: 'numeric',
   })
@@ -121,7 +125,7 @@ export function PostFocusOverlay({ post, replies, currentUserId, cardRect, onClo
           ) : (
             post.content && (
               <p className="text-base text-jk-text-muted leading-relaxed whitespace-pre-wrap">
-                {renderContent(post.content)}
+                {renderContent(post.content, { posts: allPosts, onJumpToPost })}
               </p>
             )
           )}
@@ -188,7 +192,7 @@ export function PostFocusOverlay({ post, replies, currentUserId, cardRect, onClo
                       ) : (
                         reply.content && (
                           <p className="text-sm text-jk-text-muted leading-relaxed whitespace-pre-wrap">
-                            {renderContent(reply.content)}
+                            {renderContent(reply.content, { posts: allPosts, onJumpToPost })}
                           </p>
                         )
                       )}
@@ -240,6 +244,17 @@ export function PostFocusOverlay({ post, replies, currentUserId, cardRect, onClo
           <div>
             <p className="text-[9px] font-semibold text-jk-text-faint uppercase tracking-widest mb-1.5">Comments</p>
             <p className="text-xs text-jk-text">{sortedReplies.length}</p>
+          </div>
+        )}
+
+        {linkedFrom.length > 0 && (
+          <div>
+            <p className="text-[9px] font-semibold text-jk-text-faint uppercase tracking-widest mb-2">Mentioned in</p>
+            <div className="flex flex-col gap-1.5">
+              {linkedFrom.map(p => (
+                <PostLinkChip key={p.id} postId={p.id} posts={allPosts} onJump={onJumpToPost} />
+              ))}
+            </div>
           </div>
         )}
       </div>
