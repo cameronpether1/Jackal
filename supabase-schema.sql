@@ -239,10 +239,18 @@ create policy "Board members can update posts"
     )
   );
 
-create policy "Authors can delete their posts"
+create policy "Authors and board owners can delete posts"
   on public.posts for delete
   to authenticated
-  using (author_id = auth.uid());
+  using (
+    author_id = auth.uid()
+    or exists (
+      select 1 from public.board_members
+      where board_id = posts.board_id
+        and user_id = auth.uid()
+        and role = 'owner'
+    )
+  );
 
 -- Task items: accessible by board members
 create policy "Board members can read task items"
@@ -350,10 +358,18 @@ create policy "Board members can update stickers"
     )
   );
 
-create policy "Creators can delete stickers"
+create policy "Creators and board owners can delete stickers"
   on public.stickers for delete
   to authenticated
-  using (created_by = auth.uid());
+  using (
+    created_by = auth.uid()
+    or exists (
+      select 1 from public.board_members
+      where board_id = stickers.board_id
+        and user_id = auth.uid()
+        and role = 'owner'
+    )
+  );
 
 -- ============================================================
 -- TRIGGERS

@@ -19,11 +19,18 @@ import type { PostWithRelations } from '@/lib/supabase/types'
 import { renderContent } from '@/lib/render-content'
 import { getMapImageUrl } from '@/lib/mapbox'
 import FigmaComment from '@/components/smoothui/figma-comment'
+import { ReplyBubble } from '@/components/board/reply-bubble'
 
 interface PostCardProps {
   post: PostWithRelations
   currentUserId: string
   replies?: PostWithRelations[]
+  isBoardOwner?: boolean
+  allPosts?: PostWithRelations[]
+  onJumpToPost?: (postId: string) => void
+  isReplying?: boolean
+  onReplyDraftSave?: (data: { content: string; imageFile?: File | null }) => void
+  onReplyDraftDiscard?: () => void
   onDragEnd: (postId: string, x: number, y: number) => void
   onTaskToggle: (taskId: string, checked: boolean) => void
   onDelete: (postId: string) => void
@@ -31,13 +38,20 @@ interface PostCardProps {
   onFocusPost?: (post: PostWithRelations, rect: DOMRect) => void
 }
 
-function getReplyMessage(reply: PostWithRelations): string {
+const LINK_REF = /\[\[([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\]\]/g
+
+function getReplyMessage(reply: PostWithRelations, posts: PostWithRelations[] = []): string {
   if (reply.type === 'tasks') {
     const items = reply.task_items?.map(t => `• ${t.label}`).join('\n')
     return items || '(tasks)'
   }
   const parts = [reply.title, reply.content].filter(Boolean)
-  if (parts.length > 0) return parts.join('\n')
+  if (parts.length > 0) {
+    return parts.join('\n').replace(LINK_REF, (_, id) => {
+      const p = posts.find(x => x.id === id)
+      return `[${p?.title || p?.content?.slice(0, 30) || 'Linked post'}]`
+    })
+  }
   if (reply.map_location) return reply.map_location.label
   return ''
 }
@@ -47,7 +61,9 @@ function formatTimestamp(iso: string): string {
 }
 
 export function PostCard({
-  post, currentUserId, replies = [],
+  post, currentUserId, replies = [], isBoardOwner = false,
+  allPosts = [], onJumpToPost,
+  isReplying = false, onReplyDraftSave, onReplyDraftDiscard,
   onDragEnd, onTaskToggle, onDelete, onReply, onFocusPost,
 }: PostCardProps) {
   const [pos, setPos] = useState({ x: post.pos_x, y: post.pos_y })
@@ -107,6 +123,7 @@ export function PostCard({
         {/* Outer wrapper — handles absolute positioning, drag, rotation, and badge */}
         <div
           ref={outerRef}
+          id={`post-${post.id}`}
           className={cn('absolute select-none', isDragging ? 'cursor-grabbing z-50' : 'cursor-grab')}
           style={{
             left: pos.x,
@@ -142,16 +159,14 @@ export function PostCard({
           {/* Card — always overflow-hidden since badge is now outside */}
           <div
             ref={cardRef}
-            id={`post-${post.id}`}
             className={cn(
               'relative w-72 rounded-3xl group/card border overflow-hidden',
-              `post-type-${post.type}`,
               'shadow-[0_4px_24px_rgba(0,0,0,0.09)]',
               isDragging
                 ? 'shadow-[0_16px_48px_rgba(0,0,0,0.18)]'
                 : 'hover:shadow-[0_8px_32px_rgba(0,0,0,0.14)]',
             )}
-            style={{ transition: 'box-shadow 150ms ease' }}
+            style={{ transition: 'box-shadow 150ms ease', backgroundColor: '#F4F4F4', borderColor: 'rgba(0,0,0,0.08)' }}
           >
             {/* Image-only */}
             {isImageOnly && (
@@ -200,7 +215,7 @@ export function PostCard({
                   />
                 ) : (
                   post.content && (
-                    <p className="text-sm text-jk-text-muted leading-relaxed whitespace-pre-wrap">{renderContent(post.content)}</p>
+                    <p className="text-sm text-jk-text-muted leading-relaxed whitespace-pre-wrap">{renderContent(post.content, { posts: allPosts, onJumpToPost })}</p>
                   )
                 )}
 
@@ -257,7 +272,7 @@ export function PostCard({
           </div>
 
           {/* Comment bubbles — stacked to the right of the card */}
-          {sortedReplies.length > 0 && (
+          {(sortedReplies.length > 0 || isReplying) && (
             <div
               data-comment-bubble
               className="absolute top-4 flex flex-col"
@@ -271,12 +286,21 @@ export function PostCard({
                   authorName={reply.author?.display_name ?? 'Someone'}
                   avatarUrl={reply.author?.avatar_url ?? undefined}
                   avatarColor={getAvatarColor(reply.author?.id ?? '')}
-                  message={getReplyMessage(reply)}
+                  message={getReplyMessage(reply, allPosts)}
                   imageUrl={reply.image_url ?? undefined}
                   timestamp={formatTimestamp(reply.created_at)}
                   width={200}
                 />
               ))}
+              {isReplying && onReplyDraftSave && onReplyDraftDiscard && (
+                <ReplyBubble
+                  currentProfile={currentProfile}
+                  currentUserId={currentUserId}
+                  posts={allPosts}
+                  onSave={onReplyDraftSave}
+                  onDiscard={onReplyDraftDiscard}
+                />
+              )}
             </div>
           )}
         </div>
@@ -294,7 +318,7 @@ export function PostCard({
             <CornerUpLeft className="w-4 h-4 mr-2" /> Comment
           </ContextMenuItem>
         )}
-        {isAuthor && (
+        {(isAuthor || isBoardOwner) && (
           <>
             <ContextMenuSeparator />
             <ContextMenuItem

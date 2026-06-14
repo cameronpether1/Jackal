@@ -23,6 +23,7 @@ interface WhiteboardProps {
   initialStickers: Sticker[]
   currentUserId: string
   currentProfile: Profile | null
+  isOwner?: boolean
   onExportReady?: (fn: () => Promise<void>) => void
 }
 
@@ -33,9 +34,10 @@ interface DraftCard {
   replyTo?: { postId: string; authorName: string }
 }
 
-export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, currentUserId, currentProfile, onExportReady }: WhiteboardProps) {
+export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, currentUserId, currentProfile, isOwner = false, onExportReady }: WhiteboardProps) {
   const [posts, setPosts] = useState<PostWithRelations[]>(initialPosts)
   const [draft, setDraft] = useState<DraftCard | null>(null)
+  const [replyingToPostId, setReplyingToPostId] = useState<string | null>(null)
   const [focusedPost, setFocusedPost] = useState<{ post: PostWithRelations; rect: DOMRect } | null>(null)
   const [stickers, setStickers] = useState<Sticker[]>(initialStickers)
   const [zoom, setZoom] = useState(100)
@@ -337,13 +339,94 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
   }, [boardId, currentUserId, supabase])
 
   const handleReply = useCallback((post: PostWithRelations) => {
-    setDraft({
-      x: post.pos_x + 20,
-      y: post.pos_y + 20,
-      rotation: (Math.random() * 4 - 2),
-      replyTo: { postId: post.id, authorName: post.author?.display_name ?? 'Unknown' },
-    })
+    if (window.matchMedia('(max-width: 639px)').matches) {
+      setDraft({
+        x: post.pos_x + 20,
+        y: post.pos_y + 20,
+        rotation: (Math.random() * 4 - 2),
+        replyTo: { postId: post.id, authorName: post.author?.display_name ?? 'Unknown' },
+      })
+    } else {
+      setReplyingToPostId(post.id)
+    }
   }, [])
+
+  const handleSaveReply = useCallback(async (data: { content: string; imageFile?: File | null }) => {
+    const parentId = replyingToPostId
+    const parentPost = posts.find(p => p.id === parentId)
+    if (!parentPost) return
+    setReplyingToPostId(null)
+
+    let imageUrl: string | null = null
+    if (data.imageFile) {
+      const ext = data.imageFile.name.split('.').pop() ?? 'jpg'
+      const path = `${boardId}/${Date.now()}.${ext}`
+      const { error: uploadError } = await supabase.storage
+        .from('post-images')
+        .upload(path, data.imageFile)
+      if (!uploadError) {
+        const { data: urlData } = supabase.storage.from('post-images').getPublicUrl(path)
+        imageUrl = urlData.publicUrl
+      }
+    }
+
+    const optimisticId = `opt-${Date.now()}`
+    const optimistic: PostWithRelations = {
+      id: optimisticId,
+      board_id: boardId,
+      author_id: currentUserId,
+      author: currentProfile as any,
+      type: 'note',
+      title: null,
+      content: data.content || null,
+      image_url: imageUrl,
+      map_location: null,
+      pos_x: parentPost.pos_x + 20,
+      pos_y: parentPost.pos_y + 20,
+      rotation: 0,
+      reply_to_post_id: parentId,
+      task_items: [],
+      reactions: [],
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }
+    setPosts(prev => [...prev, optimistic])
+
+    try {
+      const { data: post, error } = await supabase
+        .from('posts')
+        .insert({
+          board_id: boardId,
+          author_id: currentUserId,
+          type: 'note',
+          title: null,
+          content: data.content || null,
+          image_url: imageUrl,
+          map_location: null,
+          pos_x: parentPost.pos_x + 20,
+          pos_y: parentPost.pos_y + 20,
+          rotation: 0,
+          reply_to_post_id: parentId,
+        })
+        .select('*, author:profiles(*)')
+        .single()
+
+      if (error) throw error
+
+      setPosts(prev => {
+        const mapped = prev.map(p =>
+          p.id === optimisticId
+            ? { ...post, task_items: [], reactions: [] } as PostWithRelations
+            : p
+        )
+        const seen = new Set<string>()
+        return mapped.filter(p => !seen.has(p.id) && seen.add(p.id) !== undefined)
+      })
+    } catch {
+      setPosts(prev => prev.filter(p => p.id !== optimisticId))
+      toast.error('Failed to save comment')
+    }
+  }, [replyingToPostId, posts, boardId, currentUserId, currentProfile, supabase])
 
   const handleSaveDraft = useCallback(async (data: { type: PostType; title: string; content: string; imageFile?: File | null; mapLocation?: import('@/lib/supabase/types').MapLocation | null }) => {
     if (!draft) return
@@ -667,7 +750,13 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
             key={post.id}
             post={post}
             currentUserId={currentUserId}
+            isBoardOwner={isOwner}
+            allPosts={posts}
+            onJumpToPost={handleJumpToPost}
             replies={repliesByParentId.get(post.id) ?? []}
+            isReplying={post.id === replyingToPostId}
+            onReplyDraftSave={handleSaveReply}
+            onReplyDraftDiscard={() => setReplyingToPostId(null)}
             onDragEnd={handleDragEnd}
             onTaskToggle={handleTaskToggle}
             onDelete={handleDeletePost}
@@ -686,6 +775,7 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
             peelDirection={s.rotation}
             createdBy={s.created_by}
             currentUserId={currentUserId}
+            isBoardOwner={isOwner}
             onDragEnd={(x, y) => handleStickerDragEnd(s.id, x, y)}
             onDelete={() => handleStickerDelete(s.id)}
           />
@@ -699,6 +789,7 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
             currentProfile={currentProfile}
             currentUserId={currentUserId}
             replyTo={draft.replyTo}
+            posts={posts}
             onSave={handleSaveDraft}
             onDiscard={() => setDraft(null)}
           />
@@ -766,9 +857,14 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
             replies={repliesByParentId.get(focusedPost.post.id) ?? []}
             currentUserId={currentUserId}
             cardRect={focusedPost.rect}
+            allPosts={posts}
             onClose={() => setFocusedPost(null)}
             onTaskToggle={handleTaskToggle}
             onReply={handleReply}
+            onJumpToPost={(postId) => {
+              setFocusedPost(null)
+              handleJumpToPost(postId)
+            }}
           />
         )
       })()}

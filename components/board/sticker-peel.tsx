@@ -16,6 +16,7 @@ interface StickerPeelProps {
   posY: number
   createdBy: string
   currentUserId: string
+  isBoardOwner?: boolean
   onDragEnd: (x: number, y: number) => void
   onDelete: () => void
   rotate?: number
@@ -46,6 +47,7 @@ export function StickerPeel({
   posY,
   createdBy,
   currentUserId,
+  isBoardOwner = false,
   onDragEnd,
   onDelete,
   rotate = 30,
@@ -183,7 +185,8 @@ export function StickerPeel({
     filter: `url(#${uid}-expandAndFill)`,
   }
 
-  const isOwner = createdBy === currentUserId
+  const isCreator = createdBy === currentUserId
+  const canDelete = isCreator || isBoardOwner
 
   const stickerEl = (
     <div
@@ -288,7 +291,7 @@ export function StickerPeel({
     </div>
   )
 
-  if (!isOwner) return stickerEl
+  if (!canDelete) return stickerEl
 
   return (
     <ContextMenu>
