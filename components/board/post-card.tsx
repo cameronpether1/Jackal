@@ -33,6 +33,7 @@ interface PostCardProps {
   onReplyDraftDiscard?: () => void
   onDragEnd: (postId: string, x: number, y: number) => void
   onTaskToggle: (taskId: string, checked: boolean) => void
+  onAddTaskItem: (postId: string, label: string) => void
   onDelete: (postId: string) => void
   onReply?: (post: PostWithRelations) => void
   onFocusPost?: (post: PostWithRelations, rect: DOMRect) => void
@@ -64,7 +65,7 @@ export function PostCard({
   post, currentUserId, replies = [], isBoardOwner = false,
   allPosts = [], onJumpToPost,
   isReplying = false, onReplyDraftSave, onReplyDraftDiscard,
-  onDragEnd, onTaskToggle, onDelete, onReply, onFocusPost,
+  onDragEnd, onTaskToggle, onAddTaskItem, onDelete, onReply, onFocusPost,
 }: PostCardProps) {
   const [pos, setPos] = useState({ x: post.pos_x, y: post.pos_y })
   const [isDragging, setIsDragging] = useState(false)
@@ -213,6 +214,7 @@ export function PostCard({
                   <TaskList
                     items={post.task_items ?? []}
                     onToggle={onTaskToggle}
+                    onAddTask={(label) => onAddTaskItem(post.id, label)}
                     postId={post.id}
                     currentUserId={currentUserId}
                   />

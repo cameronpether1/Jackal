@@ -14,7 +14,7 @@ import { useBoardActions } from '@/contexts/board-actions-context'
 import { getAvatarColor } from '@/lib/avatar-color'
 import { PresenceCursors, type OnlineUser } from '@/components/board/presence-cursors'
 import { OnlineAvatars } from '@/components/board/online-avatars'
-import type { PostType, PostWithRelations, Profile, Sticker } from '@/lib/supabase/types'
+import type { PostType, PostWithRelations, Profile, Sticker, TaskItem } from '@/lib/supabase/types'
 
 interface WhiteboardProps {
   boardId: string
@@ -527,6 +527,40 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
     await supabase.from('posts').update({ pos_x: x, pos_y: y }).eq('id', postId)
   }, [supabase])
 
+  const handleAddTaskItem = useCallback(async (postId: string, label: string) => {
+    const post = posts.find(p => p.id === postId)
+    if (!post) return
+    const position = (post.task_items ?? []).length
+    const optimisticId = `opt-task-${Date.now()}`
+    setPosts(prev => prev.map(p =>
+      p.id !== postId ? p : {
+        ...p,
+        task_items: [...(p.task_items ?? []), {
+          id: optimisticId, post_id: postId, label, checked: false, position,
+          created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+        } as TaskItem],
+      }
+    ))
+    const { data, error } = await supabase
+      .from('task_items')
+      .insert({ post_id: postId, label, position })
+      .select()
+      .single()
+    if (error) {
+      setPosts(prev => prev.map(p =>
+        p.id !== postId ? p : { ...p, task_items: (p.task_items ?? []).filter(t => t.id !== optimisticId) }
+      ))
+      toast.error('Failed to add task')
+    } else if (data) {
+      setPosts(prev => prev.map(p =>
+        p.id !== postId ? p : {
+          ...p,
+          task_items: (p.task_items ?? []).map(t => t.id === optimisticId ? data as TaskItem : t),
+        }
+      ))
+    }
+  }, [posts, supabase])
+
   const handleTaskToggle = useCallback(async (taskId: string, checked: boolean) => {
     setPosts(prev => prev.map(p => ({
       ...p,
@@ -759,6 +793,7 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
             onReplyDraftDiscard={() => setReplyingToPostId(null)}
             onDragEnd={handleDragEnd}
             onTaskToggle={handleTaskToggle}
+            onAddTaskItem={handleAddTaskItem}
             onDelete={handleDeletePost}
             onReply={handleReply}
             onFocusPost={handleFocusPost}
@@ -860,6 +895,7 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
             allPosts={posts}
             onClose={() => setFocusedPost(null)}
             onTaskToggle={handleTaskToggle}
+            onAddTaskItem={handleAddTaskItem}
             onReply={handleReply}
             onJumpToPost={(postId) => {
               setFocusedPost(null)

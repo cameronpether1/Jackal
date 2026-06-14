@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
 import confetti from 'canvas-confetti'
-import { createClient } from '@/lib/supabase/client'
 import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/utils'
 import type { TaskItem } from '@/lib/supabase/types'
@@ -11,13 +10,13 @@ import type { TaskItem } from '@/lib/supabase/types'
 interface TaskListProps {
   items: TaskItem[]
   onToggle: (taskId: string, checked: boolean) => void
+  onAddTask: (label: string) => void
   postId: string
   currentUserId: string
 }
 
-export function TaskList({ items, onToggle, postId, currentUserId }: TaskListProps) {
+export function TaskList({ items, onToggle, onAddTask, postId, currentUserId }: TaskListProps) {
   const [newLabel, setNewLabel] = useState('')
-  const [adding, setAdding] = useState(false)
   const [showInput, setShowInput] = useState(false)
 
   const sorted = [...items].sort((a, b) => a.position - b.position)
@@ -38,22 +37,12 @@ export function TaskList({ items, onToggle, postId, currentUserId }: TaskListPro
     onToggle(taskId, checked)
   }
 
-  async function handleAddTask(e: React.FormEvent) {
+  function handleAddTask(e: React.FormEvent) {
     e.preventDefault()
     if (!newLabel.trim()) return
-    setAdding(true)
-    const supabase = createClient()
-    try {
-      await supabase.from('task_items').insert({
-        post_id: postId,
-        label: newLabel.trim(),
-        position: items.length,
-      })
-      setNewLabel('')
-      setShowInput(false)
-    } finally {
-      setAdding(false)
-    }
+    onAddTask(newLabel.trim())
+    setNewLabel('')
+    setShowInput(false)
   }
 
   return (
@@ -87,7 +76,7 @@ export function TaskList({ items, onToggle, postId, currentUserId }: TaskListPro
             className="flex-1 text-sm bg-jk-surface-offset rounded px-2 py-1 outline-none text-jk-text placeholder:text-jk-text-faint"
             onKeyDown={e => { if (e.key === 'Escape') setShowInput(false) }}
           />
-          <button type="submit" disabled={adding} className="text-xs text-jk-accent font-medium px-1">Add</button>
+          <button type="submit" className="text-xs text-jk-accent font-medium px-1">Add</button>
         </form>
       ) : (
         <button
