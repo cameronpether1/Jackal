@@ -11,11 +11,12 @@ import { toast } from 'sonner'
 export function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [mode, setMode] = useState<'signin' | 'signup' | 'magic'>('signin')
-  const [loading, setLoading] = useState(false)
-  const [magicSent, setMagicSent] = useState(false)
   const searchParams = useSearchParams()
   const next = searchParams.get('next') ?? '/'
+  const initialMode = searchParams.get('mode') === 'signup' ? 'signup' : 'signin'
+  const [mode, setMode] = useState<'signin' | 'signup' | 'magic'>(initialMode)
+  const [loading, setLoading] = useState(false)
+  const [magicSent, setMagicSent] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

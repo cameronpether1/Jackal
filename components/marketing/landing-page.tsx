@@ -53,7 +53,7 @@ export function LandingPage() {
             Login
           </Link>
           <Link
-            href="/login"
+            href="/login?mode=signup"
             className="text-sm font-semibold px-5 py-2 rounded-full transition-opacity hover:opacity-80"
             style={{ backgroundColor: '#333332', color: '#FBFAF5' }}
           >
@@ -63,7 +63,7 @@ export function LandingPage() {
       </nav>
 
       {/* Hero */}
-      <main className="flex-1 flex flex-col items-center justify-center text-center px-6 -mt-16">
+      <main className="flex-1 flex flex-col items-center justify-center text-center px-6">
         <h1
           className="font-black italic leading-[0.95] tracking-tight text-balance"
           style={{
