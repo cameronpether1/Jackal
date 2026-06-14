@@ -31,11 +31,12 @@ interface PostFocusOverlayProps {
   allPosts?: PostWithRelations[]
   onClose: () => void
   onTaskToggle: (taskId: string, checked: boolean) => void
+  onAddTaskItem: (postId: string, label: string) => void
   onReply: (post: PostWithRelations) => void
   onJumpToPost?: (postId: string) => void
 }
 
-export function PostFocusOverlay({ post, replies, currentUserId, cardRect, allPosts = [], onClose, onTaskToggle, onReply, onJumpToPost }: PostFocusOverlayProps) {
+export function PostFocusOverlay({ post, replies, currentUserId, cardRect, allPosts = [], onClose, onTaskToggle, onAddTaskItem, onReply, onJumpToPost }: PostFocusOverlayProps) {
   const [clipPath, setClipPath] = useState(() => rectToClipPath(cardRect))
   const [easing, setEasing] = useState<'open' | 'close'>('open')
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -119,6 +120,7 @@ export function PostFocusOverlay({ post, replies, currentUserId, cardRect, allPo
             <TaskList
               items={post.task_items ?? []}
               onToggle={onTaskToggle}
+              onAddTask={(label) => onAddTaskItem(post.id, label)}
               postId={post.id}
               currentUserId={currentUserId}
             />
@@ -186,6 +188,7 @@ export function PostFocusOverlay({ post, replies, currentUserId, cardRect, allPo
                         <TaskList
                           items={reply.task_items ?? []}
                           onToggle={onTaskToggle}
+                          onAddTask={(label) => onAddTaskItem(reply.id, label)}
                           postId={reply.id}
                           currentUserId={currentUserId}
                         />
