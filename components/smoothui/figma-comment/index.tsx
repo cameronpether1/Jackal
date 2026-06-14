@@ -8,6 +8,7 @@ import {
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
+import { Trash2 } from "lucide-react";
 import { useClickOutside } from "./use-click-outside";
 
 const CLOSED_SIZE = 32;
@@ -40,7 +41,10 @@ export interface FigmaCommentProps {
   className?: string;
   imageUrl?: string;
   message?: string;
+  messageNode?: React.ReactNode;
   onOpenChange?: (isOpen: boolean) => void;
+  onDelete?: () => void;
+  canDelete?: boolean;
   timestamp?: string;
   width?: number;
 }
@@ -54,8 +58,11 @@ export default function FigmaComment({
   authorName = "Someone",
   timestamp = "Just now",
   message = "",
+  messageNode,
   width = 200,
   onOpenChange,
+  onDelete,
+  canDelete = false,
 }: FigmaCommentProps) {
   const [isPinned, setIsPinned] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -190,6 +197,7 @@ export default function FigmaComment({
             {imageUrl ? (
               <div className="mt-1.5 w-full rounded-lg overflow-hidden" style={{ height: '120px' }} />
             ) : null}
+            {canDelete ? <div className="mt-1 w-4 h-4 self-end" /> : null}
           </div>
         </div>
 
@@ -225,7 +233,9 @@ export default function FigmaComment({
                 <p className="font-semibold text-[11px] text-foreground leading-4">{authorName}</p>
                 <p className="font-medium text-[11px] text-muted-foreground leading-4">{timestamp}</p>
               </div>
-              {message ? (
+              {messageNode != null ? (
+                <p className="text-left font-medium text-[11px] text-foreground leading-4 whitespace-pre-wrap">{messageNode}</p>
+              ) : message ? (
                 <p className="text-left font-medium text-[11px] text-foreground leading-4 whitespace-pre-wrap">{message}</p>
               ) : null}
               {imageUrl ? (
@@ -236,6 +246,15 @@ export default function FigmaComment({
                   style={{ height: '120px' }}
                   draggable={false}
                 />
+              ) : null}
+              {canDelete ? (
+                <button
+                  type="button"
+                  onClick={e => { e.stopPropagation(); onDelete?.() }}
+                  className="mt-1 self-end p-0.5 rounded text-muted-foreground/40 hover:text-destructive transition-colors"
+                >
+                  <Trash2 className="w-2.5 h-2.5" />
+                </button>
               ) : null}
             </motion.div>
           )}
