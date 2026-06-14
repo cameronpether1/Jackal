@@ -124,7 +124,7 @@ export function PostCard({
         <div
           ref={outerRef}
           id={`post-${post.id}`}
-          className={cn('absolute select-none', isDragging ? 'cursor-grabbing z-50' : 'cursor-grab')}
+          className={cn('absolute select-none group/post', isDragging ? 'cursor-grabbing z-50' : 'cursor-grab')}
           style={{
             left: pos.x,
             top: pos.y,
@@ -136,8 +136,11 @@ export function PostCard({
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
         >
-          {/* Author badge — always overlapping top-right corner, outside overflow-hidden */}
-          <div className="absolute -top-5 -right-5 group z-10">
+          {/* Author badge — always visible on text posts, hover-only on image/map-only posts */}
+          <div className={cn(
+            'absolute -top-5 -right-5 group z-10 transition-opacity duration-150',
+            (isImageOnly || isMapOnly) ? 'opacity-0 group-hover/post:opacity-100' : '',
+          )}>
             <div className="absolute right-full top-1/2 -translate-y-1/2 mr-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
               <span className="bg-[#1c1b19] text-white text-xs font-medium px-2.5 py-1 rounded-full rounded-br-none whitespace-nowrap shadow-sm">
                 {author?.display_name ?? 'Unknown'}
