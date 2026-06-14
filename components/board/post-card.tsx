@@ -287,9 +287,12 @@ export function PostCard({
                   avatarUrl={reply.author?.avatar_url ?? undefined}
                   avatarColor={getAvatarColor(reply.author?.id ?? '')}
                   message={getReplyMessage(reply, allPosts)}
+                  messageNode={reply.content ? renderContent(reply.content, { posts: allPosts, onJumpToPost }) : undefined}
                   imageUrl={reply.image_url ?? undefined}
                   timestamp={formatTimestamp(reply.created_at)}
                   width={200}
+                  canDelete={reply.author_id === currentUserId}
+                  onDelete={() => onDelete(reply.id)}
                 />
               ))}
               {isReplying && onReplyDraftSave && onReplyDraftDiscard && (
