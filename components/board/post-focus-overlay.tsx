@@ -67,25 +67,26 @@ export const PostFocusOverlay = forwardRef<HTMLDivElement, PostFocusOverlayProps
 
     return createPortal(
       <>
-        {/* Full-screen panel — React controls display (via post prop), GSAP controls the morph */}
+        {/* Frosted glass — sibling of panel, never transformed, just fades */}
+        <div
+          ref={bgRef}
+          className="fixed inset-0 z-[69] pointer-events-none"
+          style={{
+            backgroundColor: 'rgba(244, 244, 242, 0.82)',
+            backdropFilter: 'blur(24px) saturate(160%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(160%)',
+            opacity: 0,
+            display: post ? 'block' : 'none',
+          }}
+        />
+
+        {/* Morphing panel — GSAP controls scale/position, content lives here */}
         <div
           ref={panelRef}
           className="fixed inset-0 z-[70] overflow-hidden"
           style={{ display: post ? 'block' : 'none' }}
         >
             {post && (
-              <>
-              {/* Frosted glass background — fades in after morph completes */}
-              <div
-                ref={bgRef}
-                className="absolute inset-0"
-                style={{
-                  backgroundColor: 'rgba(244, 244, 242, 0.82)',
-                  backdropFilter: 'blur(24px) saturate(160%)',
-                  WebkitBackdropFilter: 'blur(24px) saturate(160%)',
-                  opacity: 0,
-                }}
-              />
               <div className="absolute inset-0 flex flex-col">
                 {/* Close button */}
                 <button
@@ -236,7 +237,6 @@ export const PostFocusOverlay = forwardRef<HTMLDivElement, PostFocusOverlayProps
                   </button>
                 </div>
               </div>
-              </>
             )}
         </div>
       </>,

@@ -711,36 +711,33 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
     // Border-radius compensation: at scale sx, (24/sx)*sx = 24px visual
     const startRadius = 24 / sx
 
+    if (bgEl) gsap.set(bgEl, { opacity: 0 })
     gsap.set(cardEl, { opacity: 0, pointerEvents: 'none' })
     flushSync(() => setFocusedPost(post))
 
-    // Re-read refs: bgRef and pillsRef live inside {post && ...} so they don't
-    // exist until flushSync renders them above.
-    const bgElAfter = overlayBgRef.current
+    // pillsRef lives inside {post && ...} so it's only available after flushSync
     const pillsElAfter = overlayPillsRef.current
-    if (bgElAfter) gsap.set(bgElAfter, { opacity: 0 })
     if (pillsElAfter) gsap.set(pillsElAfter.querySelectorAll('[data-pill]'), { opacity: 0, y: 8 })
+
+    if (bgEl) {
+      gsap.to(bgEl, {
+        opacity: 1, duration: 0.25, ease: 'power2.out',
+        onComplete: () => {
+          if (overlayPillsRef.current) {
+            gsap.to(overlayPillsRef.current.querySelectorAll('[data-pill]'), {
+              opacity: 1, y: 0, stagger: 0.07, duration: 0.22, ease: 'power2.out',
+              clearProps: 'y',
+            })
+          }
+        },
+      })
+    }
 
     gsap.fromTo(
       panelEl,
       { x: dx, y: dy, scaleX: sx, scaleY: sy, borderRadius: startRadius, transformOrigin: 'center center' },
       {
         x: 0, y: 0, scaleX: 1, scaleY: 1, borderRadius: 0, duration: 0.5, ease: 'power3.out',
-        onComplete: () => {
-          if (overlayBgRef.current) {
-            gsap.to(overlayBgRef.current, {
-              opacity: 1, duration: 0.25, ease: 'power2.out',
-              onComplete: () => {
-                if (overlayPillsRef.current) {
-                  gsap.to(overlayPillsRef.current.querySelectorAll('[data-pill]'), {
-                    opacity: 1, y: 0, stagger: 0.07, duration: 0.22, ease: 'power2.out',
-                    clearProps: 'y',
-                  })
-                }
-              },
-            })
-          }
-        },
       }
     )
   }, [])
