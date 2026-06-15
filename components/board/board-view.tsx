@@ -22,7 +22,7 @@ export function BoardView({
   const exportFnRef = useRef<(() => Promise<void>) | null>(null)
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="relative flex flex-col h-full">
       <Topbar
         board={board}
         members={members}
