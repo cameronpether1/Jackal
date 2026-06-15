@@ -232,9 +232,4 @@
   }
 }
 
-/* Post focus overlay: reduced-motion fallback — disable clip-path transition */
-@media (prefers-reduced-motion: reduce) {
-  .post-focus-overlay { transition: none !important; }
-}
-
 /* New activity indicator — pulsing red border glow on cards with unseen content */

@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { flushSync } from 'react-dom'
+import { gsap } from 'gsap'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import { PostCard } from '@/components/board/post-card'
@@ -38,7 +40,9 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
   const [posts, setPosts] = useState<PostWithRelations[]>(initialPosts)
   const [draft, setDraft] = useState<DraftCard | null>(null)
   const [replyingToPostId, setReplyingToPostId] = useState<string | null>(null)
-  const [focusedPost, setFocusedPost] = useState<{ post: PostWithRelations; rect: DOMRect } | null>(null)
+  const [focusedPost, setFocusedPost] = useState<PostWithRelations | null>(null)
+  const overlayPanelRef = useRef<HTMLDivElement | null>(null)
+  const activeCardRef = useRef<HTMLElement | null>(null)
   const [stickers, setStickers] = useState<Sticker[]>(initialStickers)
   const [zoom, setZoom] = useState(100)
   const [isExporting, setIsExporting] = useState(false)
@@ -685,8 +689,60 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
     return () => setActions(null)
   }, [zoom, spawnDraft, handleFitAll, setActions])
 
-  const handleFocusPost = useCallback((post: PostWithRelations, rect: DOMRect) => {
-    setFocusedPost({ post, rect })
+  const handleFocusPost = useCallback((post: PostWithRelations, cardEl: HTMLElement) => {
+    const panelEl = overlayPanelRef.current
+    if (!panelEl) return
+
+    activeCardRef.current = cardEl
+    gsap.killTweensOf([cardEl, panelEl])
+
+    // Measure card before any DOM changes
+    const rect = cardEl.getBoundingClientRect()
+    const dx = (rect.left + rect.width / 2) - window.innerWidth / 2
+    const dy = (rect.top + rect.height / 2) - window.innerHeight / 2
+    const sx = rect.width / window.innerWidth
+    const sy = rect.height / window.innerHeight
+    // Border-radius compensation: at scale sx, (24/sx)*sx = 24px visual
+    const startRadius = 24 / sx
+
+    gsap.set(cardEl, { opacity: 0, pointerEvents: 'none' })
+    flushSync(() => setFocusedPost(post))
+
+    gsap.fromTo(
+      panelEl,
+      { x: dx, y: dy, scaleX: sx, scaleY: sy, borderRadius: startRadius, transformOrigin: 'center center' },
+      { x: 0, y: 0, scaleX: 1, scaleY: 1, borderRadius: 0, duration: 0.5, ease: 'power3.out' }
+    )
+  }, [])
+
+  const handleClose = useCallback(() => {
+    const panelEl = overlayPanelRef.current
+    const cardEl = activeCardRef.current
+    if (!panelEl) return
+
+    if (cardEl) gsap.killTweensOf(cardEl)
+    gsap.killTweensOf(panelEl)
+
+    const rect = cardEl?.getBoundingClientRect()
+    const dx = rect ? (rect.left + rect.width / 2) - window.innerWidth / 2 : 0
+    const dy = rect ? (rect.top + rect.height / 2) - window.innerHeight / 2 : 0
+    const sx = rect ? rect.width / window.innerWidth : 0.2
+    const sy = rect ? rect.height / window.innerHeight : 0.2
+    const endRadius = 24 / sx
+
+    if (cardEl) gsap.set(cardEl, { opacity: 1, pointerEvents: 'auto' })
+
+    gsap.to(panelEl, {
+      x: dx, y: dy, scaleX: sx, scaleY: sy, borderRadius: endRadius,
+      duration: 0.4,
+      ease: 'power3.in',
+      onComplete: () => {
+        gsap.set(panelEl, { clearProps: 'x,y,scaleX,scaleY,borderRadius,transformOrigin' })
+        if (cardEl) gsap.set(cardEl, { clearProps: 'all' })
+        setFocusedPost(null)
+        activeCardRef.current = null
+      },
+    })
   }, [])
 
   const handleJumpToPost = useCallback((postId: string) => {
@@ -884,26 +940,21 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
 
 
 
-      {focusedPost && (() => {
-        const livePost = posts.find(p => p.id === focusedPost.post.id) ?? focusedPost.post
-        return (
-          <PostFocusOverlay
-            post={livePost}
-            replies={repliesByParentId.get(focusedPost.post.id) ?? []}
-            currentUserId={currentUserId}
-            cardRect={focusedPost.rect}
-            allPosts={posts}
-            onClose={() => setFocusedPost(null)}
-            onTaskToggle={handleTaskToggle}
-            onAddTaskItem={handleAddTaskItem}
-            onReply={handleReply}
-            onJumpToPost={(postId) => {
-              setFocusedPost(null)
-              handleJumpToPost(postId)
-            }}
-          />
-        )
-      })()}
+      <PostFocusOverlay
+        ref={overlayPanelRef}
+        post={focusedPost ? (posts.find(p => p.id === focusedPost.id) ?? focusedPost) : null}
+        replies={focusedPost ? (repliesByParentId.get(focusedPost.id) ?? []) : []}
+        currentUserId={currentUserId}
+        allPosts={posts}
+        onClose={handleClose}
+        onTaskToggle={handleTaskToggle}
+        onAddTaskItem={handleAddTaskItem}
+        onReply={handleReply}
+        onJumpToPost={(postId) => {
+          handleClose()
+          handleJumpToPost(postId)
+        }}
+      />
     </div>
     </div>
   )

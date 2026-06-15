@@ -36,7 +36,7 @@ interface PostCardProps {
   onAddTaskItem: (postId: string, label: string) => void
   onDelete: (postId: string) => void
   onReply?: (post: PostWithRelations) => void
-  onFocusPost?: (post: PostWithRelations, rect: DOMRect) => void
+  onFocusPost?: (post: PostWithRelations, cardEl: HTMLElement) => void
 }
 
 const LINK_REF = /\[\[([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\]\]/g
@@ -118,7 +118,7 @@ export function PostCard({
     if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
       onDragEnd(post.id, newX, newY)
     } else if (onFocusPost && cardRef.current) {
-      onFocusPost(post, cardRef.current.getBoundingClientRect())
+      onFocusPost(post, cardRef.current)
     }
   }, [post, onDragEnd, onFocusPost])
 
@@ -164,17 +164,16 @@ export function PostCard({
             </div>
           </div>
 
-          {/* Card — always overflow-hidden since badge is now outside */}
+          {/* Card */}
           <div
             ref={cardRef}
             className={cn(
-              'relative w-72 rounded-3xl group/card border overflow-hidden',
-              'shadow-[0_4px_24px_rgba(0,0,0,0.09)]',
+              'relative w-72 rounded-3xl group/card border overflow-hidden transition-shadow duration-150',
               isDragging
                 ? 'shadow-[0_16px_48px_rgba(0,0,0,0.18)]'
-                : 'hover:shadow-[0_8px_32px_rgba(0,0,0,0.14)]',
+                : 'shadow-[0_4px_24px_rgba(0,0,0,0.09)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.14)]',
             )}
-            style={{ transition: 'box-shadow 150ms ease', backgroundColor: '#F4F4F4', borderColor: 'rgba(0,0,0,0.08)' }}
+            style={{ backgroundColor: '#F4F4F4', borderColor: 'rgba(0,0,0,0.08)' }}
           >
             {/* Image-only */}
             {isImageOnly && (
