@@ -2,7 +2,7 @@
 
 import { forwardRef, useCallback, useEffect, useState, type Ref } from 'react'
 import { createPortal } from 'react-dom'
-import { X, MapPin, CornerUpLeft } from 'lucide-react'
+import { MapPin, CornerUpLeft } from 'lucide-react'
 import { TaskList } from '@/components/board/task-list'
 import { getAvatarColor } from '@/lib/avatar-color'
 import { getMapImageUrl } from '@/lib/mapbox'
@@ -88,15 +88,6 @@ export const PostFocusOverlay = forwardRef<HTMLDivElement, PostFocusOverlayProps
         >
             {post && (
               <div className="absolute inset-0 flex flex-col">
-                {/* Close button */}
-                <button
-                  onClick={onClose}
-                  className="absolute top-5 right-5 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-black/8 hover:bg-black/14 transition-colors text-jk-text"
-                  aria-label="Close"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-
                 {/* Scrollable content */}
                 <div className="flex-1 overflow-y-auto px-10 pt-10 pb-24">
                   <div className="max-w-2xl mx-auto">

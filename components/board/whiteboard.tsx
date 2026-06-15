@@ -160,7 +160,7 @@ export function Whiteboard({
       (isMobile ? 0 : (Math.random() - 0.5) * 80);
     const y =
       (scrollY + h / 3) / scale + (isMobile ? 0 : (Math.random() - 0.5) * 60);
-    setDraft({ x, y, rotation: isMobile ? 0 : Math.random() * 4 - 2 });
+    setDraft({ x, y, rotation: 0 });
   }, []);
 
   // Keyboard shortcut N
@@ -470,7 +470,7 @@ export function Whiteboard({
       setDraft({
         x: post.pos_x + 20,
         y: post.pos_y + 20,
-        rotation: Math.random() * 4 - 2,
+        rotation: 0,
         replyTo: {
           postId: post.id,
           authorName: post.author?.display_name ?? "Unknown",
