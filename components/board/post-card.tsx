@@ -91,6 +91,7 @@ export function PostCard({
   )
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
+    if (e.button !== 0) return
     const target = e.target as HTMLElement
     if (target.closest('button') || target.closest('input') || target.closest('textarea') || target.closest('[role="checkbox"]') || target.closest('a') || target.closest('[data-comment-bubble]')) return
     e.preventDefault()
