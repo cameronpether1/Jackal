@@ -765,8 +765,6 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
       const sy = rect ? rect.height / window.innerHeight : 0.2
       const endRadius = 24 / sx
 
-      if (cardEl) gsap.set(cardEl, { opacity: 1, pointerEvents: 'auto' })
-
       gsap.to(panelEl, {
         x: dx, y: dy, scaleX: sx, scaleY: sy, borderRadius: endRadius,
         duration: 0.4,
