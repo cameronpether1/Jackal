@@ -1,6 +1,6 @@
 'use client'
 
-import { forwardRef, useCallback, useEffect, useState } from 'react'
+import { forwardRef, useCallback, useEffect, useState, type Ref } from 'react'
 import { createPortal } from 'react-dom'
 import { X, MapPin, CornerUpLeft } from 'lucide-react'
 import { TaskList } from '@/components/board/task-list'
@@ -28,6 +28,8 @@ interface PostFocusOverlayProps {
   replies: PostWithRelations[]
   currentUserId: string
   allPosts?: PostWithRelations[]
+  bgRef?: Ref<HTMLDivElement>
+  pillsRef?: Ref<HTMLDivElement>
   onClose: () => void
   onTaskToggle: (taskId: string, checked: boolean) => void
   onAddTaskItem: (postId: string, label: string) => void
@@ -37,7 +39,7 @@ interface PostFocusOverlayProps {
 
 export const PostFocusOverlay = forwardRef<HTMLDivElement, PostFocusOverlayProps>(
   function PostFocusOverlay(
-    { post, replies, currentUserId, allPosts = [], onClose, onTaskToggle, onAddTaskItem, onReply, onJumpToPost },
+    { post, replies, currentUserId, allPosts = [], bgRef, pillsRef, onClose, onTaskToggle, onAddTaskItem, onReply, onJumpToPost },
     panelRef
   ) {
     const [mounted, setMounted] = useState(false)
@@ -69,9 +71,21 @@ export const PostFocusOverlay = forwardRef<HTMLDivElement, PostFocusOverlayProps
         <div
           ref={panelRef}
           className="fixed inset-0 z-[70] overflow-hidden"
-          style={{ backgroundColor: '#ffffff', display: post ? 'block' : 'none' }}
+          style={{ display: post ? 'block' : 'none' }}
         >
             {post && (
+              <>
+              {/* Frosted glass background — fades in after morph completes */}
+              <div
+                ref={bgRef}
+                className="absolute inset-0"
+                style={{
+                  backgroundColor: 'rgba(244, 244, 242, 0.82)',
+                  backdropFilter: 'blur(24px) saturate(160%)',
+                  WebkitBackdropFilter: 'blur(24px) saturate(160%)',
+                  opacity: 0,
+                }}
+              />
               <div className="absolute inset-0 flex flex-col">
                 {/* Close button */}
                 <button
@@ -193,9 +207,9 @@ export const PostFocusOverlay = forwardRef<HTMLDivElement, PostFocusOverlayProps
                 </div>
 
                 {/* Bottom pill bar */}
-                <div className="absolute bottom-5 left-5 right-5 flex items-center justify-between pointer-events-none">
+                <div ref={pillsRef} className="absolute bottom-5 left-5 right-5 flex items-center justify-between pointer-events-none">
                   <div className="flex items-center gap-2 pointer-events-auto">
-                    <div className="flex items-center gap-1.5 bg-[#1c1b19] text-white text-xs font-medium px-3 py-1.5 rounded-full">
+                    <div data-pill className="flex items-center gap-1.5 bg-[#1c1b19] text-white text-xs font-medium px-3 py-1.5 rounded-full">
                       <div
                         className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold overflow-hidden shrink-0"
                         style={{ backgroundColor: authorColor }}
@@ -206,12 +220,13 @@ export const PostFocusOverlay = forwardRef<HTMLDivElement, PostFocusOverlayProps
                       </div>
                       <span>{author?.display_name ?? 'Unknown'}</span>
                     </div>
-                    <div className="bg-[#1c1b19] text-white text-xs font-medium px-3 py-1.5 rounded-full">
+                    <div data-pill className="bg-[#1c1b19] text-white text-xs font-medium px-3 py-1.5 rounded-full">
                       {formatPillDate(post.created_at)}
                     </div>
                   </div>
 
                   <button
+                    data-pill
                     type="button"
                     onClick={handleReply}
                     className="pointer-events-auto flex items-center gap-1.5 bg-[#1c1b19] text-white/75 hover:text-white text-xs font-medium px-3 py-1.5 rounded-full hover:bg-[#2a2927] transition-colors"
@@ -221,6 +236,7 @@ export const PostFocusOverlay = forwardRef<HTMLDivElement, PostFocusOverlayProps
                   </button>
                 </div>
               </div>
+              </>
             )}
         </div>
       </>,
