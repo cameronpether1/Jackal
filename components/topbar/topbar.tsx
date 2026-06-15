@@ -1,10 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { UserPlus, Share2, Download } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { UserPlus, Share2, Download, Users } from 'lucide-react'
 import { InvitePanel } from '@/components/topbar/invite-panel'
-import { MemberAvatarStack } from '@/components/topbar/member-avatar-stack'
 import { ShareModal } from '@/components/share/share-modal'
 import { UpgradeModal } from '@/components/upgrade/upgrade-modal'
 import type { Board, BoardMemberWithProfile, Profile } from '@/lib/supabase/types'
@@ -37,59 +35,60 @@ export function Topbar({ board, members, currentUser, currentUserId, isOwner, on
 
   return (
     <>
-      <header className="flex items-center pl-14 pr-3 h-12 bg-jk-surface border-b border-jk-border shrink-0 z-10 relative">
-        {/* Left: member avatars (clickable to open members/invite panel) */}
-        <div className="hidden sm:flex items-center">
+      {/* Floating pill topbar — absolute so it doesn't affect whiteboard layout */}
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
+        <div className="pointer-events-auto flex items-center bg-[#1c1b19] rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.07)] px-2 py-2 gap-0.5">
+
+          {/* Members */}
           <button
             onClick={() => setInviteOpen(true)}
-            aria-label="View members"
-            className="flex items-center gap-2 group"
+            title="View members"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full hover:bg-white/[0.08] transition-colors duration-150"
           >
-            <MemberAvatarStack members={members} currentUserId={currentUserId} />
-            <span className="text-[11px] text-jk-text-faint tabular-nums group-hover:text-jk-text-muted transition-colors">
-              {members.length}
-            </span>
+            <Users className="w-3 h-3 text-white/40" />
+            <span className="text-[11px] font-medium text-white/50 tabular-nums">{members.length}</span>
           </button>
-        </div>
 
-        {/* Center: board title */}
-        <h1 className="absolute left-1/2 -translate-x-1/2 text-sm font-semibold text-jk-text truncate max-w-[160px] sm:max-w-[240px] pointer-events-none">
-          {board.name}
-        </h1>
+          <div className="w-px h-3.5 bg-white/[0.1] mx-0.5" />
 
-        {/* Right: secondary actions + primary CTA */}
-        <div className="flex items-center gap-0.5 ml-auto">
+          {/* Board name */}
+          <span className="text-xs font-semibold text-white/90 px-2.5 max-w-[180px] truncate select-none">
+            {board.name}
+          </span>
+
+          <div className="w-px h-3.5 bg-white/[0.1] mx-0.5" />
+
+          {/* Secondary actions */}
           {isOwner && (
-            <Button
-              size="icon-sm"
-              variant="ghost"
+            <button
               onClick={handleShare}
               title={isPro ? 'Share board' : 'Upgrade to share'}
-              className="text-jk-text-muted"
+              className="w-8 h-8 flex items-center justify-center rounded-full text-white/40 hover:text-white/70 hover:bg-white/[0.08] transition-colors duration-150"
             >
-              <Share2 />
-            </Button>
+              <Share2 className="w-3.5 h-3.5" />
+            </button>
           )}
-          <Button
-            size="icon-sm"
-            variant="ghost"
+          <button
             onClick={handleExport}
             title={isPro ? 'Export as image' : 'Upgrade to export'}
-            className="text-jk-text-muted"
+            className="w-8 h-8 flex items-center justify-center rounded-full text-white/40 hover:text-white/70 hover:bg-white/[0.08] transition-colors duration-150"
           >
-            <Download />
-          </Button>
-          <div className="w-px h-4 bg-jk-border mx-1.5" />
-          <Button
-            size="sm"
-            className="bg-jk-accent hover:bg-sky-400 text-white gap-1.5 text-xs font-medium"
+            <Download className="w-3.5 h-3.5" />
+          </button>
+
+          <div className="w-1" />
+
+          {/* Invite CTA */}
+          <button
             onClick={() => setInviteOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#0ea5e9] hover:bg-[#38bdf8] text-white text-[11px] font-semibold transition-colors duration-150"
           >
-            <UserPlus className="w-3.5 h-3.5" />
+            <UserPlus className="w-3 h-3" />
             <span className="hidden sm:inline">Invite</span>
-          </Button>
+          </button>
+
         </div>
-      </header>
+      </div>
 
       <InvitePanel
         open={inviteOpen}
