@@ -1,33 +1,32 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { forwardRef, useCallback, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { ArrowLeft, MapPin, CornerUpLeft } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { X, MapPin, CornerUpLeft } from 'lucide-react'
 import { TaskList } from '@/components/board/task-list'
 import { getAvatarColor } from '@/lib/avatar-color'
 import { getMapImageUrl } from '@/lib/mapbox'
 import { renderContent } from '@/lib/render-content'
-import { PostLinkChip } from '@/components/board/post-link-chip'
 import type { PostWithRelations } from '@/lib/supabase/types'
 
-const TYPE_LABEL: Record<string, string> = { note: 'Note', tasks: 'Tasks', question: 'Question' }
-
-function rectToClipPath(rect: DOMRect): string {
-  const vw = window.innerWidth
-  const vh = window.innerHeight
-  const top = Math.max(0, rect.top)
-  const right = Math.max(0, vw - rect.right)
-  const bottom = Math.max(0, vh - rect.bottom)
-  const left = Math.max(0, rect.left)
-  return `inset(${top}px ${right}px ${bottom}px ${left}px round 24px)`
+function formatPillDate(iso: string): string {
+  const d = new Date(iso)
+  const day = d.getDate()
+  const suffix = [11, 12, 13].includes(day)
+    ? 'th'
+    : day % 10 === 1 ? 'st'
+    : day % 10 === 2 ? 'nd'
+    : day % 10 === 3 ? 'rd'
+    : 'th'
+  const weekday = d.toLocaleDateString('en-US', { weekday: 'short' })
+  const month = d.toLocaleDateString('en-US', { month: 'short' })
+  return `${weekday} ${day}${suffix} ${month}`
 }
 
 interface PostFocusOverlayProps {
-  post: PostWithRelations
+  post: PostWithRelations | null
   replies: PostWithRelations[]
   currentUserId: string
-  cardRect: DOMRect
   allPosts?: PostWithRelations[]
   onClose: () => void
   onTaskToggle: (taskId: string, checked: boolean) => void
@@ -36,246 +35,196 @@ interface PostFocusOverlayProps {
   onJumpToPost?: (postId: string) => void
 }
 
-export function PostFocusOverlay({ post, replies, currentUserId, cardRect, allPosts = [], onClose, onTaskToggle, onAddTaskItem, onReply, onJumpToPost }: PostFocusOverlayProps) {
-  const [clipPath, setClipPath] = useState(() => rectToClipPath(cardRect))
-  const [easing, setEasing] = useState<'open' | 'close'>('open')
-  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+export const PostFocusOverlay = forwardRef<HTMLDivElement, PostFocusOverlayProps>(
+  function PostFocusOverlay(
+    { post, replies, currentUserId, allPosts = [], onClose, onTaskToggle, onAddTaskItem, onReply, onJumpToPost },
+    panelRef
+  ) {
+    const [mounted, setMounted] = useState(false)
+    useEffect(() => { setMounted(true) }, [])
 
-  const author = post.author
-  const authorColor = getAvatarColor(author?.id ?? '')
-  const initials = author?.display_name?.[0]?.toUpperCase() ?? '?'
-  const sortedReplies = [...replies].sort((a, b) => a.created_at.localeCompare(b.created_at))
-  const linkedFrom = allPosts.filter(p => p.id !== post.id && p.content?.includes(`[[${post.id}]]`))
-  const formattedDate = new Date(post.created_at).toLocaleDateString('en-US', {
-    month: 'short', day: 'numeric', year: 'numeric',
-  })
+    const author = post?.author
+    const authorColor = getAvatarColor(author?.id ?? '')
+    const initials = author?.display_name?.[0]?.toUpperCase() ?? '?'
+    const sortedReplies = [...replies].sort((a, b) => a.created_at.localeCompare(b.created_at))
 
-  // Expand from card position to full screen on mount
-  useEffect(() => {
-    const id = requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        setClipPath('inset(0px round 0px)')
-      })
-    })
-    return () => cancelAnimationFrame(id)
-  }, [])
+    const handleReply = useCallback(() => {
+      if (!post) return
+      onClose()
+      onReply(post)
+    }, [onClose, onReply, post])
 
-  const handleClose = useCallback(() => {
-    if (closeTimerRef.current) return
-    setEasing('close')
-    setClipPath(rectToClipPath(cardRect))
-    closeTimerRef.current = setTimeout(onClose, 300)
-  }, [onClose, cardRect])
+    useEffect(() => {
+      if (!post) return
+      function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
+      window.addEventListener('keydown', onKey)
+      return () => window.removeEventListener('keydown', onKey)
+    }, [post, onClose])
 
-  const handleReply = useCallback(() => {
-    if (closeTimerRef.current) return
-    setEasing('close')
-    setClipPath(rectToClipPath(cardRect))
-    closeTimerRef.current = setTimeout(() => { onClose(); onReply(post) }, 300)
-  }, [onClose, onReply, post, cardRect])
+    if (!mounted) return null
 
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') handleClose() }
-    window.addEventListener('keydown', onKey)
-    return () => {
-      window.removeEventListener('keydown', onKey)
-      if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
-    }
-  }, [handleClose])
+    return createPortal(
+      <>
+        {/* Full-screen panel — React controls display (via post prop), GSAP controls the morph */}
+        <div
+          ref={panelRef}
+          className="fixed inset-0 z-[70] overflow-hidden"
+          style={{ backgroundColor: '#ffffff', display: post ? 'block' : 'none' }}
+        >
+            {post && (
+              <div className="absolute inset-0 flex flex-col">
+                {/* Close button */}
+                <button
+                  onClick={onClose}
+                  className="absolute top-5 right-5 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-black/8 hover:bg-black/14 transition-colors text-jk-text"
+                  aria-label="Close"
+                >
+                  <X className="w-4 h-4" />
+                </button>
 
-  return createPortal(
-    <div
-      className={cn(
-        'post-focus-overlay fixed inset-0 z-[70] flex overflow-hidden bg-jk-surface',
-        `post-type-${post.type}`,
-      )}
-      style={{
-        clipPath,
-        transition: easing === 'open'
-          ? 'clip-path 460ms cubic-bezier(0.16, 1, 0.3, 1)'
-          : 'clip-path 300ms cubic-bezier(0.4, 0, 1, 1)',
-      }}
-    >
-      {/* Floating back button */}
-      <button
-        onClick={handleClose}
-        className="absolute top-6 left-6 z-10 flex items-center justify-center w-9 h-9 rounded-full bg-jk-surface-offset hover:bg-jk-border transition-colors text-jk-text-muted hover:text-jk-text shadow-sm"
-        aria-label="Back"
-      >
-        <ArrowLeft className="w-4 h-4" />
-      </button>
+                {/* Scrollable content */}
+                <div className="flex-1 overflow-y-auto px-10 pt-10 pb-24">
+                  <div className="max-w-2xl mx-auto">
+                    {post.type === 'question' && (
+                      <span className="inline-block text-xs font-semibold text-[#1a6a30] mb-3">Question</span>
+                    )}
 
-      {/* Main scrollable content */}
-      <div className="flex-1 overflow-y-auto px-16 pt-20 pb-32">
-        <div className="max-w-2xl mx-auto">
-          {post.type === 'question' && (
-            <span className="inline-block text-xs font-semibold text-[#1a6a30] mb-3">Question</span>
-          )}
+                    {post.title && (
+                      <h2 className="font-bold text-3xl text-jk-text mb-5 leading-tight">{post.title}</h2>
+                    )}
 
-          {post.title && (
-            <h2 className="font-bold text-3xl text-jk-text mb-5 leading-tight">{post.title}</h2>
-          )}
+                    {post.type === 'tasks' ? (
+                      <TaskList
+                        items={post.task_items ?? []}
+                        onToggle={onTaskToggle}
+                        onAddTask={(label) => onAddTaskItem(post.id, label)}
+                        postId={post.id}
+                        currentUserId={currentUserId}
+                      />
+                    ) : (
+                      post.content && (
+                        <p className="text-base text-jk-text-muted leading-relaxed whitespace-pre-wrap">
+                          {renderContent(post.content, { posts: allPosts, onJumpToPost })}
+                        </p>
+                      )
+                    )}
 
-          {post.type === 'tasks' ? (
-            <TaskList
-              items={post.task_items ?? []}
-              onToggle={onTaskToggle}
-              onAddTask={(label) => onAddTaskItem(post.id, label)}
-              postId={post.id}
-              currentUserId={currentUserId}
-            />
-          ) : (
-            post.content && (
-              <p className="text-base text-jk-text-muted leading-relaxed whitespace-pre-wrap">
-                {renderContent(post.content, { posts: allPosts, onJumpToPost })}
-              </p>
-            )
-          )}
-
-          {post.image_url && (
-            <div className="mt-6">
-              <img src={post.image_url} alt="" className="w-full rounded-2xl object-cover" draggable={false} />
-            </div>
-          )}
-
-          {post.map_location && (
-            <div className="mt-6 rounded-2xl overflow-hidden">
-              <img
-                src={getMapImageUrl(post.map_location.lat, post.map_location.lng)}
-                alt={post.map_location.label}
-                className="w-full"
-                draggable={false}
-              />
-              <div className="flex items-center gap-1.5 px-3 py-2 bg-jk-surface-offset">
-                <MapPin className="w-3.5 h-3.5 text-destructive shrink-0" />
-                <span className="text-xs text-jk-text truncate">{post.map_location.label}</span>
-              </div>
-            </div>
-          )}
-
-          {/* Comments */}
-          {sortedReplies.length > 0 && (
-            <div className="mt-10 pt-6 border-t border-jk-border space-y-6">
-              <p className="text-xs text-jk-text-faint">
-                {sortedReplies.length} {sortedReplies.length === 1 ? 'comment' : 'comments'}
-              </p>
-              {sortedReplies.map((reply) => {
-                const replyColor = getAvatarColor(reply.author?.id ?? '')
-                const replyInitials = reply.author?.display_name?.[0]?.toUpperCase() ?? '?'
-                return (
-                  <div key={reply.id} className="flex items-start gap-3">
-                    <div
-                      className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold overflow-hidden mt-0.5"
-                      style={{ backgroundColor: replyColor }}
-                    >
-                      {reply.author?.avatar_url
-                        ? <img src={reply.author.avatar_url} alt="" className="w-full h-full object-cover" />
-                        : replyInitials}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-baseline gap-2 mb-1">
-                        <span className="text-sm font-semibold text-jk-text">
-                          {reply.author?.display_name ?? 'Unknown'}
-                        </span>
-                        <span className="text-xs text-jk-text-faint">
-                          {new Date(reply.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                        </span>
+                    {post.image_url && (
+                      <div className="mt-6">
+                        <img src={post.image_url} alt="" className="w-full rounded-2xl object-cover" draggable={false} />
                       </div>
-                      {reply.title && (
-                        <p className="text-sm font-bold text-jk-text leading-snug mb-1">{reply.title}</p>
-                      )}
-                      {reply.type === 'tasks' ? (
-                        <TaskList
-                          items={reply.task_items ?? []}
-                          onToggle={onTaskToggle}
-                          onAddTask={(label) => onAddTaskItem(reply.id, label)}
-                          postId={reply.id}
-                          currentUserId={currentUserId}
-                        />
-                      ) : (
-                        reply.content && (
-                          <p className="text-sm text-jk-text-muted leading-relaxed whitespace-pre-wrap">
-                            {renderContent(reply.content, { posts: allPosts, onJumpToPost })}
-                          </p>
-                        )
-                      )}
-                      {reply.image_url && (
+                    )}
+
+                    {post.map_location && (
+                      <div className="mt-6 rounded-2xl overflow-hidden">
                         <img
-                          src={reply.image_url}
-                          alt=""
-                          className="mt-2 w-full rounded-xl object-cover max-h-48"
+                          src={getMapImageUrl(post.map_location.lat, post.map_location.lng)}
+                          alt={post.map_location.label}
+                          className="w-full"
                           draggable={false}
                         />
-                      )}
+                        <div className="flex items-center gap-1.5 px-3 py-2 bg-black/5">
+                          <MapPin className="w-3.5 h-3.5 text-destructive shrink-0" />
+                          <span className="text-xs text-jk-text truncate">{post.map_location.label}</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {sortedReplies.length > 0 && (
+                      <div className="mt-10 pt-6 border-t border-jk-border space-y-6">
+                        <p className="text-xs text-jk-text-faint">
+                          {sortedReplies.length} {sortedReplies.length === 1 ? 'comment' : 'comments'}
+                        </p>
+                        {sortedReplies.map((reply) => {
+                          const replyColor = getAvatarColor(reply.author?.id ?? '')
+                          const replyInitials = reply.author?.display_name?.[0]?.toUpperCase() ?? '?'
+                          return (
+                            <div key={reply.id} className="flex items-start gap-3">
+                              <div
+                                className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold overflow-hidden mt-0.5"
+                                style={{ backgroundColor: replyColor }}
+                              >
+                                {reply.author?.avatar_url
+                                  ? <img src={reply.author.avatar_url} alt="" className="w-full h-full object-cover" />
+                                  : replyInitials}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-baseline gap-2 mb-1">
+                                  <span className="text-sm font-semibold text-jk-text">
+                                    {reply.author?.display_name ?? 'Unknown'}
+                                  </span>
+                                  <span className="text-xs text-jk-text-faint">
+                                    {new Date(reply.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                  </span>
+                                </div>
+                                {reply.title && (
+                                  <p className="text-sm font-bold text-jk-text leading-snug mb-1">{reply.title}</p>
+                                )}
+                                {reply.type === 'tasks' ? (
+                                  <TaskList
+                                    items={reply.task_items ?? []}
+                                    onToggle={onTaskToggle}
+                                    onAddTask={(label) => onAddTaskItem(reply.id, label)}
+                                    postId={reply.id}
+                                    currentUserId={currentUserId}
+                                  />
+                                ) : (
+                                  reply.content && (
+                                    <p className="text-sm text-jk-text-muted leading-relaxed whitespace-pre-wrap">
+                                      {renderContent(reply.content, { posts: allPosts, onJumpToPost })}
+                                    </p>
+                                  )
+                                )}
+                                {reply.image_url && (
+                                  <img
+                                    src={reply.image_url}
+                                    alt=""
+                                    className="mt-2 w-full rounded-xl object-cover max-h-48"
+                                    draggable={false}
+                                  />
+                                )}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Bottom pill bar */}
+                <div className="absolute bottom-5 left-5 right-5 flex items-center justify-between pointer-events-none">
+                  <div className="flex items-center gap-2 pointer-events-auto">
+                    <div className="flex items-center gap-1.5 bg-[#1c1b19] text-white text-xs font-medium px-3 py-1.5 rounded-full">
+                      <div
+                        className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold overflow-hidden shrink-0"
+                        style={{ backgroundColor: authorColor }}
+                      >
+                        {author?.avatar_url
+                          ? <img src={author.avatar_url} alt="" className="w-full h-full object-cover" />
+                          : initials}
+                      </div>
+                      <span>{author?.display_name ?? 'Unknown'}</span>
+                    </div>
+                    <div className="bg-[#1c1b19] text-white text-xs font-medium px-3 py-1.5 rounded-full">
+                      {formatPillDate(post.created_at)}
                     </div>
                   </div>
-                )
-              })}
-            </div>
-          )}
+
+                  <button
+                    type="button"
+                    onClick={handleReply}
+                    className="pointer-events-auto flex items-center gap-1.5 bg-[#1c1b19] text-white/75 hover:text-white text-xs font-medium px-3 py-1.5 rounded-full hover:bg-[#2a2927] transition-colors"
+                  >
+                    <CornerUpLeft className="w-3.5 h-3.5" />
+                    Comment
+                  </button>
+                </div>
+              </div>
+            )}
         </div>
-      </div>
-
-      {/* Right metadata sidebar */}
-      <div className="w-56 border-l border-jk-border px-8 py-20 shrink-0 flex flex-col gap-8 overflow-y-auto">
-        <div>
-          <p className="text-[9px] font-semibold text-jk-text-faint uppercase tracking-widest mb-2">Author</p>
-          <div className="flex items-center gap-2">
-            <div
-              className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold overflow-hidden shrink-0"
-              style={{ backgroundColor: authorColor }}
-            >
-              {author?.avatar_url
-                ? <img src={author.avatar_url} alt="" className="w-full h-full object-cover" />
-                : initials}
-            </div>
-            <span className="text-xs text-jk-text font-medium truncate">{author?.display_name ?? 'Unknown'}</span>
-          </div>
-        </div>
-
-        <div>
-          <p className="text-[9px] font-semibold text-jk-text-faint uppercase tracking-widest mb-1.5">Type</p>
-          <p className="text-xs text-jk-text">{TYPE_LABEL[post.type]}</p>
-        </div>
-
-        <div>
-          <p className="text-[9px] font-semibold text-jk-text-faint uppercase tracking-widest mb-1.5">Created</p>
-          <p className="text-xs text-jk-text">{formattedDate}</p>
-        </div>
-
-        {sortedReplies.length > 0 && (
-          <div>
-            <p className="text-[9px] font-semibold text-jk-text-faint uppercase tracking-widest mb-1.5">Comments</p>
-            <p className="text-xs text-jk-text">{sortedReplies.length}</p>
-          </div>
-        )}
-
-        {linkedFrom.length > 0 && (
-          <div>
-            <p className="text-[9px] font-semibold text-jk-text-faint uppercase tracking-widest mb-2">Mentioned in</p>
-            <div className="flex flex-col gap-1.5">
-              {linkedFrom.map(p => (
-                <PostLinkChip key={p.id} postId={p.id} posts={allPosts} onJump={onJumpToPost} />
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Floating action bar */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2">
-        <div className="flex items-center gap-1 bg-[#1c1b19] rounded-full px-3 py-2 shadow-[0_8px_32px_rgba(0,0,0,0.32)]">
-          <button
-            type="button"
-            onClick={handleReply}
-            className="flex items-center gap-1.5 text-xs text-white/75 hover:text-white px-2.5 py-1.5 rounded-full hover:bg-white/10 transition-colors"
-          >
-            <CornerUpLeft className="w-3.5 h-3.5" />
-            Comment
-          </button>
-        </div>
-      </div>
-    </div>,
-    document.body
-  )
-}
+      </>,
+      document.body
+    )
+  }
+)
