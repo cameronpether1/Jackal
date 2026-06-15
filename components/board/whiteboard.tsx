@@ -42,6 +42,8 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
   const [replyingToPostId, setReplyingToPostId] = useState<string | null>(null)
   const [focusedPost, setFocusedPost] = useState<PostWithRelations | null>(null)
   const overlayPanelRef = useRef<HTMLDivElement | null>(null)
+  const overlayBgRef = useRef<HTMLDivElement | null>(null)
+  const overlayPillsRef = useRef<HTMLDivElement | null>(null)
   const activeCardRef = useRef<HTMLElement | null>(null)
   const [stickers, setStickers] = useState<Sticker[]>(initialStickers)
   const [zoom, setZoom] = useState(100)
@@ -691,10 +693,14 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
 
   const handleFocusPost = useCallback((post: PostWithRelations, cardEl: HTMLElement) => {
     const panelEl = overlayPanelRef.current
+    const bgEl = overlayBgRef.current
+    const pillsEl = overlayPillsRef.current
     if (!panelEl) return
 
     activeCardRef.current = cardEl
     gsap.killTweensOf([cardEl, panelEl])
+    if (bgEl) gsap.killTweensOf(bgEl)
+    if (pillsEl) gsap.killTweensOf(pillsEl.querySelectorAll('[data-pill]'))
 
     // Measure card before any DOM changes
     const rect = cardEl.getBoundingClientRect()
@@ -708,41 +714,81 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
     gsap.set(cardEl, { opacity: 0, pointerEvents: 'none' })
     flushSync(() => setFocusedPost(post))
 
+    // Re-read refs: bgRef and pillsRef live inside {post && ...} so they don't
+    // exist until flushSync renders them above.
+    const bgElAfter = overlayBgRef.current
+    const pillsElAfter = overlayPillsRef.current
+    if (bgElAfter) gsap.set(bgElAfter, { opacity: 0 })
+    if (pillsElAfter) gsap.set(pillsElAfter.querySelectorAll('[data-pill]'), { opacity: 0, y: 8 })
+
     gsap.fromTo(
       panelEl,
       { x: dx, y: dy, scaleX: sx, scaleY: sy, borderRadius: startRadius, transformOrigin: 'center center' },
-      { x: 0, y: 0, scaleX: 1, scaleY: 1, borderRadius: 0, duration: 0.5, ease: 'power3.out' }
+      {
+        x: 0, y: 0, scaleX: 1, scaleY: 1, borderRadius: 0, duration: 0.5, ease: 'power3.out',
+        onComplete: () => {
+          if (overlayBgRef.current) {
+            gsap.to(overlayBgRef.current, {
+              opacity: 1, duration: 0.25, ease: 'power2.out',
+              onComplete: () => {
+                if (overlayPillsRef.current) {
+                  gsap.to(overlayPillsRef.current.querySelectorAll('[data-pill]'), {
+                    opacity: 1, y: 0, stagger: 0.07, duration: 0.22, ease: 'power2.out',
+                    clearProps: 'y',
+                  })
+                }
+              },
+            })
+          }
+        },
+      }
     )
   }, [])
 
   const handleClose = useCallback(() => {
     const panelEl = overlayPanelRef.current
+    const bgEl = overlayBgRef.current
+    const pillsEl = overlayPillsRef.current
     const cardEl = activeCardRef.current
     if (!panelEl) return
 
     if (cardEl) gsap.killTweensOf(cardEl)
     gsap.killTweensOf(panelEl)
+    if (bgEl) gsap.killTweensOf(bgEl)
+    if (pillsEl) gsap.killTweensOf(pillsEl.querySelectorAll('[data-pill]'))
 
-    const rect = cardEl?.getBoundingClientRect()
-    const dx = rect ? (rect.left + rect.width / 2) - window.innerWidth / 2 : 0
-    const dy = rect ? (rect.top + rect.height / 2) - window.innerHeight / 2 : 0
-    const sx = rect ? rect.width / window.innerWidth : 0.2
-    const sy = rect ? rect.height / window.innerHeight : 0.2
-    const endRadius = 24 / sx
+    const doMorphBack = () => {
+      const rect = cardEl?.getBoundingClientRect()
+      const dx = rect ? (rect.left + rect.width / 2) - window.innerWidth / 2 : 0
+      const dy = rect ? (rect.top + rect.height / 2) - window.innerHeight / 2 : 0
+      const sx = rect ? rect.width / window.innerWidth : 0.2
+      const sy = rect ? rect.height / window.innerHeight : 0.2
+      const endRadius = 24 / sx
 
-    if (cardEl) gsap.set(cardEl, { opacity: 1, pointerEvents: 'auto' })
+      if (cardEl) gsap.set(cardEl, { opacity: 1, pointerEvents: 'auto' })
 
-    gsap.to(panelEl, {
-      x: dx, y: dy, scaleX: sx, scaleY: sy, borderRadius: endRadius,
-      duration: 0.4,
-      ease: 'power3.in',
-      onComplete: () => {
-        gsap.set(panelEl, { clearProps: 'x,y,scaleX,scaleY,borderRadius,transformOrigin' })
-        if (cardEl) gsap.set(cardEl, { clearProps: 'all' })
-        setFocusedPost(null)
-        activeCardRef.current = null
-      },
-    })
+      gsap.to(panelEl, {
+        x: dx, y: dy, scaleX: sx, scaleY: sy, borderRadius: endRadius,
+        duration: 0.4,
+        ease: 'power3.in',
+        onComplete: () => {
+          gsap.set(panelEl, { display: 'none' })
+          gsap.set(panelEl, { clearProps: 'x,y,scaleX,scaleY,borderRadius,transformOrigin' })
+          if (cardEl) gsap.set(cardEl, { clearProps: 'all' })
+          setFocusedPost(null)
+          activeCardRef.current = null
+        },
+      })
+    }
+
+    const pillNodes = pillsEl ? Array.from(pillsEl.querySelectorAll('[data-pill]')) : []
+    const fadeTargets = [bgEl, ...pillNodes].filter(Boolean) as Element[]
+
+    if (fadeTargets.length > 0) {
+      gsap.to(fadeTargets, { opacity: 0, duration: 0.18, ease: 'power2.in', onComplete: doMorphBack })
+    } else {
+      doMorphBack()
+    }
   }, [])
 
   const handleJumpToPost = useCallback((postId: string) => {
@@ -942,6 +988,8 @@ export function Whiteboard({ boardId, boardName, initialPosts, initialStickers, 
 
       <PostFocusOverlay
         ref={overlayPanelRef}
+        bgRef={overlayBgRef}
+        pillsRef={overlayPillsRef}
         post={focusedPost ? (posts.find(p => p.id === focusedPost.id) ?? focusedPost) : null}
         replies={focusedPost ? (repliesByParentId.get(focusedPost.id) ?? []) : []}
         currentUserId={currentUserId}
