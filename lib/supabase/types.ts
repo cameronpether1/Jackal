@@ -111,6 +111,17 @@ export type BoardMemberWithProfile = BoardMember & {
   profile: Profile
 }
 
+export type BoardCalendarEvent = {
+  id: string
+  board_id: string
+  author_id: string
+  title: string
+  start_date: string
+  end_date: string
+  color: string
+  created_at: string
+}
+
 export type Database = {
   public: {
     Tables: {

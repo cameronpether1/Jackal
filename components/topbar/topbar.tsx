@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { UserPlus, Share2, Download, Users } from 'lucide-react'
+import { UserPlus, Share2, Download, Users, CalendarDays } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { InvitePanel } from '@/components/topbar/invite-panel'
 import { ShareModal } from '@/components/share/share-modal'
 import { UpgradeModal } from '@/components/upgrade/upgrade-modal'
@@ -13,10 +14,12 @@ interface TopbarProps {
   currentUser: Profile | null
   currentUserId: string
   isOwner: boolean
+  calendarOpen: boolean
+  onCalendarToggle: () => void
   onExport?: () => void
 }
 
-export function Topbar({ board, members, currentUser, currentUserId, isOwner, onExport }: TopbarProps) {
+export function Topbar({ board, members, currentUser, currentUserId, isOwner, calendarOpen, onCalendarToggle, onExport }: TopbarProps) {
   const [inviteOpen, setInviteOpen] = useState(false)
   const [shareOpen, setShareOpen] = useState(false)
   const [upgradeOpen, setUpgradeOpen] = useState(false)
@@ -57,6 +60,20 @@ export function Topbar({ board, members, currentUser, currentUserId, isOwner, on
           </span>
 
           <div className="w-px h-3.5 bg-white/[0.1] mx-0.5" />
+
+          {/* Calendar toggle */}
+          <button
+            onClick={onCalendarToggle}
+            title="Board calendar"
+            className={cn(
+              'w-8 h-8 flex items-center justify-center rounded-full transition-colors duration-150',
+              calendarOpen
+                ? 'text-[#38bdf8] bg-[#38bdf8]/15'
+                : 'text-white/40 hover:text-white/70 hover:bg-white/[0.08]',
+            )}
+          >
+            <CalendarDays className="w-3.5 h-3.5" />
+          </button>
 
           {/* Secondary actions */}
           {isOwner && (

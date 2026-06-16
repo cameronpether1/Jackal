@@ -82,7 +82,7 @@ export function TaskList({ items, onToggle, onAddTask, postId, currentUserId }: 
         <button
           type="button"
           onClick={() => setShowInput(true)}
-          className="flex items-center gap-1 text-xs text-jk-text-faint hover:text-jk-accent transition-colors mt-1"
+          className="flex items-center gap-1 text-xs text-jk-text-faint tracking-wide hover:text-jk-accent transition-colors mt-1"
         >
           <Plus className="w-3.5 h-3.5" />
           Add task
