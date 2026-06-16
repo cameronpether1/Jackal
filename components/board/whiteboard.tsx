@@ -11,6 +11,7 @@ import { StickerPeel } from "@/components/board/sticker-peel";
 import { InlineCardEditor } from "@/components/board/inline-card-editor";
 import { EmptyState } from "@/components/board/empty-state";
 import { LiquidGlass } from "@/components/ui/glasscn/liquid-glass";
+import { BoardCalendar } from "@/components/board/board-calendar";
 import {
   Dialog,
   DialogContent,
@@ -41,6 +42,8 @@ interface WhiteboardProps {
   currentProfile: Profile | null;
   isOwner?: boolean;
   onExportReady?: (fn: () => Promise<void>) => void;
+  calendarOpen?: boolean;
+  onCalendarClose?: () => void;
 }
 
 interface DraftCard {
@@ -59,6 +62,8 @@ export function Whiteboard({
   currentProfile,
   isOwner = false,
   onExportReady,
+  calendarOpen = false,
+  onCalendarClose,
 }: WhiteboardProps) {
   const [posts, setPosts] = useState<PostWithRelations[]>(initialPosts);
   const [draft, setDraft] = useState<DraftCard | null>(null);
@@ -1169,6 +1174,32 @@ export function Whiteboard({
     [currentUserId],
   );
 
+  const [calendarCanvasPos, setCalendarCanvasPos] = useState<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    if (!calendarOpen || calendarCanvasPos !== null) return;
+    const CAL_WIDTH = 616;
+    const allRootPosts = postsRef.current.filter((p) => !p.reply_to_post_id);
+    if (allRootPosts.length === 0) {
+      setCalendarCanvasPos({ x: 200, y: 400 });
+      return;
+    }
+    let minX = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const post of allRootPosts) {
+      const el = document.getElementById(`post-${post.id}`);
+      const w = el?.offsetWidth ?? 288;
+      const h = el?.offsetHeight ?? 200;
+      minX = Math.min(minX, post.pos_x);
+      maxX = Math.max(maxX, post.pos_x + w);
+      maxY = Math.max(maxY, post.pos_y + h);
+    }
+    setCalendarCanvasPos({
+      x: (minX + maxX) / 2 - CAL_WIDTH / 2,
+      y: maxY + 80,
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [calendarOpen, calendarCanvasPos]);
+
   const onlineUsersList = useMemo(
     () => Object.values(onlineUsers),
     [onlineUsers],
@@ -1250,6 +1281,24 @@ export function Whiteboard({
               onSave={handleSaveDraft}
               onDiscard={() => setDraft(null)}
             />
+          )}
+
+          {calendarOpen && calendarCanvasPos && (
+            <div
+              style={{
+                position: "absolute",
+                left: calendarCanvasPos.x,
+                top: calendarCanvasPos.y,
+                zIndex: 20,
+              }}
+            >
+              <BoardCalendar
+                boardId={boardId}
+                currentUserId={currentUserId}
+                isOwner={isOwner}
+                onClose={() => onCalendarClose?.()}
+              />
+            </div>
           )}
 
           <PresenceCursors users={onlineUsersList} />

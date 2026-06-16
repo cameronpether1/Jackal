@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { Topbar } from '@/components/topbar/topbar'
 import { Whiteboard } from '@/components/board/whiteboard'
 import type { Board, BoardMemberWithProfile, PostWithRelations, Profile, Sticker } from '@/lib/supabase/types'
@@ -20,6 +20,7 @@ export function BoardView({
   initialPosts, initialStickers,
 }: BoardViewProps) {
   const exportFnRef = useRef<(() => Promise<void>) | null>(null)
+  const [calendarOpen, setCalendarOpen] = useState(false)
 
   return (
     <div className="relative flex flex-col h-full">
@@ -29,6 +30,8 @@ export function BoardView({
         currentUser={currentUser}
         currentUserId={currentUserId}
         isOwner={isOwner}
+        calendarOpen={calendarOpen}
+        onCalendarToggle={() => setCalendarOpen(v => !v)}
         onExport={() => exportFnRef.current?.()}
       />
       <Whiteboard
@@ -40,6 +43,8 @@ export function BoardView({
         currentProfile={currentUser}
         isOwner={isOwner}
         onExportReady={fn => { exportFnRef.current = fn }}
+        calendarOpen={calendarOpen}
+        onCalendarClose={() => setCalendarOpen(false)}
       />
     </div>
   )
