@@ -10,11 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
 import { getAvatarColor } from '@/lib/avatar-color'
 import { getPlanLimits } from '@/lib/plans'
 import { UpgradeModal } from '@/components/upgrade/upgrade-modal'
@@ -38,7 +34,6 @@ export function InvitePanel({ open, onOpenChange, board, members, currentUser, i
   const [removing, setRemoving] = useState(false)
   const router = useRouter()
 
-  // Keep local list in sync when server data updates (e.g. after router.refresh)
   useEffect(() => { setLocalMembers(members) }, [members])
 
   const plan = currentUser?.plan ?? 'free'
@@ -91,23 +86,44 @@ export function InvitePanel({ open, onOpenChange, board, members, currentUser, i
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-md flex flex-col max-h-[85vh]">
-          <DialogHeader className="shrink-0">
+        <DialogContent
+          showCloseButton={false}
+          className="border-0 bg-transparent p-0 shadow-none ring-0 gap-0 sm:max-w-[360px] top-[72px] translate-y-0"
+        >
+          <DialogHeader className="sr-only">
             <DialogTitle>Members — {board.name}</DialogTitle>
           </DialogHeader>
 
-          {/* Scrollable member list */}
-          <div className="overflow-y-auto flex-1 -mx-1 px-1">
-            <div className="space-y-0.5">
+          <div className="bg-[#1c1b19] rounded-[1.5rem] shadow-[0_16px_48px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.08)] overflow-hidden flex flex-col max-h-[min(560px,75vh)]">
+
+            {/* Header */}
+            <div className="px-5 pt-5 pb-4 flex items-center justify-between shrink-0">
+              <div>
+                <p className="text-sm font-semibold text-white/90 leading-tight">{board.name}</p>
+                <p className="text-xs text-white/35 mt-0.5">
+                  {localMembers.length} {localMembers.length === 1 ? 'member' : 'members'}
+                </p>
+              </div>
+              {plan === 'free' && (
+                <span className="text-[11px] tabular-nums text-white/25">
+                  {localMembers.length}/{limits.membersPerBoard}
+                </span>
+              )}
+            </div>
+
+            <div className="h-px bg-white/[0.06] mx-4 shrink-0" />
+
+            {/* Scrollable member list */}
+            <div className="overflow-y-auto flex-1 px-3 py-2">
               {localMembers.map(member => {
                 const p = member.profile
                 const color = getAvatarColor(p?.id ?? '')
                 const isMe = p?.id === currentUser?.id
                 const canRemove = isOwner && !isMe && member.role !== 'owner'
                 return (
-                  <div key={member.id} className="flex items-center gap-3 py-2 rounded-lg">
+                  <div key={member.id} className="flex items-center gap-3 px-2 py-2.5 rounded-xl hover:bg-white/[0.04] transition-colors group/row">
                     <div
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium shrink-0 overflow-hidden"
+                      className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-semibold shrink-0 overflow-hidden"
                       style={{ backgroundColor: color }}
                     >
                       {p?.avatar_url
@@ -115,96 +131,106 @@ export function InvitePanel({ open, onOpenChange, board, members, currentUser, i
                         : p?.display_name?.[0]?.toUpperCase() ?? '?'}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-jk-text truncate">
+                      <div className="text-sm font-medium text-white/85 truncate leading-tight">
                         {p?.display_name ?? 'Unknown'}
-                        {isMe && <span className="text-jk-text-faint font-normal"> (you)</span>}
+                        {isMe && <span className="text-white/30 font-normal"> · you</span>}
                       </div>
-                      <div className="text-xs text-jk-text-muted truncate">{p?.username}</div>
+                      <div className="text-[11px] text-white/30 truncate">{p?.username}</div>
                     </div>
-                    <Badge variant="outline" className="text-xs capitalize shrink-0">
+                    <span className="text-[10px] font-medium text-white/30 bg-white/[0.07] px-2 py-0.5 rounded-full shrink-0 capitalize">
                       {member.role}
-                    </Badge>
+                    </span>
                     {canRemove ? (
                       <button
                         type="button"
                         onClick={() => setConfirmRemove(member)}
-                        className="p-1.5 rounded-md text-jk-text-faint hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
                         title={`Remove ${p?.display_name ?? 'member'}`}
+                        className="opacity-0 group-hover/row:opacity-100 p-1 rounded-lg text-white/30 hover:text-red-400 hover:bg-red-400/10 transition-all shrink-0"
                       >
                         <UserMinus className="w-3.5 h-3.5" />
                       </button>
                     ) : (
-                      // Spacer so rows without a button stay aligned
-                      <div className="w-7 shrink-0" />
+                      <div className="w-[22px] shrink-0" />
                     )}
                   </div>
                 )
               })}
             </div>
+
+            {/* Invite section */}
+            {isOwner && (
+              <>
+                <div className="h-px bg-white/[0.06] mx-4 shrink-0" />
+                <div className="px-4 py-3.5 shrink-0">
+                  {atMemberLimit ? (
+                    <button
+                      onClick={() => setShowUpgrade(true)}
+                      className="flex items-center gap-2 w-full text-xs text-[#38bdf8] hover:text-[#0ea5e9] transition-colors"
+                    >
+                      <Zap className="w-3.5 h-3.5 shrink-0" />
+                      Upgrade to Pro to add more members
+                    </button>
+                  ) : (
+                    <form onSubmit={handleInvite} className="flex gap-2 items-center">
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={e => setEmail(e.target.value)}
+                        placeholder="person@example.com"
+                        className="flex-1 min-w-0 bg-white/[0.08] border border-white/[0.1] rounded-full px-3.5 py-2 text-xs text-white placeholder:text-white/25 focus:outline-none focus:border-white/25 focus:bg-white/[0.12] transition-colors"
+                      />
+                      <button
+                        type="submit"
+                        disabled={sending || !email.trim()}
+                        className="flex items-center justify-center w-8 h-8 rounded-full bg-[#0ea5e9] hover:bg-[#38bdf8] text-white transition-colors disabled:opacity-40 shrink-0"
+                      >
+                        <Send className="w-3.5 h-3.5" />
+                      </button>
+                    </form>
+                  )}
+                </div>
+              </>
+            )}
           </div>
-
-          {/* Invite section — always visible, pinned to bottom */}
-          {isOwner && (
-            <div className="space-y-2 pt-3 border-t border-border shrink-0">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-jk-text">Invite by email</p>
-                {plan === 'free' && (
-                  <span className="text-xs text-jk-text-faint">
-                    {localMembers.length}/{limits.membersPerBoard} members
-                  </span>
-                )}
-              </div>
-
-              {atMemberLimit ? (
-                <button
-                  onClick={() => setShowUpgrade(true)}
-                  className="flex items-center gap-2 w-full text-sm text-jk-accent hover:underline"
-                >
-                  <Zap className="w-4 h-4 shrink-0" />
-                  Upgrade to Pro to invite more members
-                </button>
-              ) : (
-                <form onSubmit={handleInvite} className="flex gap-2">
-                  <Input
-                    type="email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    placeholder="person@example.com"
-                    className="flex-1"
-                  />
-                  <Button
-                    type="submit"
-                    size="icon"
-                    disabled={sending || !email.trim()}
-                    className="bg-jk-accent hover:bg-sky-400 text-white shrink-0"
-                  >
-                    <Send className="w-4 h-4" />
-                  </Button>
-                </form>
-              )}
-            </div>
-          )}
         </DialogContent>
       </Dialog>
 
       {/* Remove confirmation */}
       <Dialog open={!!confirmRemove} onOpenChange={open => { if (!open) setConfirmRemove(null) }}>
-        <DialogContent showCloseButton={false} className="sm:max-w-sm">
-          <DialogHeader>
+        <DialogContent showCloseButton={false} className="border-0 bg-transparent p-0 shadow-none ring-0 gap-0 sm:max-w-[320px]">
+          <DialogHeader className="sr-only">
             <DialogTitle>Remove member?</DialogTitle>
             <DialogDescription>
-              <strong>{confirmRemove?.profile?.display_name ?? 'This member'}</strong> will lose access to{' '}
-              <strong>{board.name}</strong>. Their posts will remain on the board.
+              {confirmRemove?.profile?.display_name ?? 'This member'} will lose access to {board.name}.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmRemove(null)} disabled={removing}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleConfirmRemove} disabled={removing}>
-              {removing ? 'Removing…' : 'Remove'}
-            </Button>
-          </DialogFooter>
+
+          <div className="bg-[#1c1b19] rounded-[1.5rem] shadow-[0_16px_48px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.08)] overflow-hidden">
+            <div className="px-6 pt-6 pb-5">
+              <p className="text-sm font-semibold text-white/90 mb-1.5">Remove member?</p>
+              <p className="text-xs text-white/45 leading-relaxed">
+                <span className="text-white/70">{confirmRemove?.profile?.display_name ?? 'This member'}</span>{' '}
+                will lose access to <span className="text-white/70">{board.name}</span>. Their posts will remain on the board.
+              </p>
+            </div>
+            <div className="h-px bg-white/[0.06]" />
+            <div className="flex items-center gap-2 px-4 py-3.5">
+              <button
+                onClick={() => setConfirmRemove(null)}
+                disabled={removing}
+                className="flex-1 text-xs font-medium text-white/50 hover:text-white/80 bg-white/[0.07] hover:bg-white/[0.1] rounded-full py-2 transition-colors disabled:opacity-40"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmRemove}
+                disabled={removing}
+                className="flex-1 text-xs font-medium text-white bg-red-500/80 hover:bg-red-500 rounded-full py-2 transition-colors disabled:opacity-40"
+              >
+                {removing ? 'Removing…' : 'Remove'}
+              </button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
