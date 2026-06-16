@@ -209,10 +209,10 @@ export function PostCard({
             {!isImageOnly && !isMapOnly && (
               <div className="p-5 pt-6 pb-12">
                 {post.type === 'question' && (
-                  <span className="inline-block text-xs font-semibold text-[#1a6a30] mb-1.5">Question</span>
+                  <span className="inline-block text-xs font-semibold text-[#1a6a30] tracking-wide mb-1.5">Question</span>
                 )}
                 {post.title && (
-                  <h3 className="font-bold text-sm text-jk-text mb-2 leading-snug">{post.title}</h3>
+                  <h3 className="font-bold text-[0.9375rem] text-jk-text mb-2 leading-snug tracking-tight text-balance">{post.title}</h3>
                 )}
                 {post.type === 'tasks' ? (
                   <TaskList
@@ -224,7 +224,7 @@ export function PostCard({
                   />
                 ) : (
                   post.content && (
-                    <p className="text-sm text-jk-text-muted leading-relaxed whitespace-pre-wrap">{renderContent(post.content, { posts: allPosts, onJumpToPost })}</p>
+                    <p className="text-[0.8125rem] font-medium text-jk-text leading-[1.55] whitespace-pre-wrap">{renderContent(post.content, { posts: allPosts, onJumpToPost })}</p>
                   )
                 )}
 
@@ -244,7 +244,7 @@ export function PostCard({
                     />
                     <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-jk-surface-offset">
                       <MapPin className="w-3 h-3 text-destructive shrink-0" />
-                      <span className="text-[10px] text-jk-text truncate">{post.map_location.label}</span>
+                      <span className="text-[10px] text-jk-text tracking-wide truncate">{post.map_location.label}</span>
                     </div>
                   </div>
                 )}

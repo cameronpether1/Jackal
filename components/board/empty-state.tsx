@@ -12,8 +12,8 @@ export function EmptyState({ onCompose }: EmptyStateProps) {
           <div className="w-10 h-10 rounded-xl bg-jk-surface-offset flex items-center justify-center mx-auto mb-4">
             <PenLine className="w-5 h-5 text-jk-text-muted" />
           </div>
-          <p className="text-sm font-semibold text-jk-text mb-1">Start something</p>
-          <p className="text-sm text-jk-text-muted mb-4">
+          <p className="text-base font-semibold text-jk-text mb-1">Start something</p>
+          <p className="text-sm text-jk-text-muted mb-4 text-balance">
             Drop the first thought — a note, task list, or question.
           </p>
           <button

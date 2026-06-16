@@ -92,11 +92,11 @@ export const PostFocusOverlay = forwardRef<HTMLDivElement, PostFocusOverlayProps
                 <div className="flex-1 overflow-y-auto px-10 pt-10 pb-24">
                   <div className="max-w-2xl mx-auto">
                     {post.type === 'question' && (
-                      <span className="inline-block text-xs font-semibold text-[#1a6a30] mb-3">Question</span>
+                      <span className="inline-block text-xs font-semibold text-[#1a6a30] tracking-wide mb-3">Question</span>
                     )}
 
                     {post.title && (
-                      <h2 className="font-bold text-3xl text-jk-text mb-5 leading-tight">{post.title}</h2>
+                      <h2 className="font-bold text-3xl text-jk-text mb-5 leading-tight tracking-tight text-balance">{post.title}</h2>
                     )}
 
                     {post.type === 'tasks' ? (
@@ -109,7 +109,7 @@ export const PostFocusOverlay = forwardRef<HTMLDivElement, PostFocusOverlayProps
                       />
                     ) : (
                       post.content && (
-                        <p className="text-base text-jk-text-muted leading-relaxed whitespace-pre-wrap">
+                        <p className="text-base text-jk-text-muted leading-relaxed whitespace-pre-wrap text-pretty max-w-[65ch]">
                           {renderContent(post.content, { posts: allPosts, onJumpToPost })}
                         </p>
                       )
@@ -131,14 +131,14 @@ export const PostFocusOverlay = forwardRef<HTMLDivElement, PostFocusOverlayProps
                         />
                         <div className="flex items-center gap-1.5 px-3 py-2 bg-black/5">
                           <MapPin className="w-3.5 h-3.5 text-destructive shrink-0" />
-                          <span className="text-xs text-jk-text truncate">{post.map_location.label}</span>
+                          <span className="text-xs text-jk-text tracking-wide truncate">{post.map_location.label}</span>
                         </div>
                       </div>
                     )}
 
                     {sortedReplies.length > 0 && (
                       <div className="mt-10 pt-6 border-t border-jk-border space-y-6">
-                        <p className="text-xs text-jk-text-faint">
+                        <p className="text-xs font-medium text-jk-text-muted tracking-wide">
                           {sortedReplies.length} {sortedReplies.length === 1 ? 'comment' : 'comments'}
                         </p>
                         {sortedReplies.map((reply) => {
@@ -159,7 +159,7 @@ export const PostFocusOverlay = forwardRef<HTMLDivElement, PostFocusOverlayProps
                                   <span className="text-sm font-semibold text-jk-text">
                                     {reply.author?.display_name ?? 'Unknown'}
                                   </span>
-                                  <span className="text-xs text-jk-text-faint">
+                                  <span className="text-xs text-jk-text-faint tracking-wide">
                                     {new Date(reply.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                   </span>
                                 </div>
@@ -176,7 +176,7 @@ export const PostFocusOverlay = forwardRef<HTMLDivElement, PostFocusOverlayProps
                                   />
                                 ) : (
                                   reply.content && (
-                                    <p className="text-sm text-jk-text-muted leading-relaxed whitespace-pre-wrap">
+                                    <p className="text-[0.9375rem] text-jk-text-muted leading-relaxed whitespace-pre-wrap">
                                       {renderContent(reply.content, { posts: allPosts, onJumpToPost })}
                                     </p>
                                   )

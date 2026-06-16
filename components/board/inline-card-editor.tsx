@@ -142,7 +142,7 @@ export function InlineCardEditor({
     <div className={cn('space-y-2', isMobile ? 'px-4 pt-2 pb-4' : 'p-5 pt-6')}>
       {/* Reply-to banner */}
       {replyTo && (
-        <div className="flex items-center gap-1.5 pb-1 text-[11px] text-jk-text-faint">
+        <div className="flex items-center gap-1.5 pb-1 text-[11px] text-jk-text-faint tracking-wide">
           <CornerUpLeft className="w-3 h-3 shrink-0" />
           <span>Replying to <span className="font-medium text-jk-text-muted">{replyTo.authorName}</span></span>
         </div>
@@ -156,7 +156,7 @@ export function InlineCardEditor({
             type="button"
             onClick={() => setType(opt.value)}
             className={cn(
-              'text-xs px-2.5 py-1 rounded-full font-medium transition-colors',
+              'text-xs px-2.5 py-1 rounded-full font-medium tracking-wide transition-colors',
               isMobile ? 'px-3 py-1.5' : '',
               type === opt.value ? TYPE_ACTIVE_CLASS[opt.value] : 'bg-jk-surface-offset text-jk-text-muted hover:bg-jk-border',
             )}
@@ -200,7 +200,7 @@ export function InlineCardEditor({
         onChange={e => setTitle(e.target.value)}
         placeholder={type === 'tasks' ? 'Tasks' : type === 'question' ? 'Your question…' : 'Title'}
         className={cn(
-          'w-full font-bold text-sm text-jk-text outline-none placeholder:text-jk-text-faint bg-transparent',
+          'w-full font-bold text-[0.9375rem] text-jk-text outline-none placeholder:text-jk-text-faint bg-transparent',
           isMobile && 'text-base',
         )}
       />
@@ -231,7 +231,7 @@ export function InlineCardEditor({
                 onMouseDown={e => { e.preventDefault(); insertLink(p) }}
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-jk-surface-offset transition-colors"
               >
-                <span className="text-[10px] text-jk-text-faint capitalize shrink-0">{p.type}</span>
+                <span className="text-[10px] text-jk-text-faint capitalize tracking-wide shrink-0">{p.type}</span>
                 <span className="truncate text-jk-text">{p.title || p.content?.slice(0, 40) || 'Untitled'}</span>
               </button>
             ))}
@@ -277,7 +277,7 @@ export function InlineCardEditor({
           />
           <div className="absolute bottom-0 inset-x-0 bg-white/90 backdrop-blur-sm px-2.5 py-1.5 flex items-center gap-1.5">
             <MapPin className="w-3 h-3 text-destructive shrink-0" />
-            <span className="text-[10px] text-jk-text truncate flex-1">{mapLocation.label}</span>
+            <span className="text-[10px] text-jk-text tracking-wide truncate flex-1">{mapLocation.label}</span>
             <button
               type="button"
               onClick={() => setMapLocation(null)}
@@ -300,7 +300,7 @@ export function InlineCardEditor({
           Save post
         </button>
       ) : (
-        <p className="text-[10px] text-jk-text-faint pt-1">
+        <p className="text-[10px] text-jk-text-faint tracking-wide pt-1">
           ⌘↵ to save · Esc to discard · click away to save
         </p>
       )}
