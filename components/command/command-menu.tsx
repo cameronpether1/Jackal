@@ -81,7 +81,7 @@ export function CommandMenu({ boards, ownedBoardCount }: CommandMenuProps) {
 
   return (
     <>
-      <GlassCommandDialog open={open} onOpenChange={setOpen}>
+      <GlassCommandDialog open={open} onOpenChange={setOpen} glassVariant="frosted">
         <GlassCommandInput placeholder="Search boards and actions..." />
         <CommandList>
           <CommandEmpty>No results found.</CommandEmpty>
