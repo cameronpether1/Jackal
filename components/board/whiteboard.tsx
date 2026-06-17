@@ -1174,7 +1174,10 @@ export function Whiteboard({
     [currentUserId],
   );
 
-  const [calendarCanvasPos, setCalendarCanvasPos] = useState<{ x: number; y: number } | null>(null);
+  const [calendarCanvasPos, setCalendarCanvasPos] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
 
   useEffect(() => {
     if (!calendarOpen || calendarCanvasPos !== null) return;
@@ -1184,7 +1187,9 @@ export function Whiteboard({
       setCalendarCanvasPos({ x: 200, y: 400 });
       return;
     }
-    let minX = Infinity, maxX = -Infinity, maxY = -Infinity;
+    let minX = Infinity,
+      maxX = -Infinity,
+      maxY = -Infinity;
     for (const post of allRootPosts) {
       const el = document.getElementById(`post-${post.id}`);
       const w = el?.offsetWidth ?? 288;
@@ -1197,7 +1202,7 @@ export function Whiteboard({
       x: (minX + maxX) / 2 - CAL_WIDTH / 2,
       y: maxY + 80,
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [calendarOpen, calendarCanvasPos]);
 
   const onlineUsersList = useMemo(
@@ -1352,7 +1357,7 @@ export function Whiteboard({
                         handleAddSticker(src);
                         setStickerPickerOpen(false);
                       }}
-                      className="w-14 h-14 rounded-xl bg-foreground/[0.06] hover:bg-foreground/[0.12] flex items-center justify-center transition-colors"
+                      className="w-14 h-14 rounded-xl bg-foreground/6 hover:bg-foreground/12 flex items-center justify-center transition-colors"
                     >
                       <img
                         src={src}
