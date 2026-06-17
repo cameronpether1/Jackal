@@ -1,9 +1,11 @@
 'use client'
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { CalendarDays, Check, Trash2, X } from 'lucide-react'
+import { CalendarDays, Check, Eye, Pencil, Trash2, X } from 'lucide-react'
 import type { DateRange } from 'react-day-picker'
 import { GlassCalendar } from '@/components/ui/glasscn/glass-calendar'
+import { Tooltip, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { GlassTooltipContent } from '@/components/ui/glasscn/glass-tooltip'
 import { createClient } from '@/lib/supabase/client'
 import { getAvatarColor } from '@/lib/avatar-color'
 import { cn } from '@/lib/utils'
@@ -32,23 +34,61 @@ function fmtRange(from: Date, to: Date) {
   return f === t ? f : `${f} – ${t}`
 }
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type CalMode = 'view' | 'edit'
+
+type EventWithAuthor = BoardCalendarEvent & {
+  author?: { display_name: string; avatar_url: string | null } | null
+}
+
+// ─── Lane assignment ─────────────────────────────────────────────────────────
+// Each event gets a fixed vertical lane for its entire duration via greedy
+// interval scheduling. Overlapping events land in different lanes; the lane
+// persists so an event never jumps up after a higher-priority event ends.
+
+function computeLanes(events: EventWithAuthor[]): Map<string, number> {
+  const sorted = [...events].sort(
+    (a, b) => a.start_date.localeCompare(b.start_date) || a.id.localeCompare(b.id)
+  )
+  const laneMap = new Map<string, number>()
+  const laneEnds: string[] = []
+
+  for (const ev of sorted) {
+    let lane = laneEnds.findIndex(end => end < ev.start_date)
+    if (lane === -1) {
+      lane = laneEnds.length
+      laneEnds.push(ev.end_date)
+    } else {
+      laneEnds[lane] = ev.end_date
+    }
+    laneMap.set(ev.id, lane)
+  }
+  return laneMap
+}
+
 // ─── Context ─────────────────────────────────────────────────────────────────
 
 type CalCtx = {
-  events: BoardCalendarEvent[]
+  events: EventWithAuthor[]
+  laneMap: Map<string, number>
+  mode: CalMode
+  onToggleMode: () => void
   currentUserId: string
   isOwner: boolean
   onClose: () => void
+  hoveredEventId: string | null
+  onHoverRibbon: (id: string | null) => void
   showAddForm: boolean
   addTitle: string
   setAddTitle: (v: string) => void
   selectedRange: DateRange | undefined
   onAddSubmit: (e: React.FormEvent) => void
   onCancelAdd: () => void
-  editingEvent: BoardCalendarEvent | null
+  editingEvent: EventWithAuthor | null
   editTitle: string
   setEditTitle: (v: string) => void
-  onOpenEdit: (ev: BoardCalendarEvent) => void
+  onOpenEdit: (ev: EventWithAuthor) => void
   onCloseEdit: () => void
   onEditSubmit: (e: React.FormEvent) => void
   onDeleteEvent: () => void
@@ -81,17 +121,34 @@ function BoardCalRoot({
           <CalendarDays className="w-3.5 h-3.5 text-muted-foreground" />
           <span className="text-xs font-semibold text-foreground tracking-wide">Board Calendar</span>
         </div>
-        <button
-          type="button"
-          onClick={ctx.onClose}
-          className="w-6 h-6 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-black/[0.06] dark:hover:bg-white/[0.08] transition-colors"
-        >
-          <X className="w-3.5 h-3.5" />
-        </button>
+        <div className="flex items-center gap-0.5">
+          {/* View / Edit mode toggle */}
+          <button
+            type="button"
+            onClick={ctx.onToggleMode}
+            title={ctx.mode === 'view' ? 'Switch to edit mode' : 'Switch to view mode'}
+            className={cn(
+              'w-6 h-6 flex items-center justify-center rounded-full transition-colors',
+              ctx.mode === 'edit'
+                ? 'text-[#38bdf8] bg-[#38bdf8]/15 hover:bg-[#38bdf8]/25'
+                : 'text-muted-foreground hover:text-foreground hover:bg-black/[0.06] dark:hover:bg-white/[0.08]',
+            )}
+          >
+            {ctx.mode === 'edit' ? <Eye className="w-3 h-3" /> : <Pencil className="w-3 h-3" />}
+          </button>
+          {/* Close */}
+          <button
+            type="button"
+            onClick={ctx.onClose}
+            className="w-6 h-6 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-black/[0.06] dark:hover:bg-white/[0.08] transition-colors"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
 
-      {/* Edit panel */}
-      {ctx.editingEvent && (
+      {/* Edit panel — only in edit mode */}
+      {ctx.mode === 'edit' && ctx.editingEvent && (
         <form
           onSubmit={ctx.onEditSubmit}
           className="px-4 py-3 border-b border-black/[0.07] dark:border-white/[0.08]"
@@ -135,8 +192,8 @@ function BoardCalRoot({
         </form>
       )}
 
-      {/* Add form — appears after completing a range selection */}
-      {ctx.showAddForm && (
+      {/* Add form — only in edit mode, after completing a range selection */}
+      {ctx.mode === 'edit' && ctx.showAddForm && (
         <form
           onSubmit={ctx.onAddSubmit}
           className="px-4 py-3 border-b border-black/[0.07] dark:border-white/[0.08]"
@@ -194,10 +251,14 @@ function BoardCalDayButton({
   const ctx = useContext(CalCtx)!
   const date = day.date
   const dateStr = toDateStr(date)
+  const isViewMode = ctx.mode === 'view'
 
-  const dayEvents = ctx.events
-    .filter(ev => isInRange(date, ev.start_date, ev.end_date))
-    .sort((a, b) => a.start_date.localeCompare(b.start_date) || a.id.localeCompare(b.id))
+  const dayEvents = ctx.events.filter(ev => isInRange(date, ev.start_date, ev.end_date))
+
+  // Build ordered lane slots — empty lanes render as transparent spacers
+  const maxLane = dayEvents.reduce((m, ev) => Math.max(m, ctx.laneMap.get(ev.id) ?? 0), -1)
+  const laneSlots: (EventWithAuthor | null)[] = Array(maxLane + 1).fill(null)
+  dayEvents.forEach(ev => { laneSlots[ctx.laneMap.get(ev.id) ?? 0] = ev })
 
   return (
     <button
@@ -210,45 +271,142 @@ function BoardCalDayButton({
       className={cn(
         'relative z-10 flex flex-col items-center w-full min-h-[var(--cell-size)] pb-1',
         'rounded-[var(--cell-radius)] border-0 font-normal select-none',
-        'hover:bg-accent hover:text-accent-foreground transition-colors',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0',
+        // Date cell hover only in edit mode
+        isViewMode
+          ? 'cursor-default'
+          : 'hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer',
         modifiers.today && !modifiers.selected && 'bg-muted',
         modifiers.outside && 'text-muted-foreground opacity-40',
         modifiers.disabled && 'text-muted-foreground opacity-30 pointer-events-none',
-        'data-[selected-single=true]:bg-primary data-[selected-single=true]:text-primary-foreground',
-        'data-[range-start=true]:bg-primary data-[range-start=true]:text-primary-foreground data-[range-start=true]:rounded-r-none',
-        'data-[range-end=true]:bg-primary data-[range-end=true]:text-primary-foreground data-[range-end=true]:rounded-l-none',
-        'data-[range-middle=true]:bg-muted data-[range-middle=true]:rounded-none',
+        // Range selection highlight only in edit mode
+        !isViewMode && 'data-[selected-single=true]:bg-primary data-[selected-single=true]:text-primary-foreground',
+        !isViewMode && 'data-[range-start=true]:bg-primary data-[range-start=true]:text-primary-foreground data-[range-start=true]:rounded-r-none',
+        !isViewMode && 'data-[range-end=true]:bg-primary data-[range-end=true]:text-primary-foreground data-[range-end=true]:rounded-l-none',
+        !isViewMode && 'data-[range-middle=true]:bg-muted data-[range-middle=true]:rounded-none',
         className,
       )}
       {...(props as React.ButtonHTMLAttributes<HTMLButtonElement>)}
     >
       <span className="text-xs leading-none pt-1.5 shrink-0">{children}</span>
 
-      {dayEvents.length > 0 && (
-        <div className="flex flex-col gap-[2px] w-full mt-0.5 overflow-hidden">
-          {dayEvents.map(ev => {
+      {laneSlots.length > 0 && (
+        <div className="flex flex-col gap-[2px] w-full mt-0.5">
+          {laneSlots.map((ev, lane) => {
+            if (!ev) {
+              return <div key={`spacer-${lane}`} className="h-[16px] w-full shrink-0" />
+            }
             const isStart = dateStr === ev.start_date
             const isEnd = dateStr === ev.end_date
             const isSingle = isStart && isEnd
+            const showLabel = isStart || isSingle
+
+            const ribbonInner = (
+              <>
+                {/* Ribbon fill */}
+                <div
+                  style={{ backgroundColor: `${ev.color}28` }}
+                  className={cn(
+                    'absolute inset-0 transition-[filter] duration-100',
+                    isSingle ? 'rounded-full'
+                    : isStart ? 'rounded-l-full'
+                    : isEnd ? 'rounded-r-full'
+                    : '',
+                    isViewMode && ctx.hoveredEventId === ev.id && 'brightness-75',
+                  )}
+                />
+                {/* Avatar */}
+                {showLabel && (
+                  <div
+                    className="absolute left-0 top-1/2 -translate-y-1/2 w-[20px] h-[20px] rounded-full overflow-hidden border-2 border-white/70 z-10 shrink-0"
+                    style={{ backgroundColor: ev.color }}
+                  >
+                    {ev.author?.avatar_url ? (
+                      <img src={ev.author.avatar_url} alt="" className="w-full h-full object-cover" draggable={false} />
+                    ) : (
+                      <span className="flex h-full items-center justify-center text-[7px] font-bold text-white leading-none select-none">
+                        {(ev.author?.display_name ?? '?')[0]?.toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                )}
+                {/* Title */}
+                {showLabel && (
+                  <span
+                    className="absolute left-[22px] right-0.5 inset-y-0 flex items-center text-[9px] font-semibold truncate leading-none"
+                    style={{ color: ev.color }}
+                  >
+                    {ev.title}
+                  </span>
+                )}
+              </>
+            )
+
+            if (isViewMode) {
+              return (
+                <Tooltip key={ev.id}>
+                  <TooltipTrigger
+                    render={<div />}
+                    onMouseEnter={() => ctx.onHoverRibbon(ev.id)}
+                    onMouseLeave={() => ctx.onHoverRibbon(null)}
+                    onMouseDown={(e: React.MouseEvent) => e.stopPropagation()}
+                    className={cn(
+                      'relative h-[16px] w-full cursor-pointer shrink-0',
+                      isSingle && 'self-center !w-[calc(100%-6px)]',
+                    )}
+                  >
+                    {ribbonInner}
+                  </TooltipTrigger>
+                  <GlassTooltipContent
+                    side="top"
+                    align="start"
+                    sideOffset={6}
+                    className="min-w-[160px] max-w-[220px]"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-6 h-6 rounded-full overflow-hidden shrink-0 flex items-center justify-center"
+                        style={{ backgroundColor: ev.color }}
+                      >
+                        {ev.author?.avatar_url ? (
+                          <img src={ev.author.avatar_url} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-[8px] font-bold text-white leading-none">
+                            {(ev.author?.display_name ?? '?')[0]?.toUpperCase()}
+                          </span>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-foreground truncate">{ev.title}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">{ev.author?.display_name ?? 'Unknown'}</p>
+                      </div>
+                    </div>
+                    <p className="mt-1.5 text-[10px] text-muted-foreground">
+                      {ev.start_date === ev.end_date
+                        ? fmtStored(ev.start_date)
+                        : `${fmtStored(ev.start_date)} – ${fmtStored(ev.end_date)}`}
+                    </p>
+                  </GlassTooltipContent>
+                </Tooltip>
+              )
+            }
+
+            // Edit mode ribbon — click opens edit panel
             return (
               <div
                 key={ev.id}
                 onClick={e => { e.stopPropagation(); ctx.onOpenEdit(ev) }}
                 onMouseDown={e => e.stopPropagation()}
+                onMouseEnter={() => ctx.onHoverRibbon(ev.id)}
+                onMouseLeave={() => ctx.onHoverRibbon(null)}
                 title={ev.title}
-                style={{ backgroundColor: ev.color }}
                 className={cn(
-                  'h-[5px] w-full cursor-pointer shrink-0',
-                  isSingle
-                    ? 'rounded-full self-center !w-[calc(100%-10px)]'
-                    : isStart
-                    ? 'rounded-l-full'
-                    : isEnd
-                    ? 'rounded-r-full'
-                    : 'rounded-none',
+                  'relative h-[16px] w-full cursor-pointer shrink-0',
+                  isSingle && 'self-center !w-[calc(100%-6px)]',
                 )}
-              />
+              >
+                {ribbonInner}
+              </div>
             )
           })}
         </div>
@@ -272,26 +430,32 @@ interface BoardCalendarProps {
 }
 
 export function BoardCalendar({ boardId, currentUserId, isOwner, onClose }: BoardCalendarProps) {
-  const [events, setEvents] = useState<BoardCalendarEvent[]>([])
+  const [events, setEvents] = useState<EventWithAuthor[]>([])
+  const [hoveredEventId, setHoveredEventId] = useState<string | null>(null)
+  const [mode, setMode] = useState<CalMode>('view')
   const [selectedRange, setSelectedRange] = useState<DateRange | undefined>()
-  const [editingEvent, setEditingEvent] = useState<BoardCalendarEvent | null>(null)
+  const [editingEvent, setEditingEvent] = useState<EventWithAuthor | null>(null)
   const [addTitle, setAddTitle] = useState('')
   const [editTitle, setEditTitle] = useState('')
   const [saving, setSaving] = useState(false)
 
   const supabase = useMemo(() => createClient(), [])
-  const editingRef = useRef<BoardCalendarEvent | null>(null)
+  const editingRef = useRef<EventWithAuthor | null>(null)
   editingRef.current = editingEvent
+  const modeRef = useRef<CalMode>('view')
+  modeRef.current = mode
+
+  const laneMap = useMemo(() => computeLanes(events), [events])
 
   const showAddForm = !!(selectedRange?.from && selectedRange?.to) && !editingEvent
 
-  // Initial fetch
+  // Initial fetch — join author profile for avatar/name in ribbons
   useEffect(() => {
     supabase
       .from('board_calendar_events')
-      .select('*')
+      .select('*, author:profiles(display_name, avatar_url)')
       .eq('board_id', boardId)
-      .then(({ data }) => { if (data) setEvents(data) })
+      .then(({ data }) => { if (data) setEvents(data as EventWithAuthor[]) })
   }, [boardId, supabase])
 
   // Realtime sync
@@ -301,10 +465,18 @@ export function BoardCalendar({ boardId, currentUserId, isOwner, onClose }: Boar
       .on('postgres_changes', { event: '*', schema: 'public', table: 'board_calendar_events' }, p => {
         if (p.eventType === 'INSERT') {
           const ev = p.new as BoardCalendarEvent
-          if (ev.board_id === boardId) setEvents(prev => [...prev, ev])
+          if (ev.board_id !== boardId) return
+          supabase
+            .from('board_calendar_events')
+            .select('*, author:profiles(display_name, avatar_url)')
+            .eq('id', ev.id)
+            .single()
+            .then(({ data }) => {
+              if (data) setEvents(prev => prev.some(e => e.id === data.id) ? prev : [...prev, data as EventWithAuthor])
+            })
         } else if (p.eventType === 'UPDATE') {
           const ev = p.new as BoardCalendarEvent
-          if (ev.board_id === boardId) setEvents(prev => prev.map(e => e.id === ev.id ? ev : e))
+          if (ev.board_id === boardId) setEvents(prev => prev.map(e => e.id === ev.id ? { ...e, ...ev } : e))
         } else if (p.eventType === 'DELETE') {
           setEvents(prev => prev.filter(e => e.id !== (p.old as { id: string }).id))
         }
@@ -313,10 +485,23 @@ export function BoardCalendar({ boardId, currentUserId, isOwner, onClose }: Boar
     return () => { supabase.removeChannel(ch) }
   }, [boardId, supabase])
 
-  // Use ref so handleSelect is stable (no deps that change)
+  // Block selection in view mode via modeRef to keep handleSelect stable
   const handleSelect = useCallback((range: DateRange | undefined) => {
     if (editingRef.current) return
+    if (modeRef.current === 'view') return
     setSelectedRange(range)
+  }, [])
+
+  const handleToggleMode = useCallback(() => {
+    setMode(prev => {
+      if (prev === 'edit') {
+        // Returning to view — clear any in-progress edit/add state
+        setSelectedRange(undefined)
+        setEditingEvent(null)
+        setAddTitle('')
+      }
+      return prev === 'view' ? 'edit' : 'view'
+    })
   }, [])
 
   const handleAddSubmit = useCallback(async (e: React.FormEvent) => {
@@ -328,14 +513,19 @@ export function BoardCalendar({ boardId, currentUserId, isOwner, onClose }: Boar
     setSelectedRange(undefined)
     setAddTitle('')
     setSaving(true)
-    await supabase.from('board_calendar_events').insert({
-      board_id: boardId,
-      author_id: currentUserId,
-      title,
-      start_date: toDateStr(from),
-      end_date: toDateStr(to),
-      color: getAvatarColor(currentUserId),
-    })
+    const { data } = await supabase
+      .from('board_calendar_events')
+      .insert({
+        board_id: boardId,
+        author_id: currentUserId,
+        title,
+        start_date: toDateStr(from),
+        end_date: toDateStr(to),
+        color: getAvatarColor(currentUserId),
+      })
+      .select('*, author:profiles(display_name, avatar_url)')
+      .single()
+    if (data) setEvents(prev => prev.some(e => e.id === (data as EventWithAuthor).id) ? prev : [...prev, data as EventWithAuthor])
     setSaving(false)
   }, [selectedRange, addTitle, boardId, currentUserId, supabase])
 
@@ -344,7 +534,7 @@ export function BoardCalendar({ boardId, currentUserId, isOwner, onClose }: Boar
     setAddTitle('')
   }, [])
 
-  const handleOpenEdit = useCallback((ev: BoardCalendarEvent) => {
+  const handleOpenEdit = useCallback((ev: EventWithAuthor) => {
     setEditingEvent(ev)
     setEditTitle(ev.title)
     setSelectedRange(undefined)
@@ -359,24 +549,33 @@ export function BoardCalendar({ boardId, currentUserId, isOwner, onClose }: Boar
     const title = editTitle.trim()
     setSaving(true)
     setEditingEvent(null)
+    setEvents(prev => prev.map(e => e.id === ev.id ? { ...e, title } : e))
     await supabase.from('board_calendar_events').update({ title }).eq('id', ev.id)
     setSaving(false)
   }, [editTitle, supabase])
+
+  const handleHoverRibbon = useCallback((id: string | null) => setHoveredEventId(id), [])
 
   const handleDeleteEvent = useCallback(async () => {
     const ev = editingRef.current
     if (!ev) return
     setSaving(true)
+    setEditingEvent(null)
+    setEvents(prev => prev.filter(e => e.id !== ev.id))
     await supabase.from('board_calendar_events').delete().eq('id', ev.id)
     setSaving(false)
-    setEditingEvent(null)
   }, [supabase])
 
   const ctxValue = useMemo<CalCtx>(() => ({
     events,
+    laneMap,
+    mode,
+    onToggleMode: handleToggleMode,
     currentUserId,
     isOwner,
     onClose,
+    hoveredEventId,
+    onHoverRibbon: handleHoverRibbon,
     showAddForm,
     addTitle,
     setAddTitle,
@@ -392,7 +591,8 @@ export function BoardCalendar({ boardId, currentUserId, isOwner, onClose }: Boar
     onDeleteEvent: handleDeleteEvent,
     saving,
   }), [
-    events, currentUserId, isOwner, onClose,
+    events, laneMap, mode, handleToggleMode, currentUserId, isOwner, onClose,
+    hoveredEventId, handleHoverRibbon,
     showAddForm, addTitle, selectedRange,
     handleAddSubmit, handleCancelAdd,
     editingEvent, editTitle,
@@ -402,13 +602,15 @@ export function BoardCalendar({ boardId, currentUserId, isOwner, onClose }: Boar
 
   return (
     <div className="w-[616px]">
+      <TooltipProvider delay={400}>
       <CalCtx.Provider value={ctxValue}>
         <GlassCalendar
           glassVariant="frosted"
           mode="range"
           numberOfMonths={2}
           showOutsideDays={false}
-          selected={selectedRange}
+          // No selection highlight in view mode
+          selected={mode === 'view' ? undefined : selectedRange}
           onSelect={handleSelect}
           className="w-full rounded-2xl [--cell-size:--spacing(9)]"
           classNames={{
@@ -421,6 +623,7 @@ export function BoardCalendar({ boardId, currentUserId, isOwner, onClose }: Boar
           components={CALENDAR_COMPONENTS as never}
         />
       </CalCtx.Provider>
+      </TooltipProvider>
     </div>
   )
 }
