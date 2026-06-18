@@ -38,6 +38,7 @@ interface PostCardProps {
   getNearbyPostRects?: (excludeId: string) => Array<{ id: string; x: number; y: number; w: number; h: number }>
   getDraggedInfo?: () => { id: string; x: number; y: number; w: number; h: number } | null
   setActiveDrag?: (info: { id: string; x: number; y: number; w: number; h: number } | null) => void
+  getZoom?: () => number
   onTaskToggle: (taskId: string, checked: boolean) => void
   onAddTaskItem: (postId: string, label: string) => void
   onDelete: (postId: string) => void
@@ -214,7 +215,7 @@ export function PostCard({
   post, currentUserId, replies = [], isBoardOwner = false,
   allPosts = [], onJumpToPost,
   isReplying = false, onReplyDraftSave, onReplyDraftDiscard,
-  onDragEnd, boardBounds, getCalendarZone, getNearbyPostRects, getDraggedInfo, setActiveDrag,
+  onDragEnd, boardBounds, getCalendarZone, getNearbyPostRects, getDraggedInfo, setActiveDrag, getZoom,
   onTaskToggle, onAddTaskItem, onDelete, onReply, onFocusPost,
 }: PostCardProps) {
   // raw tracks the cursor exactly (no spring) — bias springs toward nearby posts
@@ -325,9 +326,10 @@ export function PostCard({
     const el = outerRef.current
     const w = el?.offsetWidth ?? 288
     const h = el?.offsetHeight ?? 200
+    const scale = (getZoom?.() ?? 100) / 100
     let newPos = {
-      x: dragState.current.startPosX + (e.clientX - dragState.current.startX),
-      y: dragState.current.startPosY + (e.clientY - dragState.current.startY),
+      x: dragState.current.startPosX + (e.clientX - dragState.current.startX) / scale,
+      y: dragState.current.startPosY + (e.clientY - dragState.current.startY) / scale,
     }
     if (boardBounds) newPos = clampToBoard(newPos, w, h, boardBounds)
     const zone = getCalendarZone?.()

@@ -1199,6 +1199,7 @@ export function Whiteboard({
   const setActiveDrag = useCallback((info: typeof activeDragRef.current) => {
     activeDragRef.current = info;
   }, []);
+  const getZoom = useCallback(() => zoomRef.current, []);
 
   const getNearbyPostRects = useCallback((excludeId: string) => {
     return postsRef.current
@@ -1281,6 +1282,7 @@ export function Whiteboard({
               getNearbyPostRects={getNearbyPostRects}
               getDraggedInfo={getDraggedInfo}
               setActiveDrag={setActiveDrag}
+              getZoom={getZoom}
               onTaskToggle={handleTaskToggle}
               onAddTaskItem={handleAddTaskItem}
               onDelete={handleDeletePost}
@@ -1302,6 +1304,7 @@ export function Whiteboard({
               isBoardOwner={isOwner}
               onDragEnd={(x, y) => handleStickerDragEnd(s.id, x, y)}
               onDelete={() => handleStickerDelete(s.id)}
+              getZoom={getZoom}
             />
           ))}
 
