@@ -1182,25 +1182,13 @@ export function Whiteboard({
   useEffect(() => {
     if (!calendarOpen || calendarCanvasPos !== null) return;
     const CAL_WIDTH = 616;
-    const allRootPosts = postsRef.current.filter((p) => !p.reply_to_post_id);
-    if (allRootPosts.length === 0) {
-      setCalendarCanvasPos({ x: 200, y: 400 });
-      return;
-    }
-    let minX = Infinity,
-      maxX = -Infinity,
-      maxY = -Infinity;
-    for (const post of allRootPosts) {
-      const el = document.getElementById(`post-${post.id}`);
-      const w = el?.offsetWidth ?? 288;
-      const h = el?.offsetHeight ?? 200;
-      minX = Math.min(minX, post.pos_x);
-      maxX = Math.max(maxX, post.pos_x + w);
-      maxY = Math.max(maxY, post.pos_y + h);
-    }
+    const CAL_HEIGHT = 420;
+    const el = canvasRef.current;
+    if (!el) { setCalendarCanvasPos({ x: 200, y: 200 }); return; }
+    const scale = zoomRef.current / 100;
     setCalendarCanvasPos({
-      x: (minX + maxX) / 2 - CAL_WIDTH / 2,
-      y: maxY + 80,
+      x: (el.scrollLeft + el.clientWidth / 2) / scale - CAL_WIDTH / 2,
+      y: (el.scrollTop + el.clientHeight / 2) / scale - CAL_HEIGHT / 2,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [calendarOpen, calendarCanvasPos]);
