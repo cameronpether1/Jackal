@@ -19,6 +19,7 @@ interface StickerPeelProps {
   isBoardOwner?: boolean
   onDragEnd: (x: number, y: number) => void
   onDelete: () => void
+  getZoom?: () => number
   rotate?: number
   peelBackHoverPct?: number
   peelBackActivePct?: number
@@ -50,6 +51,7 @@ export function StickerPeel({
   isBoardOwner = false,
   onDragEnd,
   onDelete,
+  getZoom,
   rotate = 30,
   peelBackHoverPct = 10,
   peelBackActivePct = 70,
@@ -88,24 +90,26 @@ export function StickerPeel({
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
     if (!dragState.current) return
-    const deltaX = e.clientX - dragState.current.lastClientX
+    const scale = (getZoom?.() ?? 100) / 100
+    const deltaX = (e.clientX - dragState.current.lastClientX) / scale
     dragState.current.lastClientX = e.clientX
     setDragRotation(r => Math.max(-20, Math.min(20, r + deltaX * 0.35)))
     setPos({
-      x: dragState.current.startPosX + (e.clientX - dragState.current.startX),
-      y: dragState.current.startPosY + (e.clientY - dragState.current.startY),
+      x: dragState.current.startPosX + (e.clientX - dragState.current.startX) / scale,
+      y: dragState.current.startPosY + (e.clientY - dragState.current.startY) / scale,
     })
-  }, [])
+  }, [getZoom])
 
   const onPointerUp = useCallback((e: React.PointerEvent) => {
     if (!dragState.current) return
-    const newX = dragState.current.startPosX + (e.clientX - dragState.current.startX)
-    const newY = dragState.current.startPosY + (e.clientY - dragState.current.startY)
+    const scale = (getZoom?.() ?? 100) / 100
+    const newX = dragState.current.startPosX + (e.clientX - dragState.current.startX) / scale
+    const newY = dragState.current.startPosY + (e.clientY - dragState.current.startY) / scale
     dragState.current = null
     setIsDragging(false)
     setDragRotation(0)
     onDragEnd(newX, newY)
-  }, [onDragEnd])
+  }, [onDragEnd, getZoom])
 
   // SVG point-light follows cursor for the peel lighting effect
   useEffect(() => {
