@@ -33,6 +33,17 @@ import type {
   TaskItem,
 } from "@/lib/supabase/types";
 
+// ─── Board & calendar layout constants ───────────────────────────────────────
+const BOARD_W = 4000;
+const BOARD_H = 3000;
+const CALENDAR_W = 616;
+const CALENDAR_H_EST = 460; // base estimate used when calendar is closed
+const CALENDAR_POS = {
+  x: Math.round((BOARD_W - CALENDAR_W) / 2), // 1692
+  y: Math.round((BOARD_H - CALENDAR_H_EST) / 2), // 1270
+} as const;
+const BOARD_BOUNDS = { w: BOARD_W, h: BOARD_H } as const;
+
 interface WhiteboardProps {
   boardId: string;
   boardName?: string;
@@ -1174,24 +1185,51 @@ export function Whiteboard({
     [currentUserId],
   );
 
-  const [calendarCanvasPos, setCalendarCanvasPos] = useState<{
+  const calendarContainerRef = useRef<HTMLDivElement>(null);
+
+  // Active drag info shared across all PostCards for bidirectional magnetic attraction
+  const activeDragRef = useRef<{
+    id: string;
     x: number;
     y: number;
+    w: number;
+    h: number;
   } | null>(null);
+  const getDraggedInfo = useCallback(() => activeDragRef.current, []);
+  const setActiveDrag = useCallback((info: typeof activeDragRef.current) => {
+    activeDragRef.current = info;
+  }, []);
 
-  useEffect(() => {
-    if (!calendarOpen || calendarCanvasPos !== null) return;
-    const CAL_WIDTH = 616;
-    const CAL_HEIGHT = 420;
-    const el = canvasRef.current;
-    if (!el) { setCalendarCanvasPos({ x: 200, y: 200 }); return; }
-    const scale = zoomRef.current / 100;
-    setCalendarCanvasPos({
-      x: (el.scrollLeft + el.clientWidth / 2) / scale - CAL_WIDTH / 2,
-      y: (el.scrollTop + el.clientHeight / 2) / scale - CAL_HEIGHT / 2,
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [calendarOpen, calendarCanvasPos]);
+  const getNearbyPostRects = useCallback((excludeId: string) => {
+    return postsRef.current
+      .filter((p) => !p.reply_to_post_id && p.id !== excludeId)
+      .map((p) => {
+        const el = document.getElementById(`post-${p.id}`);
+        return {
+          id: p.id,
+          x: p.pos_x,
+          y: p.pos_y,
+          w: el?.offsetWidth ?? 288,
+          h: el?.offsetHeight ?? 200,
+        };
+      });
+  }, []);
+
+  const getCalendarZone = useCallback((): {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  } => {
+    const BUFFER = 20;
+    const h = calendarContainerRef.current?.offsetHeight ?? CALENDAR_H_EST;
+    return {
+      x: CALENDAR_POS.x - BUFFER,
+      y: CALENDAR_POS.y - BUFFER,
+      w: CALENDAR_W + BUFFER * 2,
+      h: h + BUFFER * 2,
+    };
+  }, []);
 
   const onlineUsersList = useMemo(
     () => Object.values(onlineUsers),
@@ -1238,6 +1276,11 @@ export function Whiteboard({
               onReplyDraftSave={handleSaveReply}
               onReplyDraftDiscard={() => setReplyingToPostId(null)}
               onDragEnd={handleDragEnd}
+              boardBounds={BOARD_BOUNDS}
+              getCalendarZone={getCalendarZone}
+              getNearbyPostRects={getNearbyPostRects}
+              getDraggedInfo={getDraggedInfo}
+              setActiveDrag={setActiveDrag}
               onTaskToggle={handleTaskToggle}
               onAddTaskItem={handleAddTaskItem}
               onDelete={handleDeletePost}
@@ -1276,12 +1319,13 @@ export function Whiteboard({
             />
           )}
 
-          {calendarOpen && calendarCanvasPos && (
+          {calendarOpen && (
             <div
+              ref={calendarContainerRef}
               style={{
                 position: "absolute",
-                left: calendarCanvasPos.x,
-                top: calendarCanvasPos.y,
+                left: CALENDAR_POS.x,
+                top: CALENDAR_POS.y,
                 zIndex: 20,
               }}
             >

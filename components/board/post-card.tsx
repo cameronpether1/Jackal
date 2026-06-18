@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef, useCallback, useState, useMemo, useEffect } from 'react'
+import { motion, useMotionValue, useSpring, useTransform, useAnimationFrame } from 'motion/react'
 import { Trash2, Copy, CornerUpLeft, MapPin } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -32,6 +33,11 @@ interface PostCardProps {
   onReplyDraftSave?: (data: { content: string; imageFile?: File | null }) => void
   onReplyDraftDiscard?: () => void
   onDragEnd: (postId: string, x: number, y: number) => void
+  boardBounds?: { w: number; h: number }
+  getCalendarZone?: () => { x: number; y: number; w: number; h: number } | null
+  getNearbyPostRects?: (excludeId: string) => Array<{ id: string; x: number; y: number; w: number; h: number }>
+  getDraggedInfo?: () => { id: string; x: number; y: number; w: number; h: number } | null
+  setActiveDrag?: (info: { id: string; x: number; y: number; w: number; h: number } | null) => void
   onTaskToggle: (taskId: string, checked: boolean) => void
   onAddTaskItem: (postId: string, label: string) => void
   onDelete: (postId: string) => void
@@ -40,6 +46,149 @@ interface PostCardProps {
 }
 
 const LINK_REF = /\[\[([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\]\]/g
+
+const MAGNET_RADIUS = 200
+const MAGNET_SNAP_GAP = 20
+const BIAS_SPRING = { stiffness: 280, damping: 22, mass: 0.5 }
+const ATTRACT_MAX = 25  // max pixel offset for dragged post bias
+const STATIONARY_MAX = 14  // max pixel offset for stationary post attraction
+
+// On release: if within MAGNET_RADIUS (or overlapping), returns the fully committed snap position.
+function computeSnapCommit(
+  raw: { x: number; y: number },
+  w: number,
+  h: number,
+  others: Array<{ x: number; y: number; w: number; h: number }>,
+): { x: number; y: number } | null {
+  let snapX: number | null = null
+  let snapY: number | null = null
+  let minXDist = Infinity
+  let minYDist = Infinity
+  for (const o of others) {
+    const gRight  = o.x - (raw.x + w)
+    const gLeft   = raw.x - (o.x + o.w)
+    const gBottom = o.y - (raw.y + h)
+    const gTop    = raw.y - (o.y + o.h)
+    const overlapping = gRight < 0 && gLeft < 0 && gBottom < 0 && gTop < 0
+    if (overlapping) {
+      // Min-penetration: find shortest axis to exit and snap to SNAP_GAP there
+      const penR = -gRight, penL = -gLeft, penB = -gBottom, penT = -gTop
+      const minH = Math.min(penR, penL)
+      const minV = Math.min(penB, penT)
+      if (minH <= minV && minH < minXDist) {
+        minXDist = minH
+        snapX = penL <= penR ? o.x + o.w + MAGNET_SNAP_GAP : o.x - w - MAGNET_SNAP_GAP
+      } else if (minV < minH && minV < minYDist) {
+        minYDist = minV
+        snapY = penT <= penB ? o.y + o.h + MAGNET_SNAP_GAP : o.y - h - MAGNET_SNAP_GAP
+      }
+    } else {
+      const vOverlap = Math.min(raw.y + h, o.y + o.h) - Math.max(raw.y, o.y)
+      const hOverlap = Math.min(raw.x + w, o.x + o.w) - Math.max(raw.x, o.x)
+      if (vOverlap > -MAGNET_RADIUS) {
+        if (gRight >= 0 && gRight < MAGNET_RADIUS && gRight < minXDist) {
+          minXDist = gRight; snapX = o.x - w - MAGNET_SNAP_GAP
+        }
+        if (gLeft >= 0 && gLeft < MAGNET_RADIUS && gLeft < minXDist) {
+          minXDist = gLeft; snapX = o.x + o.w + MAGNET_SNAP_GAP
+        }
+      }
+      if (hOverlap > -MAGNET_RADIUS) {
+        if (gBottom >= 0 && gBottom < MAGNET_RADIUS && gBottom < minYDist) {
+          minYDist = gBottom; snapY = o.y - h - MAGNET_SNAP_GAP
+        }
+        if (gTop >= 0 && gTop < MAGNET_RADIUS && gTop < minYDist) {
+          minYDist = gTop; snapY = o.y + o.h + MAGNET_SNAP_GAP
+        }
+      }
+    }
+  }
+  if (snapX === null && snapY === null) return null
+  return { x: snapX ?? raw.x, y: snapY ?? raw.y }
+}
+
+// Returns the spring target bias to apply to the dragged post's position.
+// Handles both the approach animation (bell-shaped pull) and overlap (min-penetration push-out).
+function computeMagneticBias(
+  raw: { x: number; y: number },
+  w: number,
+  h: number,
+  others: Array<{ x: number; y: number; w: number; h: number }>,
+): { x: number; y: number } {
+  let bx = 0, by = 0
+  for (const o of others) {
+    const gRight  = o.x - (raw.x + w)
+    const gLeft   = raw.x - (o.x + o.w)
+    const gBottom = o.y - (raw.y + h)
+    const gTop    = raw.y - (o.y + o.h)
+    const overlapping = gRight < 0 && gLeft < 0 && gBottom < 0 && gTop < 0
+    if (overlapping) {
+      // Show push-out direction so user can see where it'll land
+      const penR = -gRight, penL = -gLeft, penB = -gBottom, penT = -gTop
+      const minH = Math.min(penR, penL)
+      const minV = Math.min(penB, penT)
+      if (minH <= minV) {
+        bx += penL <= penR ? ATTRACT_MAX : -ATTRACT_MAX
+      } else {
+        by += penT <= penB ? ATTRACT_MAX : -ATTRACT_MAX
+      }
+    } else {
+      // Bell-shaped attraction: 0 at MAGNET_RADIUS, peaks mid-range, 0 at snap gap, gentle repel inside
+      const vOverlap = Math.min(raw.y + h, o.y + o.h) - Math.max(raw.y, o.y)
+      const hOverlap = Math.min(raw.x + w, o.x + o.w) - Math.max(raw.x, o.x)
+      if (vOverlap > -MAGNET_RADIUS) {
+        if (gRight >= 0 && gRight < MAGNET_RADIUS)
+          bx += (gRight - MAGNET_SNAP_GAP) * (1 - gRight / MAGNET_RADIUS)
+        else if (gLeft >= 0 && gLeft < MAGNET_RADIUS)
+          bx -= (gLeft - MAGNET_SNAP_GAP) * (1 - gLeft / MAGNET_RADIUS)
+      }
+      if (hOverlap > -MAGNET_RADIUS) {
+        if (gBottom >= 0 && gBottom < MAGNET_RADIUS)
+          by += (gBottom - MAGNET_SNAP_GAP) * (1 - gBottom / MAGNET_RADIUS)
+        else if (gTop >= 0 && gTop < MAGNET_RADIUS)
+          by -= (gTop - MAGNET_SNAP_GAP) * (1 - gTop / MAGNET_RADIUS)
+      }
+    }
+  }
+  return {
+    x: Math.max(-ATTRACT_MAX, Math.min(ATTRACT_MAX, bx)),
+    y: Math.max(-ATTRACT_MAX, Math.min(ATTRACT_MAX, by)),
+  }
+}
+
+function clampToBoard(
+  pos: { x: number; y: number },
+  w: number,
+  h: number,
+  board: { w: number; h: number },
+): { x: number; y: number } {
+  return {
+    x: Math.max(0, Math.min(board.w - w, pos.x)),
+    y: Math.max(0, Math.min(board.h - h, pos.y)),
+  }
+}
+
+function clampOutsideRect(
+  pos: { x: number; y: number },
+  w: number,
+  h: number,
+  zone: { x: number; y: number; w: number; h: number },
+): { x: number; y: number } {
+  const pr = pos.x + w
+  const pb = pos.y + h
+  const zr = zone.x + zone.w
+  const zb = zone.y + zone.h
+  if (pr <= zone.x || pos.x >= zr || pb <= zone.y || pos.y >= zb) return pos
+  const dLeft = pr - zone.x
+  const dRight = zr - pos.x
+  const dTop = pb - zone.y
+  const dBottom = zb - pos.y
+  const min = Math.min(dLeft, dRight, dTop, dBottom)
+  if (min === dLeft) return { x: zone.x - w, y: pos.y }
+  if (min === dRight) return { x: zr, y: pos.y }
+  if (min === dTop) return { x: pos.x, y: zone.y - h }
+  return { x: pos.x, y: zb }
+}
 
 function getReplyMessage(reply: PostWithRelations, posts: PostWithRelations[] = []): string {
   if (reply.type === 'tasks') {
@@ -65,14 +214,77 @@ export function PostCard({
   post, currentUserId, replies = [], isBoardOwner = false,
   allPosts = [], onJumpToPost,
   isReplying = false, onReplyDraftSave, onReplyDraftDiscard,
-  onDragEnd, onTaskToggle, onAddTaskItem, onDelete, onReply, onFocusPost,
+  onDragEnd, boardBounds, getCalendarZone, getNearbyPostRects, getDraggedInfo, setActiveDrag,
+  onTaskToggle, onAddTaskItem, onDelete, onReply, onFocusPost,
 }: PostCardProps) {
-  const [pos, setPos] = useState({ x: post.pos_x, y: post.pos_y })
+  // raw tracks the cursor exactly (no spring) — bias springs toward nearby posts
+  const rawX = useMotionValue(post.pos_x)
+  const rawY = useMotionValue(post.pos_y)
+  const biasX = useSpring(0, BIAS_SPRING)
+  const biasY = useSpring(0, BIAS_SPRING)
+  const displayX = useTransform(() => rawX.get() + biasX.get())
+  const displayY = useTransform(() => rawY.get() + biasY.get())
+  // tracks the committed bias target (for onDragEnd final position)
+  const biasTargetRef = useRef({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
+  const isDraggingRef = useRef(false)
+  isDraggingRef.current = isDragging
 
   useEffect(() => {
-    if (!isDragging) setPos({ x: post.pos_x, y: post.pos_y })
-  }, [post.pos_x, post.pos_y, isDragging])
+    if (!isDragging) {
+      rawX.set(post.pos_x)
+      rawY.set(post.pos_y)
+      biasX.jump(0)
+      biasY.jump(0)
+      biasTargetRef.current = { x: 0, y: 0 }
+    }
+  }, [post.pos_x, post.pos_y, isDragging, rawX, rawY, biasX, biasY])
+
+  // Stationary post attraction: read dragged post position every frame and spring toward it
+  useAnimationFrame(() => {
+    if (isDraggingRef.current) return
+    const drag = getDraggedInfo?.()
+    if (!drag || drag.id === post.id) {
+      if (Math.abs(biasX.get()) > 0.1) biasX.set(0)
+      if (Math.abs(biasY.get()) > 0.1) biasY.set(0)
+      return
+    }
+    const el = outerRef.current
+    const myW = el?.offsetWidth ?? 288
+    const myH = el?.offsetHeight ?? 200
+    const myX = rawX.get()
+    const myY = rawY.get()
+    const gRight  = drag.x - (myX + myW)
+    const gLeft   = myX - (drag.x + drag.w)
+    const gBottom = drag.y - (myY + myH)
+    const gTop    = myY - (drag.y + drag.h)
+    const overlapping = gRight < 0 && gLeft < 0 && gBottom < 0 && gTop < 0
+    let ax = 0, ay = 0
+    if (overlapping) {
+      const penR = -gRight, penL = -gLeft, penB = -gBottom, penT = -gTop
+      const minH = Math.min(penR, penL), minV = Math.min(penB, penT)
+      if (minH <= minV) ax = penL <= penR ? STATIONARY_MAX : -STATIONARY_MAX
+      else ay = penT <= penB ? STATIONARY_MAX : -STATIONARY_MAX
+    } else {
+      const vOverlap = Math.min(myY + myH, drag.y + drag.h) - Math.max(myY, drag.y)
+      const hOverlap = Math.min(myX + myW, drag.x + drag.w) - Math.max(myX, drag.x)
+      if (vOverlap > -MAGNET_RADIUS) {
+        if (gRight >= 0 && gRight < MAGNET_RADIUS)
+          ax = (1 - gRight / MAGNET_RADIUS) * STATIONARY_MAX
+        else if (gLeft >= 0 && gLeft < MAGNET_RADIUS)
+          ax = -(1 - gLeft / MAGNET_RADIUS) * STATIONARY_MAX
+      }
+      if (hOverlap > -MAGNET_RADIUS) {
+        if (gBottom >= 0 && gBottom < MAGNET_RADIUS)
+          ay = (1 - gBottom / MAGNET_RADIUS) * STATIONARY_MAX
+        else if (gTop >= 0 && gTop < MAGNET_RADIUS)
+          ay = -(1 - gTop / MAGNET_RADIUS) * STATIONARY_MAX
+      }
+    }
+    biasX.set(ax)
+    biasY.set(ay)
+  })
+
   const outerRef = useRef<HTMLDivElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
   const dragState = useRef<{ startX: number; startY: number; startPosX: number; startPosY: number } | null>(null)
@@ -96,51 +308,106 @@ export function PostCard({
     if (target.closest('button') || target.closest('input') || target.closest('textarea') || target.closest('[role="checkbox"]') || target.closest('a') || target.closest('[data-comment-bubble]')) return
     e.preventDefault()
     ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
-    dragState.current = { startX: e.clientX, startY: e.clientY, startPosX: pos.x, startPosY: pos.y }
+    // Snap bias spring to 0 so drag starts from the raw position
+    biasX.jump(0)
+    biasY.jump(0)
+    biasTargetRef.current = { x: 0, y: 0 }
+    const startPosX = rawX.get()
+    const startPosY = rawY.get()
+    dragState.current = { startX: e.clientX, startY: e.clientY, startPosX, startPosY }
+    const el = outerRef.current
+    setActiveDrag?.({ id: post.id, x: startPosX, y: startPosY, w: el?.offsetWidth ?? 288, h: el?.offsetHeight ?? 200 })
     setIsDragging(true)
-  }, [pos])
+  }, [rawX, rawY, biasX, biasY, post.id, setActiveDrag])
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
     if (!dragState.current) return
-    setPos({
+    const el = outerRef.current
+    const w = el?.offsetWidth ?? 288
+    const h = el?.offsetHeight ?? 200
+    let newPos = {
       x: dragState.current.startPosX + (e.clientX - dragState.current.startX),
       y: dragState.current.startPosY + (e.clientY - dragState.current.startY),
-    })
-  }, [])
+    }
+    if (boardBounds) newPos = clampToBoard(newPos, w, h, boardBounds)
+    const zone = getCalendarZone?.()
+    if (zone) newPos = clampOutsideRect(newPos, w, h, zone)
+    // Update raw position instantly (no spring lag during drag)
+    rawX.set(newPos.x)
+    rawY.set(newPos.y)
+    // Compute magnetic bias and spring toward it
+    const nearby = getNearbyPostRects?.(post.id) ?? []
+    const bias = computeMagneticBias(newPos, w, h, nearby)
+    biasTargetRef.current = bias
+    biasX.set(bias.x)
+    biasY.set(bias.y)
+    // Broadcast dragged position so stationary posts can react
+    setActiveDrag?.({ id: post.id, x: newPos.x, y: newPos.y, w, h })
+  }, [boardBounds, getCalendarZone, getNearbyPostRects, post.id, rawX, rawY, biasX, biasY, setActiveDrag])
 
   const onPointerUp = useCallback((e: React.PointerEvent) => {
     if (!dragState.current) return
     const dx = e.clientX - dragState.current.startX
     const dy = e.clientY - dragState.current.startY
-    const newX = dragState.current.startPosX + dx
-    const newY = dragState.current.startPosY + dy
+    const el = outerRef.current
+    const w = el?.offsetWidth ?? 288
+    const h = el?.offsetHeight ?? 200
+    const rawPos = { x: rawX.get(), y: rawY.get() }
+    // Check if we should snap-commit on release
+    const nearby = getNearbyPostRects?.(post.id) ?? []
+    const snap = computeSnapCommit(rawPos, w, h, nearby)
+    let finalX: number, finalY: number
+    if (snap) {
+      finalX = snap.x
+      finalY = snap.y
+      // Commit raw to final position, then spring bias from current visual offset to 0
+      // This keeps visual continuity and animates the post into place
+      const visualOffsetX = rawPos.x + biasX.get() - finalX
+      const visualOffsetY = rawPos.y + biasY.get() - finalY
+      rawX.set(finalX)
+      rawY.set(finalY)
+      biasX.jump(visualOffsetX)
+      biasY.jump(visualOffsetY)
+      biasX.set(0)
+      biasY.set(0)
+    } else {
+      finalX = rawPos.x + biasTargetRef.current.x
+      finalY = rawPos.y + biasTargetRef.current.y
+      rawX.set(finalX)
+      rawY.set(finalY)
+      biasX.jump(0)
+      biasY.jump(0)
+    }
+    biasTargetRef.current = { x: 0, y: 0 }
     dragState.current = null
     setIsDragging(false)
+    setActiveDrag?.(null)
     if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
-      onDragEnd(post.id, newX, newY)
+      onDragEnd(post.id, finalX, finalY)
     } else if (onFocusPost && cardRef.current) {
       onFocusPost(post, cardRef.current)
     }
-  }, [post, onDragEnd, onFocusPost])
+  }, [post, onDragEnd, onFocusPost, rawX, rawY, biasX, biasY, setActiveDrag, getNearbyPostRects])
 
   return (
     <ContextMenu>
       <ContextMenuTrigger>
-        {/* Outer wrapper — handles absolute positioning, drag, rotation, and badge */}
-        <div
+        {/* Outer wrapper — canvas position driven by Framer Motion springs */}
+        <motion.div
           ref={outerRef}
           id={`post-${post.id}`}
           className={cn('absolute select-none group/post', isDragging ? 'cursor-grabbing z-50' : 'cursor-grab')}
-          style={{
-            left: pos.x,
-            top: pos.y,
-            transform: isDragging ? 'rotate(0deg) translateY(-4px) scale(1.02)' : `rotate(${post.rotation}deg)`,
-            transition: isDragging ? 'none' : 'transform 200ms cubic-bezier(0.16, 1, 0.3, 1), left 350ms ease-in-out, top 350ms ease-in-out',
-            touchAction: 'none',
-          }}
+          style={{ x: displayX, y: displayY, touchAction: 'none' }}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
+        >
+        {/* Inner wrapper — handles visual transforms (rotation, lift, scale) */}
+        <div
+          style={{
+            transform: isDragging ? 'rotate(0deg) translateY(-4px) scale(1.02)' : `rotate(${post.rotation}deg)`,
+            transition: 'transform 200ms cubic-bezier(0.16, 1, 0.3, 1)',
+          }}
         >
           {/* Author badge — always visible on text posts, hover-only on image/map-only posts */}
           <div className={cn(
@@ -302,7 +569,8 @@ export function PostCard({
               )}
             </div>
           )}
-        </div>
+        </div>{/* end inner visual-transform wrapper */}
+        </motion.div>
       </ContextMenuTrigger>
 
       <ContextMenuContent>
