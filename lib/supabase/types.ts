@@ -46,6 +46,7 @@ export type Post = {
   pos_y: number
   rotation: number
   reply_to_post_id: string | null
+  label_color: 'red' | 'blue' | 'green' | 'pink' | 'grey' | null
   created_at: string
   updated_at: string
 }

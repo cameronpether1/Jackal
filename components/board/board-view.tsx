@@ -6,6 +6,7 @@ import { Whiteboard } from '@/components/board/whiteboard'
 import { BoardCalendar } from '@/components/board/board-calendar'
 import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/drawer'
 import { cn } from '@/lib/utils'
+import { type LabelColor } from '@/lib/label-colors'
 import type { Board, BoardMemberWithProfile, PostWithRelations, Profile, Sticker } from '@/lib/supabase/types'
 
 function MenuHint() {
@@ -58,6 +59,13 @@ export function BoardView({
 }: BoardViewProps) {
   const exportFnRef = useRef<(() => Promise<void>) | null>(null)
   const [calendarOpen, setCalendarOpen] = useState(false)
+  const [activeFilters, setActiveFilters] = useState<LabelColor[]>([])
+
+  function handleToggleFilter(color: LabelColor) {
+    setActiveFilters(prev =>
+      prev.includes(color) ? prev.filter(c => c !== color) : [...prev, color]
+    )
+  }
 
   return (
     <div className="relative flex flex-col h-full">
@@ -71,6 +79,9 @@ export function BoardView({
         calendarOpen={calendarOpen}
         onCalendarToggle={() => setCalendarOpen(v => !v)}
         onExport={() => exportFnRef.current?.()}
+        activeFilters={activeFilters}
+        onToggleFilter={handleToggleFilter}
+        onClearFilters={() => setActiveFilters([])}
       />
       <Whiteboard
         boardId={board.id}
@@ -81,6 +92,7 @@ export function BoardView({
         currentProfile={currentUser}
         isOwner={isOwner}
         onExportReady={fn => { exportFnRef.current = fn }}
+        activeFilters={activeFilters}
       />
 
       <Drawer open={calendarOpen} onOpenChange={setCalendarOpen}>

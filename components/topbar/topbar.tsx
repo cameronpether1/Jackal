@@ -1,12 +1,14 @@
 'use client'
 
-import { useState } from 'react'
-import { UserPlus, Share2, Download, Users, CalendarDays } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { UserPlus, Share2, Download, Users, CalendarDays, SlidersHorizontal } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import { cn } from '@/lib/utils'
 import { InvitePanel } from '@/components/topbar/invite-panel'
+import { FilterPanel } from '@/components/topbar/filter-panel'
 import { ShareModal } from '@/components/share/share-modal'
 import { UpgradeModal } from '@/components/upgrade/upgrade-modal'
+import { LABEL_COLORS, type LabelColor } from '@/lib/label-colors'
 import type { Board, BoardMemberWithProfile, Profile } from '@/lib/supabase/types'
 
 const SPRING = { type: 'spring', stiffness: 600, damping: 32 } as const
@@ -20,15 +22,31 @@ interface TopbarProps {
   calendarOpen: boolean
   onCalendarToggle: () => void
   onExport?: () => void
+  activeFilters: LabelColor[]
+  onToggleFilter: (color: LabelColor) => void
+  onClearFilters: () => void
 }
 
-export function Topbar({ board, members, currentUser, currentUserId, isOwner, calendarOpen, onCalendarToggle, onExport }: TopbarProps) {
+export function Topbar({ board, members, currentUser, currentUserId, isOwner, calendarOpen, onCalendarToggle, onExport, activeFilters, onToggleFilter, onClearFilters }: TopbarProps) {
   const [inviteOpen, setInviteOpen] = useState(false)
   const [shareOpen, setShareOpen] = useState(false)
   const [upgradeOpen, setUpgradeOpen] = useState(false)
   const [upgradeReason, setUpgradeReason] = useState<'boards' | 'members'>('boards')
+  const [filterOpen, setFilterOpen] = useState(false)
+  const filterRef = useRef<HTMLDivElement>(null)
   const isPro = currentUser?.plan === 'pro'
   const reduced = !!useReducedMotion()
+  const hasActiveFilters = activeFilters.length > 0
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (filterRef.current && !filterRef.current.contains(e.target as Node)) {
+        setFilterOpen(false)
+      }
+    }
+    if (filterOpen) document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [filterOpen])
 
   function handleShare() {
     if (!isPro) { setUpgradeReason('boards'); setUpgradeOpen(true); return }
@@ -94,6 +112,36 @@ export function Topbar({ board, members, currentUser, currentUserId, isOwner, ca
               <CalendarDays className="w-3.5 h-3.5" />
             </motion.span>
           </motion.button>
+
+          {/* Filter */}
+          <div ref={filterRef} className="relative">
+            <motion.button
+              onClick={() => setFilterOpen(v => !v)}
+              title="Filter posts by colour"
+              className={cn(
+                'w-8 h-8 flex items-center justify-center rounded-full transition-colors duration-150 relative',
+                filterOpen || hasActiveFilters
+                  ? 'text-[#38bdf8] bg-[#38bdf8]/15'
+                  : 'text-white/40 hover:text-white/70 hover:bg-white/[0.08]',
+              )}
+              whileTap={reduced ? undefined : { scale: 0.85 }}
+              transition={SPRING}
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              {hasActiveFilters && (
+                <span
+                  className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#1c1b19]"
+                  style={{ backgroundColor: LABEL_COLORS.find(c => c.id === activeFilters[activeFilters.length - 1])?.hex }}
+                />
+              )}
+            </motion.button>
+            <FilterPanel
+              open={filterOpen}
+              activeFilters={activeFilters}
+              onToggleFilter={onToggleFilter}
+              onClearFilters={onClearFilters}
+            />
+          </div>
 
           {/* Secondary actions */}
           {isOwner && (

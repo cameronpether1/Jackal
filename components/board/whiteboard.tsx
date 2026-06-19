@@ -46,6 +46,7 @@ interface WhiteboardProps {
   currentProfile: Profile | null;
   isOwner?: boolean;
   onExportReady?: (fn: () => Promise<void>) => void;
+  activeFilters?: string[];
 }
 
 interface DraftCard {
@@ -64,6 +65,7 @@ export function Whiteboard({
   currentProfile,
   isOwner = false,
   onExportReady,
+  activeFilters = [],
 }: WhiteboardProps) {
   const [posts, setPosts] = useState<PostWithRelations[]>(initialPosts);
   const [draft, setDraft] = useState<DraftCard | null>(null);
@@ -523,6 +525,7 @@ export function Whiteboard({
         pos_y: parentPost.pos_y + 20,
         rotation: 0,
         reply_to_post_id: parentId,
+        label_color: null,
         task_items: [],
         reactions: [],
         created_at: new Date().toISOString(),
@@ -615,6 +618,7 @@ export function Whiteboard({
         pos_y: draft.y,
         rotation: draft.rotation,
         reply_to_post_id: draft.replyTo?.postId ?? null,
+        label_color: null,
         task_items: [],
         reactions: [],
         created_at: new Date().toISOString(),
@@ -804,6 +808,16 @@ export function Whiteboard({
           prev.filter((p) => p.id !== postId && p.reply_to_post_id !== postId),
         );
       }
+    },
+    [supabase],
+  );
+
+  const handleSetColor = useCallback(
+    async (postId: string, color: string | null) => {
+      setPosts((prev) =>
+        prev.map((p) => (p.id === postId ? { ...p, label_color: color as 'red' | 'blue' | 'green' | 'pink' | 'grey' | null } : p)),
+      );
+      await supabase.from("posts").update({ label_color: color }).eq("id", postId);
     },
     [supabase],
   );
@@ -1256,6 +1270,10 @@ export function Whiteboard({
               onTaskToggle={handleTaskToggle}
               onAddTaskItem={handleAddTaskItem}
               onDelete={handleDeletePost}
+              onSetColor={handleSetColor}
+              isFiltered={activeFilters.length > 0 && post.label_color !== null
+                ? !activeFilters.includes(post.label_color)
+                : activeFilters.length > 0}
               onReply={handleReply}
               onFocusPost={handleFocusPost}
             />

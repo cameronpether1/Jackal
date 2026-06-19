@@ -6,11 +6,11 @@ import { Trash2, Copy, CornerUpLeft, MapPin } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   ContextMenu,
-  ContextMenuContent,
   ContextMenuItem,
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
+import { GlassContextMenuContent } from '@/components/ui/glasscn/glass-context-menu'
 import { TaskList } from '@/components/board/task-list'
 import { GlassButton } from '@/components/ui/glasscn/glass-button'
 import { getAvatarColor } from '@/lib/avatar-color'
@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils'
 import type { PostWithRelations } from '@/lib/supabase/types'
 import { renderContent } from '@/lib/render-content'
 import { getMapImageUrl } from '@/lib/mapbox'
+import { LABEL_COLORS } from '@/lib/label-colors'
 import FigmaComment from '@/components/smoothui/figma-comment'
 import { ReplyBubble } from '@/components/board/reply-bubble'
 
@@ -41,6 +42,8 @@ interface PostCardProps {
   onTaskToggle: (taskId: string, checked: boolean) => void
   onAddTaskItem: (postId: string, label: string) => void
   onDelete: (postId: string) => void
+  onSetColor?: (postId: string, color: string | null) => void
+  isFiltered?: boolean
   onReply?: (post: PostWithRelations) => void
   onFocusPost?: (post: PostWithRelations, cardEl: HTMLElement) => void
 }
@@ -193,7 +196,7 @@ export function PostCard({
   allPosts = [], onJumpToPost,
   isReplying = false, onReplyDraftSave, onReplyDraftDiscard,
   onDragEnd, boardBounds, getNearbyPostRects, getDraggedInfo, setActiveDrag, getZoom,
-  onTaskToggle, onAddTaskItem, onDelete, onReply, onFocusPost,
+  onTaskToggle, onAddTaskItem, onDelete, onSetColor, isFiltered = false, onReply, onFocusPost,
 }: PostCardProps) {
   // raw tracks the cursor exactly (no spring) — bias springs toward nearby posts
   const rawX = useMotionValue(post.pos_x)
@@ -374,7 +377,7 @@ export function PostCard({
         <motion.div
           ref={outerRef}
           id={`post-${post.id}`}
-          className={cn('absolute select-none group/post', isDragging ? 'cursor-grabbing z-50' : 'cursor-grab')}
+          className={cn('absolute select-none group/post', isDragging ? 'cursor-grabbing z-50' : 'cursor-grab', isFiltered && 'pointer-events-none')}
           style={{ x: displayX, y: displayY, touchAction: 'none' }}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
@@ -383,10 +386,12 @@ export function PostCard({
         {/* Inner wrapper — handles visual transforms (rotation, lift, scale) */}
         <motion.div
           animate={isDragging
-            ? { rotate: 0, y: -6, scale: 1.03 }
-            : { rotate: post.rotation, y: 0, scale: 1 }
+            ? { rotate: 0, y: -6, scale: 1.03, filter: 'blur(0px)', opacity: 1 }
+            : isFiltered
+              ? { rotate: post.rotation, y: 0, scale: 1, filter: 'blur(4px)', opacity: 0.5 }
+              : { rotate: post.rotation, y: 0, scale: 1, filter: 'blur(0px)', opacity: 1 }
           }
-          whileHover={reduced || isDragging ? undefined : { y: -3, scale: 1.015 }}
+          whileHover={reduced || isDragging || isFiltered ? undefined : { y: -3, scale: 1.015 }}
           transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
         >
           {/* Author badge — always visible on text posts, hover-only on image/map-only posts */}
@@ -553,7 +558,32 @@ export function PostCard({
         </motion.div>
       </ContextMenuTrigger>
 
-      <ContextMenuContent>
+      <GlassContextMenuContent>
+        {/* Colour label picker */}
+        {onSetColor && (
+          <>
+            <div className="flex items-center gap-1.5 px-1.5 py-1.5">
+              {LABEL_COLORS.map(({ id, hex, name }) => {
+                const active = post.label_color === id
+                return (
+                  <button
+                    key={id}
+                    title={name}
+                    onClick={() => onSetColor(post.id, active ? null : id)}
+                    className={cn(
+                      'w-5 h-5 rounded-full transition-all duration-100 flex-shrink-0',
+                      active
+                        ? 'ring-2 ring-white/80 ring-offset-1 ring-offset-black/10 scale-110'
+                        : 'opacity-70 hover:opacity-100 hover:scale-110',
+                    )}
+                    style={{ backgroundColor: hex }}
+                  />
+                )
+              })}
+            </div>
+            <ContextMenuSeparator />
+          </>
+        )}
         <ContextMenuItem onClick={() => {
           navigator.clipboard.writeText(`${window.location.href}#post-${post.id}`)
           toast.success('Link copied ✓')
@@ -576,7 +606,7 @@ export function PostCard({
             </ContextMenuItem>
           </>
         )}
-      </ContextMenuContent>
+      </GlassContextMenuContent>
     </ContextMenu>
   )
 }

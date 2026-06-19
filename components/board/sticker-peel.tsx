@@ -5,10 +5,10 @@ import { Trash2 } from 'lucide-react'
 import { gsap } from 'gsap'
 import {
   ContextMenu,
-  ContextMenuContent,
   ContextMenuItem,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
+import { GlassContextMenuContent } from '@/components/ui/glasscn/glass-context-menu'
 
 interface StickerPeelProps {
   imageSrc: string
@@ -303,11 +303,11 @@ export function StickerPeel({
   return (
     <ContextMenu>
       <ContextMenuTrigger>{stickerEl}</ContextMenuTrigger>
-      <ContextMenuContent>
+      <GlassContextMenuContent>
         <ContextMenuItem onClick={onDelete} className="text-destructive focus:text-destructive">
           <Trash2 className="w-4 h-4 mr-2" /> Delete
         </ContextMenuItem>
-      </ContextMenuContent>
+      </GlassContextMenuContent>
     </ContextMenu>
   )
 }
