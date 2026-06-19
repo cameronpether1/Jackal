@@ -3,6 +3,8 @@
 import { useRef, useState, useEffect } from 'react'
 import { Topbar } from '@/components/topbar/topbar'
 import { Whiteboard } from '@/components/board/whiteboard'
+import { BoardCalendar } from '@/components/board/board-calendar'
+import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/drawer'
 import { cn } from '@/lib/utils'
 import type { Board, BoardMemberWithProfile, PostWithRelations, Profile, Sticker } from '@/lib/supabase/types'
 
@@ -55,7 +57,7 @@ export function BoardView({
   initialPosts, initialStickers,
 }: BoardViewProps) {
   const exportFnRef = useRef<(() => Promise<void>) | null>(null)
-  const [calendarOpen, setCalendarOpen] = useState(true)
+  const [calendarOpen, setCalendarOpen] = useState(false)
 
   return (
     <div className="relative flex flex-col h-full">
@@ -79,9 +81,19 @@ export function BoardView({
         currentProfile={currentUser}
         isOwner={isOwner}
         onExportReady={fn => { exportFnRef.current = fn }}
-        calendarOpen={calendarOpen}
-        onCalendarClose={() => setCalendarOpen(false)}
       />
+
+      <Drawer open={calendarOpen} onOpenChange={setCalendarOpen}>
+        <DrawerContent className="rounded-t-2xl border-t-0 pb-6 items-center">
+          <DrawerTitle className="sr-only">Board Calendar</DrawerTitle>
+          <BoardCalendar
+            boardId={board.id}
+            currentUserId={currentUserId}
+            isOwner={isOwner}
+            onClose={() => setCalendarOpen(false)}
+          />
+        </DrawerContent>
+      </Drawer>
     </div>
   )
 }

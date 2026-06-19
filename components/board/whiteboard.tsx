@@ -11,7 +11,6 @@ import { StickerPeel } from "@/components/board/sticker-peel";
 import { InlineCardEditor } from "@/components/board/inline-card-editor";
 import { EmptyState } from "@/components/board/empty-state";
 import { LiquidGlass } from "@/components/ui/glasscn/liquid-glass";
-import { BoardCalendar } from "@/components/board/board-calendar";
 import {
   Dialog,
   DialogContent,
@@ -34,14 +33,8 @@ import type {
 } from "@/lib/supabase/types";
 
 // ─── Board & calendar layout constants ───────────────────────────────────────
-const BOARD_W = 4000;
-const BOARD_H = 3000;
-const CALENDAR_W = 616;
-const CALENDAR_H_EST = 460; // base estimate used when calendar is closed
-const CALENDAR_POS = {
-  x: Math.round((BOARD_W - CALENDAR_W) / 2), // 1692
-  y: Math.round((BOARD_H - CALENDAR_H_EST) / 2), // 1270
-} as const;
+const BOARD_W = 19200;
+const BOARD_H = 10800;
 const BOARD_BOUNDS = { w: BOARD_W, h: BOARD_H } as const;
 
 interface WhiteboardProps {
@@ -53,8 +46,6 @@ interface WhiteboardProps {
   currentProfile: Profile | null;
   isOwner?: boolean;
   onExportReady?: (fn: () => Promise<void>) => void;
-  calendarOpen?: boolean;
-  onCalendarClose?: () => void;
 }
 
 interface DraftCard {
@@ -73,8 +64,6 @@ export function Whiteboard({
   currentProfile,
   isOwner = false,
   onExportReady,
-  calendarOpen = false,
-  onCalendarClose,
 }: WhiteboardProps) {
   const [posts, setPosts] = useState<PostWithRelations[]>(initialPosts);
   const [draft, setDraft] = useState<DraftCard | null>(null);
@@ -1185,8 +1174,6 @@ export function Whiteboard({
     [currentUserId],
   );
 
-  const calendarContainerRef = useRef<HTMLDivElement>(null);
-
   // Active drag info shared across all PostCards for bidirectional magnetic attraction
   const activeDragRef = useRef<{
     id: string;
@@ -1216,22 +1203,6 @@ export function Whiteboard({
       });
   }, []);
 
-  const getCalendarZone = useCallback((): {
-    x: number;
-    y: number;
-    w: number;
-    h: number;
-  } => {
-    const BUFFER = 20;
-    const h = calendarContainerRef.current?.offsetHeight ?? CALENDAR_H_EST;
-    return {
-      x: CALENDAR_POS.x - BUFFER,
-      y: CALENDAR_POS.y - BUFFER,
-      w: CALENDAR_W + BUFFER * 2,
-      h: h + BUFFER * 2,
-    };
-  }, []);
-
   const onlineUsersList = useMemo(
     () => Object.values(onlineUsers),
     [onlineUsers],
@@ -1242,7 +1213,7 @@ export function Whiteboard({
       <OnlineAvatars users={onlineUsersList} />
       <div
         ref={canvasRef}
-        className="relative flex-1 overflow-auto bg-jk-bg"
+        className="relative flex-1 overflow-auto bg-[#D9D9D9]"
         style={{ touchAction: "pan-x pan-y", overscrollBehavior: "none" }}
         onPointerMove={handleCanvasPointerMove}
       >
@@ -1260,13 +1231,7 @@ export function Whiteboard({
             willChange: "transform",
           }}
         >
-          {/* Board boundary outline */}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{ width: BOARD_W, height: BOARD_H, border: '1px solid rgba(0,0,0,0.15)', zIndex: 0 }}
-          />
-
-          {posts.length === 0 && !draft && (
+{posts.length === 0 && !draft && (
             <EmptyState onCompose={spawnDraft} />
           )}
 
@@ -1284,7 +1249,6 @@ export function Whiteboard({
               onReplyDraftDiscard={() => setReplyingToPostId(null)}
               onDragEnd={handleDragEnd}
               boardBounds={BOARD_BOUNDS}
-              getCalendarZone={getCalendarZone}
               getNearbyPostRects={getNearbyPostRects}
               getDraggedInfo={getDraggedInfo}
               setActiveDrag={setActiveDrag}
@@ -1326,25 +1290,6 @@ export function Whiteboard({
               onSave={handleSaveDraft}
               onDiscard={() => setDraft(null)}
             />
-          )}
-
-          {calendarOpen && (
-            <div
-              ref={calendarContainerRef}
-              style={{
-                position: "absolute",
-                left: CALENDAR_POS.x,
-                top: CALENDAR_POS.y,
-                zIndex: 20,
-              }}
-            >
-              <BoardCalendar
-                boardId={boardId}
-                currentUserId={currentUserId}
-                isOwner={isOwner}
-                onClose={() => onCalendarClose?.()}
-              />
-            </div>
           )}
 
           <PresenceCursors users={onlineUsersList} />

@@ -34,7 +34,6 @@ interface PostCardProps {
   onReplyDraftDiscard?: () => void
   onDragEnd: (postId: string, x: number, y: number) => void
   boardBounds?: { w: number; h: number }
-  getCalendarZone?: () => { x: number; y: number; w: number; h: number } | null
   getNearbyPostRects?: (excludeId: string) => Array<{ id: string; x: number; y: number; w: number; h: number }>
   getDraggedInfo?: () => { id: string; x: number; y: number; w: number; h: number } | null
   setActiveDrag?: (info: { id: string; x: number; y: number; w: number; h: number } | null) => void
@@ -169,28 +168,6 @@ function clampToBoard(
   }
 }
 
-function clampOutsideRect(
-  pos: { x: number; y: number },
-  w: number,
-  h: number,
-  zone: { x: number; y: number; w: number; h: number },
-): { x: number; y: number } {
-  const pr = pos.x + w
-  const pb = pos.y + h
-  const zr = zone.x + zone.w
-  const zb = zone.y + zone.h
-  if (pr <= zone.x || pos.x >= zr || pb <= zone.y || pos.y >= zb) return pos
-  const dLeft = pr - zone.x
-  const dRight = zr - pos.x
-  const dTop = pb - zone.y
-  const dBottom = zb - pos.y
-  const min = Math.min(dLeft, dRight, dTop, dBottom)
-  if (min === dLeft) return { x: zone.x - w, y: pos.y }
-  if (min === dRight) return { x: zr, y: pos.y }
-  if (min === dTop) return { x: pos.x, y: zone.y - h }
-  return { x: pos.x, y: zb }
-}
-
 function getReplyMessage(reply: PostWithRelations, posts: PostWithRelations[] = []): string {
   if (reply.type === 'tasks') {
     const items = reply.task_items?.map(t => `• ${t.label}`).join('\n')
@@ -215,7 +192,7 @@ export function PostCard({
   post, currentUserId, replies = [], isBoardOwner = false,
   allPosts = [], onJumpToPost,
   isReplying = false, onReplyDraftSave, onReplyDraftDiscard,
-  onDragEnd, boardBounds, getCalendarZone, getNearbyPostRects, getDraggedInfo, setActiveDrag, getZoom,
+  onDragEnd, boardBounds, getNearbyPostRects, getDraggedInfo, setActiveDrag, getZoom,
   onTaskToggle, onAddTaskItem, onDelete, onReply, onFocusPost,
 }: PostCardProps) {
   // raw tracks the cursor exactly (no spring) — bias springs toward nearby posts
@@ -333,8 +310,6 @@ export function PostCard({
       y: dragState.current.startPosY + (e.clientY - dragState.current.startY) / scale,
     }
     if (boardBounds) newPos = clampToBoard(newPos, w, h, boardBounds)
-    const zone = getCalendarZone?.()
-    if (zone) newPos = clampOutsideRect(newPos, w, h, zone)
     // Update raw position instantly (no spring lag during drag)
     rawX.set(newPos.x)
     rawY.set(newPos.y)
@@ -346,7 +321,7 @@ export function PostCard({
     biasY.set(bias.y)
     // Broadcast dragged position so stationary posts can react
     setActiveDrag?.({ id: post.id, x: newPos.x, y: newPos.y, w, h })
-  }, [boardBounds, getCalendarZone, getNearbyPostRects, post.id, rawX, rawY, biasX, biasY, setActiveDrag])
+  }, [boardBounds, getNearbyPostRects, post.id, rawX, rawY, biasX, biasY, setActiveDrag])
 
   const onPointerUp = useCallback((e: React.PointerEvent) => {
     if (!dragState.current) return

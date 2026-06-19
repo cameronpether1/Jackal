@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { CalendarDays, Check, Eye, Pencil, Trash2, X } from 'lucide-react'
+import { Check, Eye, Pencil, Trash2, X } from 'lucide-react'
 import type { DateRange } from 'react-day-picker'
 import { GlassCalendar } from '@/components/ui/glasscn/glass-calendar'
 import { Tooltip, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
@@ -116,35 +116,21 @@ function BoardCalRoot({
     <div ref={rootRef as React.Ref<HTMLDivElement>} className={cn(className)} {...(props as object)}>
 
       {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-3.5 pb-2.5 border-b border-black/[0.07] dark:border-white/[0.08]">
-        <div className="flex items-center gap-1.5">
-          <CalendarDays className="w-3.5 h-3.5 text-muted-foreground" />
-          <span className="text-xs font-semibold text-foreground tracking-wide">Board Calendar</span>
-        </div>
-        <div className="flex items-center gap-0.5">
-          {/* View / Edit mode toggle */}
-          <button
-            type="button"
-            onClick={ctx.onToggleMode}
-            title={ctx.mode === 'view' ? 'Switch to edit mode' : 'Switch to view mode'}
-            className={cn(
-              'w-6 h-6 flex items-center justify-center rounded-full transition-colors',
-              ctx.mode === 'edit'
-                ? 'text-[#38bdf8] bg-[#38bdf8]/15 hover:bg-[#38bdf8]/25'
-                : 'text-muted-foreground hover:text-foreground hover:bg-black/[0.06] dark:hover:bg-white/[0.08]',
-            )}
-          >
-            {ctx.mode === 'edit' ? <Eye className="w-3 h-3" /> : <Pencil className="w-3 h-3" />}
-          </button>
-          {/* Close */}
-          <button
-            type="button"
-            onClick={ctx.onClose}
-            className="w-6 h-6 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-black/[0.06] dark:hover:bg-white/[0.08] transition-colors"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
+      <div className="flex items-center justify-end px-4 pt-3.5 pb-2.5 border-b border-black/[0.07] dark:border-white/[0.08]">
+        {/* View / Edit mode toggle */}
+        <button
+          type="button"
+          onClick={ctx.onToggleMode}
+          title={ctx.mode === 'view' ? 'Switch to edit mode' : 'Switch to view mode'}
+          className={cn(
+            'w-6 h-6 flex items-center justify-center rounded-full transition-colors',
+            ctx.mode === 'edit'
+              ? 'text-[#38bdf8] bg-[#38bdf8]/15 hover:bg-[#38bdf8]/25'
+              : 'text-muted-foreground hover:text-foreground hover:bg-black/[0.06] dark:hover:bg-white/[0.08]',
+          )}
+        >
+          {ctx.mode === 'edit' ? <Eye className="w-3 h-3" /> : <Pencil className="w-3 h-3" />}
+        </button>
       </div>
 
       {/* Edit panel — only in edit mode */}
@@ -612,7 +598,7 @@ export function BoardCalendar({ boardId, currentUserId, isOwner, onClose }: Boar
           // No selection highlight in view mode
           selected={mode === 'view' ? undefined : selectedRange}
           onSelect={handleSelect}
-          className="w-full rounded-2xl [--cell-size:--spacing(9)]"
+          className="w-full rounded-none [--cell-size:--spacing(9)] !bg-transparent !shadow-none !border-0 !backdrop-blur-none !backdrop-saturate-[1]"
           classNames={{
             day: cn(
               'group/day relative w-full p-0 text-center select-none',
