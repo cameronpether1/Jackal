@@ -57,7 +57,7 @@ export function StickerPeel({
   peelBackActivePct = 70,
   width = 120,
   shadowIntensity = 0.6,
-  lightingIntensity = 0.47,
+  lightingIntensity = 0.22,
   peelDirection = 27,
 }: StickerPeelProps) {
   const [pos, setPos] = useState({ x: posX, y: posY })
@@ -118,13 +118,16 @@ export function StickerPeel({
 
     const updateLight = (e: MouseEvent) => {
       const rect = container.getBoundingClientRect()
-      const x = e.clientX - rect.left
-      const y = e.clientY - rect.top
+      // rect is in screen pixels (zoomed); divide by scale to get element local coords
+      const scale = (getZoom?.() ?? 100) / 100
+      const x = (e.clientX - rect.left) / scale
+      const y = (e.clientY - rect.top) / scale
+      const localH = rect.height / scale
       if (pointLightRef.current) gsap.set(pointLightRef.current, { attr: { x, y } })
       const normalizedAngle = Math.abs(peelDirection % 360)
       if (pointLightFlippedRef.current) {
         if (normalizedAngle !== 180) {
-          gsap.set(pointLightFlippedRef.current, { attr: { x, y: rect.height - y } })
+          gsap.set(pointLightFlippedRef.current, { attr: { x, y: localH - y } })
         } else {
           gsap.set(pointLightFlippedRef.current, { attr: { x: -1000, y: -1000 } })
         }
@@ -242,7 +245,7 @@ export function StickerPeel({
           </filter>
           <filter id={`${uid}-pointLightFlipped`}>
             <feGaussianBlur stdDeviation="10" result="blur" />
-            <feSpecularLighting result="spec" in="blur" specularExponent="100" specularConstant={lightingIntensity * 7} lightingColor="white">
+            <feSpecularLighting result="spec" in="blur" specularExponent="100" specularConstant={lightingIntensity * 4} lightingColor="white">
               <fePointLight ref={pointLightFlippedRef} x="100" y="100" z="300" />
             </feSpecularLighting>
             <feComposite in="spec" in2="SourceGraphic" result="lit" />
