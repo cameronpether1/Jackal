@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useCallback, useState, useMemo, useEffect } from 'react'
-import { motion, useMotionValue, useSpring, useTransform, useAnimationFrame } from 'motion/react'
+import { motion, useMotionValue, useSpring, useTransform, useAnimationFrame, useReducedMotion } from 'motion/react'
 import { Trash2, Copy, CornerUpLeft, MapPin } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -290,6 +290,7 @@ export function PostCard({
   const cardRef = useRef<HTMLDivElement>(null)
   const dragState = useRef<{ startX: number; startY: number; startPosX: number; startPosY: number } | null>(null)
 
+  const reduced = !!useReducedMotion()
   const { profile: currentProfile } = useProfile()
   const isAuthor = post.author_id === currentUserId
   const author = isAuthor && currentProfile ? currentProfile : post.author
@@ -405,11 +406,13 @@ export function PostCard({
           onPointerUp={onPointerUp}
         >
         {/* Inner wrapper — handles visual transforms (rotation, lift, scale) */}
-        <div
-          style={{
-            transform: isDragging ? 'rotate(0deg) translateY(-4px) scale(1.02)' : `rotate(${post.rotation}deg)`,
-            transition: 'transform 200ms cubic-bezier(0.16, 1, 0.3, 1)',
-          }}
+        <motion.div
+          animate={isDragging
+            ? { rotate: 0, y: -6, scale: 1.03 }
+            : { rotate: post.rotation, y: 0, scale: 1 }
+          }
+          whileHover={reduced || isDragging ? undefined : { y: -3, scale: 1.015 }}
+          transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
         >
           {/* Author badge — always visible on text posts, hover-only on image/map-only posts */}
           <div className={cn(
@@ -571,7 +574,7 @@ export function PostCard({
               )}
             </div>
           )}
-        </div>{/* end inner visual-transform wrapper */}
+        </motion.div>{/* end inner visual-transform wrapper */}
         </motion.div>
       </ContextMenuTrigger>
 
