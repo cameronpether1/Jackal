@@ -1260,6 +1260,12 @@ export function Whiteboard({
             willChange: "transform",
           }}
         >
+          {/* Board boundary outline */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ width: BOARD_W, height: BOARD_H, border: '1px solid rgba(0,0,0,0.15)', zIndex: 0 }}
+          />
+
           {posts.length === 0 && !draft && (
             <EmptyState onCompose={spawnDraft} />
           )}
