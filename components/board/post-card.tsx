@@ -279,6 +279,26 @@ export function PostCard({
   const authorColor = getAvatarColor(author?.id ?? '')
   const initials = author?.display_name?.[0]?.toUpperCase() ?? '?'
 
+  // Post-type semantic accent color (top border strip)
+  const typeAccentColor = (isImageOnly || isMapOnly)
+    ? null
+    : post.type === 'tasks'
+      ? '#faad86'   // Tangerine Dream
+      : post.type === 'question'
+        ? '#86fa96' // Mint
+        : '#86d3fa' // Frozen Lake (note)
+
+  // Task progress
+  const taskItemsList = post.task_items ?? []
+  const totalTasks = taskItemsList.length
+  const completedTasks = taskItemsList.filter(t => t.checked).length
+  const taskProgress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
+
+  // Label color dot
+  const labelHex = post.label_color
+    ? LABEL_COLORS.find(c => c.id === post.label_color)?.hex ?? null
+    : null
+
   const sortedReplies = useMemo(
     () => [...replies].sort((a, b) => a.created_at.localeCompare(b.created_at)),
     [replies]
@@ -421,13 +441,29 @@ export function PostCard({
           <div
             ref={cardRef}
             className={cn(
-              'relative w-72 rounded-3xl group/card border overflow-hidden transition-shadow duration-150',
+              'relative w-72 rounded-[18px] group/card border overflow-hidden transition-shadow duration-150',
               isDragging
-                ? 'shadow-[0_16px_48px_rgba(0,0,0,0.18)]'
-                : 'shadow-[0_4px_24px_rgba(0,0,0,0.09)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.14)]',
+                ? 'shadow-[0_8px_32px_rgba(0,0,0,0.16)]'
+                : 'shadow-[0_4px_20px_rgba(0,0,0,0.09)] hover:shadow-[0_6px_24px_rgba(0,0,0,0.12)]',
             )}
-            style={{ backgroundColor: '#F4F4F4', borderColor: 'rgba(0,0,0,0.08)' }}
+            style={{
+              backgroundColor: '#ffffff',
+              borderColor: 'rgba(0,0,0,0.08)',
+              ...(typeAccentColor && {
+                borderTopColor: typeAccentColor,
+                borderTopWidth: '3px',
+              }),
+            }}
           >
+            {/* Label color dot — top-right indicator of assigned label */}
+            {labelHex && !isImageOnly && !isMapOnly && (
+              <div
+                className="absolute top-4 right-4 w-[7px] h-[7px] rounded-full z-10 pointer-events-none"
+                style={{ backgroundColor: labelHex }}
+                title={`Label: ${post.label_color}`}
+              />
+            )}
+
             {/* Image-only */}
             {isImageOnly && (
               <img
@@ -461,19 +497,45 @@ export function PostCard({
             {!isImageOnly && !isMapOnly && (
               <div className="p-5 pt-6 pb-12">
                 {post.type === 'question' && (
-                  <span className="inline-block text-xs font-semibold text-[#1a6a30] tracking-wide mb-1.5">Question</span>
+                  <span
+                    className="inline-flex items-center text-[10px] font-semibold rounded-full px-2 py-0.5 mb-2"
+                    style={{ backgroundColor: 'rgba(134, 250, 150, 0.22)', color: '#262626' }}
+                  >
+                    Question
+                  </span>
                 )}
                 {post.title && (
                   <h3 className="font-bold text-[0.9375rem] text-jk-text mb-2 leading-snug tracking-tight text-balance">{post.title}</h3>
                 )}
                 {post.type === 'tasks' ? (
-                  <TaskList
-                    items={post.task_items ?? []}
-                    onToggle={onTaskToggle}
-                    onAddTask={(label) => onAddTaskItem(post.id, label)}
-                    postId={post.id}
-                    currentUserId={currentUserId}
-                  />
+                  <>
+                    {totalTasks > 0 && (
+                      <div className="flex items-center gap-2.5 mb-3">
+                        <div
+                          className="flex-1 h-0.5 rounded-full overflow-hidden"
+                          style={{ backgroundColor: 'rgba(0,0,0,0.07)' }}
+                        >
+                          <div
+                            className="h-full rounded-full transition-[width] duration-500 ease-out"
+                            style={{ width: `${taskProgress}%`, backgroundColor: '#faad86' }}
+                          />
+                        </div>
+                        <span
+                          className="text-[10px] font-medium tabular-nums shrink-0"
+                          style={{ color: '#b0afa9' }}
+                        >
+                          {completedTasks}/{totalTasks}
+                        </span>
+                      </div>
+                    )}
+                    <TaskList
+                      items={post.task_items ?? []}
+                      onToggle={onTaskToggle}
+                      onAddTask={(label) => onAddTaskItem(post.id, label)}
+                      postId={post.id}
+                      currentUserId={currentUserId}
+                    />
+                  </>
                 ) : (
                   post.content && (
                     <p className="text-[0.8125rem] font-medium text-jk-text leading-[1.55] whitespace-pre-wrap">{renderContent(post.content, { posts: allPosts, onJumpToPost })}</p>
