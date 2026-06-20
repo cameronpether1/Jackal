@@ -89,6 +89,7 @@ export function Whiteboard({
   );
   const canvasRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
+  const sizeRef = useRef<HTMLDivElement>(null);
   const supabase = useMemo(() => createClient(), []);
   const postsRef = useRef(posts);
   const boardNameRef = useRef(boardName);
@@ -222,6 +223,10 @@ export function Whiteboard({
       const panX = e.ctrlKey ? 0 : e.deltaX;
       const panY = e.ctrlKey ? 0 : e.deltaY;
       inner.style.transform = `scale(${newScale})`;
+      if (sizeRef.current) {
+        sizeRef.current.style.width = `${BOARD_W * newScale}px`;
+        sizeRef.current.style.height = `${BOARD_H * newScale}px`;
+      }
       container.scrollLeft = Math.max(0, contentX * newScale - mouseX + panX);
       container.scrollTop = Math.max(0, contentY * newScale - mouseY + panY);
 
@@ -1231,14 +1236,27 @@ export function Whiteboard({
         style={{ touchAction: "pan-x pan-y", overscrollBehavior: "none" }}
         onPointerMove={handleCanvasPointerMove}
       >
+        {/* Size wrapper: sets scroll area to board dimensions × zoom so the
+            full board is always navigable regardless of where posts are */}
+        <div
+          ref={sizeRef}
+          style={{
+            position: "relative",
+            width: BOARD_W * (zoom / 100),
+            height: BOARD_H * (zoom / 100),
+          }}
+        >
         <div
           ref={innerRef}
           className="relative"
           style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: BOARD_W,
+            height: BOARD_H,
             transform: isExporting ? "scale(1)" : `scale(${zoom / 100})`,
             transformOrigin: "top left",
-            minWidth: "200%",
-            minHeight: "200%",
             transition: isExporting
               ? "none"
               : "transform 550ms cubic-bezier(0.4, 0, 0.2, 1)",
@@ -1312,6 +1330,7 @@ export function Whiteboard({
 
           <PresenceCursors users={onlineUsersList} />
         </div>
+        </div>{/* end size wrapper */}
 
         <Dialog open={stickerPickerOpen} onOpenChange={setStickerPickerOpen}>
           <DialogContent
