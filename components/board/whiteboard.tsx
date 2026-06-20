@@ -974,8 +974,8 @@ export function Whiteboard({
       const dy = rect.top + rect.height / 2 - window.innerHeight / 2;
       const sx = rect.width / window.innerWidth;
       const sy = rect.height / window.innerHeight;
-      // Border-radius compensation: at scale sx, (24/sx)*sx = 24px visual
-      const startRadius = 24 / sx;
+      // Border-radius compensation: at scale sx, (18/sx)*sx = 18px visual (matches rounded-[18px] card)
+      const startRadius = 18 / sx;
 
       if (bgEl) gsap.set(bgEl, { opacity: 0 });
       gsap.set(cardEl, { opacity: 0, pointerEvents: "none" });
@@ -1051,7 +1051,7 @@ export function Whiteboard({
       const dy = rect ? rect.top + rect.height / 2 - window.innerHeight / 2 : 0;
       const sx = rect ? rect.width / window.innerWidth : 0.2;
       const sy = rect ? rect.height / window.innerHeight : 0.2;
-      const endRadius = 24 / sx;
+      const endRadius = 18 / sx;
 
       gsap.to(panelEl, {
         x: dx,
@@ -1066,7 +1066,7 @@ export function Whiteboard({
           gsap.set(panelEl, {
             clearProps: "x,y,scaleX,scaleY,borderRadius,transformOrigin",
           });
-          if (cardEl) gsap.set(cardEl, { clearProps: "all" });
+          if (cardEl) gsap.set(cardEl, { clearProps: "opacity,pointerEvents" });
           setFocusedPost(null);
           activeCardRef.current = null;
         },
