@@ -106,7 +106,7 @@ export const PostFocusOverlay = forwardRef<HTMLDivElement, PostFocusOverlayProps
                     )}
 
                     {post.title && (
-                      <h2 className="font-bold text-3xl text-jk-text mb-5 leading-tight tracking-tight text-balance">{post.title}</h2>
+                      <h2 className="font-bold text-3xl text-jk-text mb-5 leading-tight tracking-tight text-balance">{renderContent(post.title, { posts: allPosts, onJumpToPost })}</h2>
                     )}
 
                     {post.type === 'tasks' ? (

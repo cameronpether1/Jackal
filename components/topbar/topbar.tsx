@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { UserPlus, Share2, Download, Users, CalendarDays, SlidersHorizontal } from 'lucide-react'
+import { UserPlus, Share2, Download, Users, CalendarDays, SlidersHorizontal, Plus } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import { cn } from '@/lib/utils'
 import { InvitePanel } from '@/components/topbar/invite-panel'
@@ -25,9 +25,10 @@ interface TopbarProps {
   activeFilters: LabelColor[]
   onToggleFilter: (color: LabelColor) => void
   onClearFilters: () => void
+  onNewPost?: () => void
 }
 
-export function Topbar({ board, members, currentUser, currentUserId, isOwner, calendarOpen, onCalendarToggle, onExport, activeFilters, onToggleFilter, onClearFilters }: TopbarProps) {
+export function Topbar({ board, members, currentUser, currentUserId, isOwner, calendarOpen, onCalendarToggle, onExport, activeFilters, onToggleFilter, onClearFilters, onNewPost }: TopbarProps) {
   const [inviteOpen, setInviteOpen] = useState(false)
   const [shareOpen, setShareOpen] = useState(false)
   const [upgradeOpen, setUpgradeOpen] = useState(false)
@@ -170,13 +171,25 @@ export function Topbar({ board, members, currentUser, currentUserId, isOwner, ca
           {/* Invite CTA */}
           <motion.button
             onClick={() => setInviteOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#0ea5e9] hover:bg-[#38bdf8] text-white text-[11px] font-semibold transition-colors duration-150"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white/60 hover:text-white hover:bg-white/[0.08] text-[11px] font-semibold transition-colors duration-150"
             whileHover={reduced ? undefined : { scale: 1.03 }}
             whileTap={reduced ? undefined : { scale: 0.95 }}
             transition={SPRING}
           >
             <UserPlus className="w-3 h-3" />
             <span className="hidden sm:inline">Invite</span>
+          </motion.button>
+
+          {/* New post — primary CTA */}
+          <motion.button
+            onClick={onNewPost}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#0ea5e9] hover:bg-[#38bdf8] text-white text-[11px] font-semibold transition-colors duration-150"
+            whileHover={reduced ? undefined : { scale: 1.03 }}
+            whileTap={reduced ? undefined : { scale: 0.95 }}
+            transition={SPRING}
+          >
+            <Plus className="w-3 h-3" />
+            <span className="hidden sm:inline">New post</span>
           </motion.button>
 
         </motion.div>

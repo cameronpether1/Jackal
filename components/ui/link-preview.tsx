@@ -3,11 +3,11 @@
 import * as HoverCardPrimitive from '@radix-ui/react-hover-card'
 import Image from 'next/image'
 import { AnimatePresence, motion, useMotionValue, useSpring } from 'motion/react'
+import { ExternalLink } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 
 interface LinkPreviewProps {
-  children: React.ReactNode
   url: string
   className?: string
   width?: number
@@ -15,8 +15,15 @@ interface LinkPreviewProps {
   quality?: number
 }
 
+function getDomain(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '')
+  } catch {
+    return url.slice(0, 30)
+  }
+}
+
 export function LinkPreview({
-  children,
   url,
   className,
   width = 200,
@@ -62,51 +69,57 @@ export function LinkPreview({
             href={url}
             target="_blank"
             rel="noopener noreferrer"
-            className={cn('text-blue-500 hover:underline break-all', className)}
+            className={cn(
+              'inline-flex items-center gap-1 px-2 py-0.5 rounded-full align-baseline mx-0.5',
+              'bg-sky-50 text-sky-600 text-xs font-medium',
+              'hover:bg-sky-100 transition-colors cursor-pointer',
+              className,
+            )}
             onMouseMove={handleMouseMove}
             onClick={(e) => e.stopPropagation()}
             onPointerDown={(e) => e.stopPropagation()}
           >
-            {children}
+            <ExternalLink className="w-2.5 h-2.5 shrink-0" />
+            <span className="truncate max-w-[160px]">{getDomain(url)}</span>
           </a>
         </HoverCardPrimitive.Trigger>
         <HoverCardPrimitive.Portal>
-        <HoverCardPrimitive.Content
-          className="z-[200]"
-          side="top"
-          align="center"
-          sideOffset={10}
-        >
-          <AnimatePresence>
-            {isOpen && (
-              <motion.div
-                initial={{ opacity: 0, y: 20, scale: 0.6 }}
-                animate={{ opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 260, damping: 20 } }}
-                exit={{ opacity: 0, y: 20, scale: 0.6 }}
-                className="shadow-xl rounded-xl"
-                style={{ x: translateX }}
-              >
-                <a
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block p-1 bg-white border-2 border-transparent shadow rounded-xl hover:border-neutral-200"
-                  style={{ fontSize: 0 }}
+          <HoverCardPrimitive.Content
+            className="z-[200]"
+            side="top"
+            align="center"
+            sideOffset={10}
+          >
+            <AnimatePresence>
+              {isOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20, scale: 0.6 }}
+                  animate={{ opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 260, damping: 20 } }}
+                  exit={{ opacity: 0, y: 20, scale: 0.6 }}
+                  className="shadow-xl rounded-xl"
+                  style={{ x: translateX }}
                 >
-                  <Image
-                    src={src}
-                    width={width}
-                    height={height}
-                    quality={quality}
-                    priority
-                    className="rounded-lg"
-                    alt="link preview"
-                  />
-                </a>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </HoverCardPrimitive.Content>
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block p-1 bg-white border-2 border-transparent shadow rounded-xl hover:border-neutral-200"
+                    style={{ fontSize: 0 }}
+                  >
+                    <Image
+                      src={src}
+                      width={width}
+                      height={height}
+                      quality={quality}
+                      priority
+                      className="rounded-lg"
+                      alt="link preview"
+                    />
+                  </a>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </HoverCardPrimitive.Content>
         </HoverCardPrimitive.Portal>
       </HoverCardPrimitive.Root>
     </>
