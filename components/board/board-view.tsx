@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect } from 'react'
 import { Topbar } from '@/components/topbar/topbar'
+import { useBoardActions } from '@/contexts/board-actions-context'
 import { Whiteboard } from '@/components/board/whiteboard'
 import { BoardCalendar } from '@/components/board/board-calendar'
 import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/drawer'
@@ -60,6 +61,7 @@ export function BoardView({
   const exportFnRef = useRef<(() => Promise<void>) | null>(null)
   const [calendarOpen, setCalendarOpen] = useState(false)
   const [activeFilters, setActiveFilters] = useState<LabelColor[]>([])
+  const { actions } = useBoardActions()
 
   function handleToggleFilter(color: LabelColor) {
     setActiveFilters(prev =>
@@ -82,6 +84,7 @@ export function BoardView({
         activeFilters={activeFilters}
         onToggleFilter={handleToggleFilter}
         onClearFilters={() => setActiveFilters([])}
+        onNewPost={actions?.onNewPost}
       />
       <Whiteboard
         boardId={board.id}

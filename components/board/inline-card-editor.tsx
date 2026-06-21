@@ -52,6 +52,7 @@ export function InlineCardEditor({
   const linkMatches = linkSearch !== null
     ? posts.filter(p => {
         if (p.reply_to_post_id) return false
+        if (p.id.startsWith('opt-')) return false
         const hay = (p.title || p.content || '').toLowerCase()
         return linkSearch === '' || hay.includes(linkSearch.toLowerCase())
       }).slice(0, 5)

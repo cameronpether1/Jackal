@@ -573,7 +573,7 @@ export function PostCard({
                   </span>
                 )}
                 {post.title && (
-                  <h3 className="font-bold text-[0.9375rem] text-jk-text mb-2 leading-snug tracking-tight text-balance">{post.title}</h3>
+                  <h3 className="font-bold text-[0.9375rem] text-jk-text mb-2 leading-snug tracking-tight text-balance">{renderContent(post.title, { posts: allPosts, onJumpToPost })}</h3>
                 )}
                 {post.type === 'tasks' ? (
                   <>

@@ -34,7 +34,7 @@ export function renderContent(text: string, opts?: RenderOptions): React.ReactNo
     } else {
       // URL
       const url = match[0]
-      nodes.push(<LinkPreview key={`url-${start}`} url={url}>{url}</LinkPreview>)
+      nodes.push(<LinkPreview key={`url-${start}`} url={url} />)
     }
 
     lastIndex = start + match[0].length
