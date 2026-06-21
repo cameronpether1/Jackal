@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useMotionValue, useSpring } from "motion/react";
+import { computeMagneticBias, computeSnapCommit } from "@/components/board/post-card";
 import { flushSync } from "react-dom";
 import { gsap } from "gsap";
 import { createClient } from "@/lib/supabase/client";
@@ -1173,25 +1175,127 @@ export function Whiteboard({
     [supabase],
   );
 
-  const handleCanvasPointerMove = useCallback(
-    (e: React.PointerEvent<HTMLDivElement>) => {
-      const now = Date.now();
-      if (now - lastCursorRef.current < 50) return;
-      lastCursorRef.current = now;
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const rect = canvas.getBoundingClientRect();
+  const handlePasteImage = useCallback(
+    async (file: File) => {
+      const el = canvasRef.current;
+      const scrollX = el?.scrollLeft ?? 0;
+      const scrollY = el?.scrollTop ?? 0;
+      const w = el?.clientWidth ?? 800;
+      const h = el?.clientHeight ?? 600;
       const scale = zoomRef.current / 100;
-      const x = (e.clientX - rect.left + canvas.scrollLeft) / scale;
-      const y = (e.clientY - rect.top + canvas.scrollTop) / scale;
-      channelRef.current?.send({
-        type: "broadcast",
-        event: "cursor",
-        payload: { userId: currentUserId, x, y },
-      });
+      // Place at viewport center with a small random offset to avoid stacking
+      const pos_x = (scrollX + w / 2) / scale - 144 + (Math.random() - 0.5) * 80;
+      const pos_y = (scrollY + h / 2) / scale - 100 + (Math.random() - 0.5) * 80;
+
+      const toastId = `paste-${Date.now()}`;
+      toast.loading("Adding image…", { id: toastId });
+
+      const ext = file.name !== "image.png"
+        ? (file.name.split(".").pop() ?? "jpg")
+        : file.type.split("/")[1] ?? "jpg";
+      const path = `${boardId}/${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("post-images")
+        .upload(path, file);
+
+      if (uploadError) {
+        toast.error("Failed to upload image", { id: toastId });
+        return;
+      }
+
+      const { data: urlData } = supabase.storage
+        .from("post-images")
+        .getPublicUrl(path);
+      const imageUrl = urlData.publicUrl;
+
+      const optimisticId = `opt-${Date.now()}`;
+      const optimistic: PostWithRelations = {
+        id: optimisticId,
+        board_id: boardId,
+        author_id: currentUserId,
+        author: currentProfile as any,
+        type: "note",
+        title: null,
+        content: null,
+        image_url: imageUrl,
+        map_location: null,
+        pos_x,
+        pos_y,
+        rotation: 0,
+        reply_to_post_id: null,
+        label_color: null,
+        task_items: [],
+        reactions: [],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      setPosts((prev) => [...prev, optimistic]);
+
+      try {
+        const { data: post, error } = await supabase
+          .from("posts")
+          .insert({
+            board_id: boardId,
+            author_id: currentUserId,
+            type: "note",
+            title: null,
+            content: null,
+            image_url: imageUrl,
+            map_location: null,
+            pos_x,
+            pos_y,
+            rotation: 0,
+            reply_to_post_id: null,
+          })
+          .select("*, author:profiles(*)")
+          .single();
+
+        if (error) throw error;
+
+        setPosts((prev) => {
+          const mapped = prev.map((p) =>
+            p.id === optimisticId
+              ? ({ ...post, task_items: [], reactions: [] } as PostWithRelations)
+              : p,
+          );
+          const seen = new Set<string>();
+          return mapped.filter(
+            (p) => !seen.has(p.id) && seen.add(p.id) !== undefined,
+          );
+        });
+
+        toast.success("Image added", { id: toastId });
+      } catch {
+        setPosts((prev) => prev.filter((p) => p.id !== optimisticId));
+        toast.error("Failed to save post", { id: toastId });
+      }
     },
-    [currentUserId],
+    [boardId, currentUserId, currentProfile, supabase],
   );
+
+  useEffect(() => {
+    function onPaste(e: ClipboardEvent) {
+      const target = e.target as HTMLElement;
+      // Let paste events in text fields pass through untouched
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      ) return;
+
+      const items = Array.from(e.clipboardData?.items ?? []);
+      const imageItem = items.find((item) => item.type.startsWith("image/"));
+      if (!imageItem) return;
+
+      e.preventDefault();
+      const file = imageItem.getAsFile();
+      if (file) handlePasteImage(file);
+    }
+
+    document.addEventListener("paste", onPaste);
+    return () => document.removeEventListener("paste", onPaste);
+  }, [handlePasteImage]);
+
 
   // Active drag info shared across all PostCards for bidirectional magnetic attraction
   const activeDragRef = useRef<{
@@ -1222,6 +1326,247 @@ export function Whiteboard({
       });
   }, []);
 
+  // ─── Multi-select & group drag ─────────────────────────────────────────────
+  const [selectedPostIds, setSelectedPostIds] = useState<Set<string>>(new Set())
+  const selectedPostIdsRef = useRef(selectedPostIds)
+  useEffect(() => { selectedPostIdsRef.current = selectedPostIds }, [selectedPostIds])
+  const [isGroupDragging, setIsGroupDragging] = useState(false)
+  const groupDeltaX = useMotionValue(0)
+  const groupDeltaY = useMotionValue(0)
+  const GROUP_BIAS_SPRING = { stiffness: 280, damping: 22, mass: 0.5 }
+  const groupBiasX = useSpring(0, GROUP_BIAS_SPRING)
+  const groupBiasY = useSpring(0, GROUP_BIAS_SPRING)
+
+  // Marquee selection
+  const [marqueeRect, setMarqueeRect] = useState<{ x: number; y: number; w: number; h: number } | null>(null)
+  const marqueeStartRef = useRef<{ clientX: number; clientY: number } | null>(null)
+  const isMarqueeRef = useRef(false)
+
+  // Group drag tracking
+  const groupDragStartRef = useRef<{
+    startClientX: number
+    startClientY: number
+  } | null>(null)
+
+  const handleGroupDragStart = useCallback((postId: string, clientX: number, clientY: number) => {
+    groupDragStartRef.current = { startClientX: clientX, startClientY: clientY }
+    groupDeltaX.jump(0)
+    groupDeltaY.jump(0)
+    setIsGroupDragging(true)
+  }, [groupDeltaX, groupDeltaY])
+
+  const handleGroupDragMove = useCallback((clientX: number, clientY: number) => {
+    if (!groupDragStartRef.current) return
+    const scale = zoomRef.current / 100
+    const dx = (clientX - groupDragStartRef.current.startClientX) / scale
+    const dy = (clientY - groupDragStartRef.current.startClientY) / scale
+    groupDeltaX.set(dx)
+    groupDeltaY.set(dy)
+
+    // Magnetic bias: find the strongest attraction among all selected posts vs non-selected
+    const selected = selectedPostIdsRef.current
+    const nonSelected = postsRef.current
+      .filter(p => !p.reply_to_post_id && !selected.has(p.id))
+      .map(p => {
+        const el = document.getElementById(`post-${p.id}`)
+        return { id: p.id, x: p.pos_x, y: p.pos_y, w: el?.offsetWidth ?? 288, h: el?.offsetHeight ?? 200 }
+      })
+
+    let bx = 0, by = 0, maxMag = 0
+    postsRef.current.forEach(p => {
+      if (!selected.has(p.id) || p.reply_to_post_id) return
+      const el = document.getElementById(`post-${p.id}`)
+      const pw = el?.offsetWidth ?? 288
+      const ph = el?.offsetHeight ?? 200
+      const bias = computeMagneticBias({ x: p.pos_x + dx, y: p.pos_y + dy }, pw, ph, nonSelected)
+      const mag = Math.abs(bias.x) + Math.abs(bias.y)
+      if (mag > maxMag) { maxMag = mag; bx = bias.x; by = bias.y }
+    })
+    groupBiasX.set(bx)
+    groupBiasY.set(by)
+  }, [groupDeltaX, groupDeltaY, groupBiasX, groupBiasY])
+
+  const handleGroupDragEnd = useCallback(async (clientX: number, clientY: number, _cardEl: HTMLElement | null) => {
+    if (!groupDragStartRef.current) return
+    const scale = zoomRef.current / 100
+    const dx = (clientX - groupDragStartRef.current.startClientX) / scale
+    const dy = (clientY - groupDragStartRef.current.startClientY) / scale
+    const selected = selectedPostIdsRef.current
+
+    // Check for snap across all selected posts
+    const nonSelected = postsRef.current
+      .filter(p => !p.reply_to_post_id && !selected.has(p.id))
+      .map(p => {
+        const el = document.getElementById(`post-${p.id}`)
+        return { id: p.id, x: p.pos_x, y: p.pos_y, w: el?.offsetWidth ?? 288, h: el?.offsetHeight ?? 200 }
+      })
+
+    let snapDx = 0, snapDy = 0, bestSnapDist = Infinity
+    postsRef.current.forEach(p => {
+      if (!selected.has(p.id) || p.reply_to_post_id) return
+      const el = document.getElementById(`post-${p.id}`)
+      const pw = el?.offsetWidth ?? 288
+      const ph = el?.offsetHeight ?? 200
+      const curPos = { x: p.pos_x + dx, y: p.pos_y + dy }
+      const snap = computeSnapCommit(curPos, pw, ph, nonSelected)
+      if (snap) {
+        const cx = snap.x - curPos.x
+        const cy = snap.y - curPos.y
+        const dist = Math.abs(cx) + Math.abs(cy)
+        if (dist < bestSnapDist) { bestSnapDist = dist; snapDx = cx; snapDy = cy }
+      }
+    })
+
+    const finalDx = dx + snapDx
+    const finalDy = dy + snapDy
+
+    // Snap animation: jump bias to compensate for snap correction, then spring to 0
+    if (snapDx !== 0 || snapDy !== 0) {
+      const curBiasX = groupBiasX.get()
+      const curBiasY = groupBiasY.get()
+      groupDeltaX.set(finalDx)
+      groupDeltaY.set(finalDy)
+      groupBiasX.jump(curBiasX - snapDx)
+      groupBiasY.jump(curBiasY - snapDy)
+      groupBiasX.set(0)
+      groupBiasY.set(0)
+    }
+
+    // Commit final positions optimistically
+    const updates: { id: string; x: number; y: number }[] = []
+    postsRef.current.forEach(p => {
+      if (selected.has(p.id)) updates.push({ id: p.id, x: p.pos_x + finalDx, y: p.pos_y + finalDy })
+    })
+    setPosts(prev => prev.map(p => {
+      const u = updates.find(u => u.id === p.id)
+      return u ? { ...p, pos_x: u.x, pos_y: u.y } : p
+    }))
+    groupDragStartRef.current = null
+    setIsGroupDragging(false)
+    // Reset delta; motion batches this with rawX.set(finalPos) in the same frame
+    groupDeltaX.jump(0)
+    groupDeltaY.jump(0)
+    groupBiasX.jump(0)
+    groupBiasY.jump(0)
+
+    // Persist to DB + broadcast
+    for (const { id, x, y } of updates) {
+      channelRef.current?.send({ type: "broadcast", event: "post-move", payload: { id, x, y } })
+      supabase.from("posts").update({ pos_x: x, pos_y: y }).eq("id", id).then(() => {})
+    }
+  }, [groupDeltaX, groupDeltaY, groupBiasX, groupBiasY, supabase])
+
+  const handleDeselect = useCallback(() => {
+    setSelectedPostIds(new Set())
+  }, [])
+
+  // Escape key clears selection
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape" && selectedPostIdsRef.current.size > 0) {
+        setSelectedPostIds(new Set())
+      }
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [])
+
+  const handleCanvasPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return
+    const target = e.target as HTMLElement
+    // Only start marquee on empty canvas (not on posts/stickers)
+    if (target.closest('[id^="post-"]') || target.closest('[data-sticker-peel]')) return
+    marqueeStartRef.current = { clientX: e.clientX, clientY: e.clientY }
+    isMarqueeRef.current = false
+  }, [])
+
+  const handleCanvasPointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (!marqueeStartRef.current) return
+    const start = marqueeStartRef.current
+    marqueeStartRef.current = null
+
+    if (isMarqueeRef.current && marqueeRect) {
+      // Hit-test posts against marquee in board coordinates
+      const canvas = canvasRef.current
+      if (!canvas) { setMarqueeRect(null); return }
+      const rect = canvas.getBoundingClientRect()
+      const scale = zoomRef.current / 100
+      const toBoard = (cx: number, cy: number) => ({
+        x: (cx - rect.left + canvas.scrollLeft) / scale,
+        y: (cy - rect.top + canvas.scrollTop) / scale,
+      })
+      const rawX = marqueeRect.w < 0 ? marqueeRect.x + marqueeRect.w : marqueeRect.x
+      const rawY = marqueeRect.h < 0 ? marqueeRect.y + marqueeRect.h : marqueeRect.y
+      const rawW = Math.abs(marqueeRect.w)
+      const rawH = Math.abs(marqueeRect.h)
+      const tl = toBoard(rawX, rawY)
+      const br = toBoard(rawX + rawW, rawY + rawH)
+      const newSelected = new Set<string>()
+      postsRef.current.forEach(p => {
+        if (p.reply_to_post_id) return
+        const el = document.getElementById(`post-${p.id}`)
+        const pw = el?.offsetWidth ?? 288
+        const ph = el?.offsetHeight ?? 200
+        const px2 = p.pos_x + pw
+        const py2 = p.pos_y + ph
+        // Intersects marquee rect
+        if (p.pos_x < br.x && px2 > tl.x && p.pos_y < br.y && py2 > tl.y) {
+          newSelected.add(p.id)
+        }
+      })
+      setSelectedPostIds(newSelected)
+      setMarqueeRect(null)
+    } else {
+      // Plain click on canvas background — deselect
+      const dx = Math.abs(e.clientX - start.clientX)
+      const dy = Math.abs(e.clientY - start.clientY)
+      if (dx < 4 && dy < 4) {
+        setSelectedPostIds(new Set())
+      }
+      setMarqueeRect(null)
+    }
+    isMarqueeRef.current = false
+  }, [marqueeRect])
+
+  const handleCanvasPointerMove = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      // Cursor broadcast (throttled)
+      const now = Date.now();
+      if (now - lastCursorRef.current >= 50) {
+        lastCursorRef.current = now;
+        const canvas = canvasRef.current;
+        if (canvas) {
+          const rect = canvas.getBoundingClientRect();
+          const scale = zoomRef.current / 100;
+          const x = (e.clientX - rect.left + canvas.scrollLeft) / scale;
+          const y = (e.clientY - rect.top + canvas.scrollTop) / scale;
+          channelRef.current?.send({
+            type: "broadcast",
+            event: "cursor",
+            payload: { userId: currentUserId, x, y },
+          });
+        }
+      }
+
+      // Marquee update
+      if (!marqueeStartRef.current) return
+      const dx = e.clientX - marqueeStartRef.current.clientX
+      const dy = e.clientY - marqueeStartRef.current.clientY
+      if (!isMarqueeRef.current && (Math.abs(dx) > 4 || Math.abs(dy) > 4)) {
+        isMarqueeRef.current = true
+      }
+      if (isMarqueeRef.current) {
+        setMarqueeRect({
+          x: marqueeStartRef.current.clientX,
+          y: marqueeStartRef.current.clientY,
+          w: dx,
+          h: dy,
+        })
+      }
+    },
+    [currentUserId],
+  );
+
   const onlineUsersList = useMemo(
     () => Object.values(onlineUsers),
     [onlineUsers],
@@ -1230,11 +1575,31 @@ export function Whiteboard({
   return (
     <div className="relative flex-1 flex flex-col overflow-hidden">
       <OnlineAvatars users={onlineUsersList} />
+
+      {/* Marquee selection rectangle */}
+      {marqueeRect && (
+        <div
+          className="pointer-events-none"
+          style={{
+            position: 'fixed',
+            left: Math.min(marqueeRect.x, marqueeRect.x + marqueeRect.w),
+            top: Math.min(marqueeRect.y, marqueeRect.y + marqueeRect.h),
+            width: Math.abs(marqueeRect.w),
+            height: Math.abs(marqueeRect.h),
+            border: '1.5px solid rgba(28, 27, 25, 0.5)',
+            backgroundColor: 'rgba(28, 27, 25, 0.06)',
+            borderRadius: 6,
+            zIndex: 100,
+          }}
+        />
+      )}
       <div
         ref={canvasRef}
         className="relative flex-1 overflow-auto bg-[#D9D9D9]"
         style={{ touchAction: "pan-x pan-y", overscrollBehavior: "none" }}
+        onPointerDown={handleCanvasPointerDown}
         onPointerMove={handleCanvasPointerMove}
+        onPointerUp={handleCanvasPointerUp}
       >
         {/* Size wrapper: sets scroll area to board dimensions × zoom so the
             full board is always navigable regardless of where posts are */}
@@ -1292,6 +1657,17 @@ export function Whiteboard({
               isFiltered={activeFilters.length > 0 && post.label_color !== null
                 ? !activeFilters.includes(post.label_color)
                 : activeFilters.length > 0}
+              isSelected={selectedPostIds.has(post.id)}
+              selectedCount={selectedPostIds.size}
+              isGroupDragging={isGroupDragging}
+              groupDeltaX={groupDeltaX}
+              groupDeltaY={groupDeltaY}
+              groupBiasX={groupBiasX}
+              groupBiasY={groupBiasY}
+              onGroupDragStart={handleGroupDragStart}
+              onGroupDragMove={handleGroupDragMove}
+              onGroupDragEnd={handleGroupDragEnd}
+              onDeselect={handleDeselect}
               onReply={handleReply}
               onFocusPost={handleFocusPost}
             />

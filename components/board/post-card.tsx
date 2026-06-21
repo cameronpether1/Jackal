@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useCallback, useState, useMemo, useEffect } from 'react'
-import { motion, useMotionValue, useSpring, useTransform, useAnimationFrame, useReducedMotion } from 'motion/react'
+import { type MotionValue, motion, useMotionValue, useSpring, useTransform, useAnimationFrame, useReducedMotion } from 'motion/react'
 import { Trash2, Copy, CornerUpLeft, MapPin } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -44,6 +44,17 @@ interface PostCardProps {
   onDelete: (postId: string) => void
   onSetColor?: (postId: string, color: string | null) => void
   isFiltered?: boolean
+  isSelected?: boolean
+  selectedCount?: number
+  isGroupDragging?: boolean
+  groupDeltaX?: MotionValue<number>
+  groupDeltaY?: MotionValue<number>
+  groupBiasX?: MotionValue<number>
+  groupBiasY?: MotionValue<number>
+  onGroupDragStart?: (postId: string, clientX: number, clientY: number) => void
+  onGroupDragMove?: (clientX: number, clientY: number) => void
+  onGroupDragEnd?: (clientX: number, clientY: number, cardEl: HTMLElement | null) => void
+  onDeselect?: () => void
   onReply?: (post: PostWithRelations) => void
   onFocusPost?: (post: PostWithRelations, cardEl: HTMLElement) => void
 }
@@ -57,7 +68,7 @@ const ATTRACT_MAX = 25  // max pixel offset for dragged post bias
 const STATIONARY_MAX = 14  // max pixel offset for stationary post attraction
 
 // On release: if within MAGNET_RADIUS (or overlapping), returns the fully committed snap position.
-function computeSnapCommit(
+export function computeSnapCommit(
   raw: { x: number; y: number },
   w: number,
   h: number,
@@ -112,7 +123,7 @@ function computeSnapCommit(
 
 // Returns the spring target bias to apply to the dragged post's position.
 // Handles both the approach animation (bell-shaped pull) and overlap (min-penetration push-out).
-function computeMagneticBias(
+export function computeMagneticBias(
   raw: { x: number; y: number },
   w: number,
   h: number,
@@ -196,34 +207,53 @@ export function PostCard({
   allPosts = [], onJumpToPost,
   isReplying = false, onReplyDraftSave, onReplyDraftDiscard,
   onDragEnd, boardBounds, getNearbyPostRects, getDraggedInfo, setActiveDrag, getZoom,
-  onTaskToggle, onAddTaskItem, onDelete, onSetColor, isFiltered = false, onReply, onFocusPost,
+  onTaskToggle, onAddTaskItem, onDelete, onSetColor, isFiltered = false,
+  isSelected = false, selectedCount = 0, isGroupDragging = false,
+  groupDeltaX, groupDeltaY, groupBiasX, groupBiasY,
+  onGroupDragStart, onGroupDragMove, onGroupDragEnd, onDeselect,
+  onReply, onFocusPost,
 }: PostCardProps) {
   // raw tracks the cursor exactly (no spring) — bias springs toward nearby posts
   const rawX = useMotionValue(post.pos_x)
   const rawY = useMotionValue(post.pos_y)
   const biasX = useSpring(0, BIAS_SPRING)
   const biasY = useSpring(0, BIAS_SPRING)
-  const displayX = useTransform(() => rawX.get() + biasX.get())
-  const displayY = useTransform(() => rawY.get() + biasY.get())
+  // When selected in a group, display adds the shared group offset instead of individual bias
+  const isSelectedRef = useRef(isSelected)
+  isSelectedRef.current = isSelected
+  const displayX = useTransform(() => {
+    if (isSelectedRef.current && groupDeltaX) {
+      return rawX.get() + groupDeltaX.get() + (groupBiasX?.get() ?? 0)
+    }
+    return rawX.get() + biasX.get()
+  })
+  const displayY = useTransform(() => {
+    if (isSelectedRef.current && groupDeltaY) {
+      return rawY.get() + groupDeltaY.get() + (groupBiasY?.get() ?? 0)
+    }
+    return rawY.get() + biasY.get()
+  })
   // tracks the committed bias target (for onDragEnd final position)
   const biasTargetRef = useRef({ x: 0, y: 0 })
+  const isGroupDragRef = useRef(false)
   const [isDragging, setIsDragging] = useState(false)
   const isDraggingRef = useRef(false)
   isDraggingRef.current = isDragging
 
   useEffect(() => {
-    if (!isDragging) {
+    if (!isDragging && !isGroupDragging) {
       rawX.set(post.pos_x)
       rawY.set(post.pos_y)
       biasX.jump(0)
       biasY.jump(0)
       biasTargetRef.current = { x: 0, y: 0 }
     }
-  }, [post.pos_x, post.pos_y, isDragging, rawX, rawY, biasX, biasY])
+  }, [post.pos_x, post.pos_y, isDragging, isGroupDragging, rawX, rawY, biasX, biasY])
 
   // Stationary post attraction: read dragged post position every frame and spring toward it
   useAnimationFrame(() => {
     if (isDraggingRef.current) return
+    if (isGroupDragging) return
     const drag = getDraggedInfo?.()
     if (!drag || drag.id === post.id) {
       if (Math.abs(biasX.get()) > 0.1) biasX.set(0)
@@ -310,7 +340,23 @@ export function PostCard({
     if (target.closest('button') || target.closest('input') || target.closest('textarea') || target.closest('[role="checkbox"]') || target.closest('a') || target.closest('[data-comment-bubble]')) return
     e.preventDefault()
     ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
-    // Snap bias spring to 0 so drag starts from the raw position
+
+    const willGroupDrag = isSelected && selectedCount > 1
+
+    if (!isSelected) {
+      onDeselect?.()
+    }
+
+    if (willGroupDrag) {
+      isGroupDragRef.current = true
+      dragState.current = { startX: e.clientX, startY: e.clientY, startPosX: rawX.get(), startPosY: rawY.get() }
+      onGroupDragStart?.(post.id, e.clientX, e.clientY)
+      setIsDragging(true)
+      return
+    }
+
+    // Normal solo drag
+    isGroupDragRef.current = false
     biasX.jump(0)
     biasY.jump(0)
     biasTargetRef.current = { x: 0, y: 0 }
@@ -320,10 +366,14 @@ export function PostCard({
     const el = outerRef.current
     setActiveDrag?.({ id: post.id, x: startPosX, y: startPosY, w: el?.offsetWidth ?? 288, h: el?.offsetHeight ?? 200 })
     setIsDragging(true)
-  }, [rawX, rawY, biasX, biasY, post.id, setActiveDrag])
+  }, [rawX, rawY, biasX, biasY, post.id, setActiveDrag, isSelected, selectedCount, onDeselect, onGroupDragStart])
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
     if (!dragState.current) return
+    if (isGroupDragRef.current) {
+      onGroupDragMove?.(e.clientX, e.clientY)
+      return
+    }
     const el = outerRef.current
     const w = el?.offsetWidth ?? 288
     const h = el?.offsetHeight ?? 200
@@ -344,12 +394,24 @@ export function PostCard({
     biasY.set(bias.y)
     // Broadcast dragged position so stationary posts can react
     setActiveDrag?.({ id: post.id, x: newPos.x, y: newPos.y, w, h })
-  }, [boardBounds, getNearbyPostRects, post.id, rawX, rawY, biasX, biasY, setActiveDrag])
+  }, [boardBounds, getNearbyPostRects, post.id, rawX, rawY, biasX, biasY, setActiveDrag, onGroupDragMove])
 
   const onPointerUp = useCallback((e: React.PointerEvent) => {
     if (!dragState.current) return
     const dx = e.clientX - dragState.current.startX
     const dy = e.clientY - dragState.current.startY
+
+    if (isGroupDragRef.current) {
+      isGroupDragRef.current = false
+      dragState.current = null
+      setIsDragging(false)
+      onGroupDragEnd?.(e.clientX, e.clientY, cardRef.current)
+      if (Math.abs(dx) <= 3 && Math.abs(dy) <= 3 && onFocusPost && cardRef.current) {
+        onFocusPost(post, cardRef.current)
+      }
+      return
+    }
+
     const el = outerRef.current
     const w = el?.offsetWidth ?? 288
     const h = el?.offsetHeight ?? 200
@@ -362,7 +424,6 @@ export function PostCard({
       finalX = snap.x
       finalY = snap.y
       // Commit raw to final position, then spring bias from current visual offset to 0
-      // This keeps visual continuity and animates the post into place
       const visualOffsetX = rawPos.x + biasX.get() - finalX
       const visualOffsetY = rawPos.y + biasY.get() - finalY
       rawX.set(finalX)
@@ -388,7 +449,7 @@ export function PostCard({
     } else if (onFocusPost && cardRef.current) {
       onFocusPost(post, cardRef.current)
     }
-  }, [post, onDragEnd, onFocusPost, rawX, rawY, biasX, biasY, setActiveDrag, getNearbyPostRects])
+  }, [post, onDragEnd, onFocusPost, rawX, rawY, biasX, biasY, setActiveDrag, getNearbyPostRects, onGroupDragEnd])
 
   return (
     <ContextMenu>
@@ -405,13 +466,16 @@ export function PostCard({
         >
         {/* Inner wrapper — handles visual transforms (rotation, lift, scale) */}
         <motion.div
-          animate={isDragging
-            ? { rotate: 0, y: -6, scale: 1.03, filter: 'blur(0px)', opacity: 1 }
-            : isFiltered
-              ? { rotate: post.rotation, y: 0, scale: 1, filter: 'blur(4px)', opacity: 0.5 }
-              : { rotate: post.rotation, y: 0, scale: 1, filter: 'blur(0px)', opacity: 1 }
+          animate={
+            isDragging
+              ? { rotate: 0, y: -6, scale: 1.03, filter: 'blur(0px)', opacity: 1 }
+              : (isGroupDragging && isSelected)
+                ? { rotate: 0, y: -4, scale: 1.02, filter: 'blur(0px)', opacity: 1 }
+                : isFiltered
+                  ? { rotate: post.rotation, y: 0, scale: 1, filter: 'blur(4px)', opacity: 0.5 }
+                  : { rotate: post.rotation, y: 0, scale: 1, filter: 'blur(0px)', opacity: 1 }
           }
-          whileHover={reduced || isDragging || isFiltered ? undefined : { y: -3, scale: 1.015 }}
+          whileHover={reduced || isDragging || isGroupDragging || isFiltered ? undefined : { y: -3, scale: 1.015 }}
           transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
         >
           {/* Author badge — always visible on text posts, hover-only on image/map-only posts */}
@@ -452,6 +516,10 @@ export function PostCard({
               ...(typeAccentColor && {
                 borderTopColor: typeAccentColor,
                 borderTopWidth: '3px',
+              }),
+              ...(isSelected && {
+                outline: '2px solid rgba(28, 27, 25, 0.55)',
+                outlineOffset: '3px',
               }),
             }}
           >
