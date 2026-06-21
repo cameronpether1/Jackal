@@ -198,6 +198,7 @@ export function StickerPeel({
   const stickerEl = (
     <div
       ref={outerRef}
+      data-sticker-peel
       className="absolute select-none"
       style={{
         left: pos.x,
